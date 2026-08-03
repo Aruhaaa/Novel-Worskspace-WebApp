@@ -1,0 +1,260 @@
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { 
+  BookOpen, 
+  Compass, 
+  BarChart2, 
+  Plus, 
+  Database, 
+  ChevronDown, 
+  FileText, 
+  BookOpenCheck 
+} from 'lucide-react';
+
+export const Sidebar: React.FC = () => {
+  const {
+    projects,
+    activeProject,
+    chapters,
+    activeChapter,
+    activeView,
+    isSupabase,
+    setActiveView,
+    setActiveProject,
+    setActiveChapter,
+    createProject,
+    createChapter
+  } = useApp();
+
+  const [showProjDropdown, setShowProjDropdown] = useState(false);
+  const [showNewProjModal, setShowNewProjModal] = useState(false);
+  const [newProjTitle, setNewProjTitle] = useState('');
+  const [newProjDesc, setNewProjDesc] = useState('');
+  const [newChapterTitle, setNewChapterTitle] = useState('');
+  const [showNewChapterInput, setShowNewChapterInput] = useState(false);
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjTitle.trim()) return;
+    await createProject(newProjTitle, newProjDesc);
+    setNewProjTitle('');
+    setNewProjDesc('');
+    setShowNewProjModal(false);
+  };
+
+  const handleCreateChapter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newChapterTitle.trim()) return;
+    await createChapter(newChapterTitle);
+    setNewChapterTitle('');
+    setShowNewChapterInput(false);
+  };
+
+  return (
+    <aside className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col h-screen text-slate-300 select-none">
+      {/* App Header & Project Selector */}
+      <div className="p-5 border-b border-slate-900 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
+              N
+            </div>
+            <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
+          </div>
+          
+          {/* Connection Status Badge */}
+          <div 
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help bg-slate-900 border border-slate-800"
+            title={isSupabase ? 'Connected to Supabase cloud database' : 'Using LocalStorage offline fallback'}
+          >
+            <span className={`w-2 h-2 rounded-full ${isSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+            <Database className="w-3.5 h-3.5 text-slate-400" />
+          </div>
+        </div>
+
+        {/* Project Selector dropdown */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowProjDropdown(!showProjDropdown)}
+            className="w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200"
+          >
+            <span className="truncate text-slate-200">
+              {activeProject ? activeProject.title : 'No Project Selected'}
+            </span>
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          </button>
+
+          {showProjDropdown && (
+            <div className="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+              {projects.map((proj) => (
+                <button
+                  key={proj.id}
+                  onClick={() => {
+                    setActiveProject(proj);
+                    setShowProjDropdown(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white transition-colors duration-150 ${activeProject?.id === proj.id ? 'text-indigo-400 bg-indigo-500/5 font-semibold' : 'text-slate-300'}`}
+                >
+                  <div className="truncate font-semibold">{proj.title}</div>
+                  <div className="truncate text-[10px] opacity-70 mt-0.5">{proj.description || 'No description'}</div>
+                </button>
+              ))}
+              <div className="border-t border-slate-800/60 my-1"></div>
+              <button
+                onClick={() => {
+                  setShowProjDropdown(false);
+                  setShowNewProjModal(true);
+                }}
+                className="w-full text-left px-4 py-2 text-xs text-indigo-400 hover:bg-indigo-600 hover:text-white font-medium flex items-center gap-1.5 transition-colors duration-150"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Project...
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Module Nav */}
+      <nav className="p-4 flex flex-col gap-1.5">
+        <button
+          onClick={() => setActiveView('editor')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'editor'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Editor</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('planner')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'planner'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span>Planner (Wiki)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('tracker')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'tracker'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <BarChart2 className="w-4 h-4" />
+          <span>Tracker</span>
+        </button>
+      </nav>
+
+      {/* Secondary Context Panel (Chapters - Only shown on Editor View) */}
+      {activeView === 'editor' && (
+        <div className="flex-1 flex flex-col border-t border-slate-900 overflow-hidden">
+          <div className="px-5 py-4 flex items-center justify-between text-xs font-semibold text-slate-400 tracking-wider uppercase">
+            <span>Manuscript Chapters</span>
+            <button 
+              onClick={() => setShowNewChapterInput(!showNewChapterInput)}
+              className="text-slate-400 hover:text-indigo-400 transition-colors p-0.5 hover:bg-slate-900 rounded"
+              title="Add Chapter"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
+            {showNewChapterInput && (
+              <form onSubmit={handleCreateChapter} className="px-2 py-1">
+                <input
+                  type="text"
+                  placeholder="Chapter title..."
+                  value={newChapterTitle}
+                  onChange={(e) => setNewChapterTitle(e.target.value)}
+                  className="w-full bg-slate-900 text-xs text-slate-200 border border-slate-800 rounded px-2.5 py-1.5 focus:outline-none focus:border-indigo-600"
+                  autoFocus
+                />
+              </form>
+            )}
+
+            {chapters.length === 0 ? (
+              <div className="text-xs text-slate-500 text-center py-6 px-4">
+                No chapters. Click the plus icon to write your first chapter.
+              </div>
+            ) : (
+              chapters.map((chap) => (
+                <button
+                  key={chap.id}
+                  onClick={() => setActiveChapter(chap)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs text-left transition-all duration-150 group border ${
+                    activeChapter?.id === chap.id
+                      ? 'bg-slate-900/60 text-slate-100 border-slate-800/80 font-medium'
+                      : 'border-transparent hover:bg-slate-900/30 text-slate-400 hover:text-slate-300'
+                  }`}
+                >
+                  <FileText className={`w-3.5 h-3.5 ${activeChapter?.id === chap.id ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
+                  <span className="truncate flex-1">{chap.title}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* New Project Modal */}
+      {showNewProjModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in scale-in duration-200">
+            <h3 className="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
+              <BookOpenCheck className="w-5 h-5 text-indigo-500" />
+              Create New Project
+            </h3>
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Project Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Whispers of the Starward"
+                  value={newProjTitle}
+                  onChange={(e) => setNewProjTitle(e.target.value)}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                <textarea
+                  placeholder="A short summary of your novel's theme, setting, or plot..."
+                  value={newProjDesc}
+                  onChange={(e) => setNewProjDesc(e.target.value)}
+                  rows={3}
+                  className="w-full bg-slate-955 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewProjModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+};
