@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight } from 'lucide-react';
+import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight, X } from 'lucide-react';
 
 import { RichTextEditor } from './RichTextEditor';
 
@@ -9,6 +9,8 @@ export const EditorView: React.FC = () => {
   const [localTitle, setLocalTitle] = useState(activeChapter?.title || '');
   const [localContent, setLocalContent] = useState(activeChapter?.content || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
+  const [showNewChapterModal, setShowNewChapterModal] = useState(false);
+  const [newChapterTitle, setNewChapterTitle] = useState('');
   
   const saveTimeoutRef = useRef<number | null>(null);
 
@@ -109,12 +111,7 @@ export const EditorView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Create New Chapter Card */}
             <div 
-              onClick={() => {
-                const title = prompt("Enter new chapter title:");
-                if (title && title.trim()) {
-                  createChapter(title.trim());
-                }
-              }}
+              onClick={() => setShowNewChapterModal(true)}
               className="group relative bg-slate-900/40 border-2 border-dashed border-slate-700/60 rounded-xl p-6 hover:bg-slate-800/40 hover:border-indigo-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] cursor-pointer"
             >
               <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors mb-3">
@@ -225,6 +222,65 @@ export const EditorView: React.FC = () => {
           Focus Mode Active
         </div>
       </footer>
+      {/* New Chapter Modal */}
+      {showNewChapterModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in scale-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-indigo-500" />
+                Create New Chapter
+              </h3>
+              <button 
+                onClick={() => setShowNewChapterModal(false)}
+                className="text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newChapterTitle.trim()) {
+                  createChapter(newChapterTitle.trim());
+                  setNewChapterTitle('');
+                  setShowNewChapterModal(false);
+                }
+              }}
+            >
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Chapter Title</label>
+                <input
+                  type="text"
+                  value={newChapterTitle}
+                  onChange={(e) => setNewChapterTitle(e.target.value)}
+                  placeholder="e.g. Chapter 1: The Beginning"
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowNewChapterModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newChapterTitle.trim()}
+                  className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
+                >
+                  Create Chapter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
