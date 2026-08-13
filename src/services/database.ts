@@ -241,7 +241,7 @@ export const databaseService = {
       return updated;
     }
   },
-  async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>): Promise<Project> {
+  async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')

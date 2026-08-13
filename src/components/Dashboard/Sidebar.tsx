@@ -34,7 +34,8 @@ export const Sidebar: React.FC = () => {
     createChapter,
     publishProject,
     logout,
-    user
+    user,
+    profile
   } = useApp();
 
   const [showProjDropdown, setShowProjDropdown] = useState(false);
@@ -80,7 +81,7 @@ export const Sidebar: React.FC = () => {
 
   const handleTogglePublish = async () => {
     if (!activeProject || !user) return;
-    const authorName = user.email ? user.email.split('@')[0] : 'Anonymous';
+    const authorName = profile?.display_name || (user.email ? user.email.split('@')[0] : 'Anonymous');
     await publishProject(activeProject.id, !activeProject.is_published, authorName);
   };
 

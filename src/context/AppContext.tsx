@@ -30,7 +30,7 @@ interface AppContextType {
   loadProjectData: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string) => Promise<void>;
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
-  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>) => Promise<void>;
+  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
   updateProfile: (fields: Partial<UserProfile>) => Promise<{error: string | null}>;
   createChapter: (title: string) => Promise<void>;
@@ -212,7 +212,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>) => {
+  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => {
     try {
       const updated = await databaseService.updateProjectSettings(projectId, fields);
       setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
@@ -243,6 +243,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await databaseService.updateProfile(user.id, fields);
       setProfile(updated);
+      
+      // Sync the new display_name to all projects as author_name
+      if (fields.display_name) {
+        const updatedProjects = await Promise.all(
+          projects.map(async (p) => {
+            if (p.author_name !== fields.display_name) {
+              const res = await databaseService.updateProjectSettings(p.id, { author_name: fields.display_name });
+              return res;
+            }
+            return p;
+          })
+        );
+        setProjects(updatedProjects);
+        if (activeProject) {
+          const syncedActive = updatedProjects.find(p => p.id === activeProject.id);
+          if (syncedActive) setActiveProject(syncedActive);
+        }
+      }
+
       return { error: null };
     } catch (err: any) {
       console.error('Error updating profile:', err);
