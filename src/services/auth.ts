@@ -49,10 +49,16 @@ class AuthService {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) return { user: null, error: error.message };
+      
+      // If session is null, it usually means email confirmation is required
+      if (!data.session) {
+        return { user: null, error: 'Signup successful! Please check your email to verify your account.' };
+      }
+      
       if (data.user && data.user.email) {
         return { user: { id: data.user.id, email: data.user.email }, error: null };
       }
-      return { user: null, error: 'User data not found after signup.' };
+      return { user: null, error: 'An unexpected issue occurred during signup. Please try logging in.' };
     }
 
     // Local Mock Fallback
