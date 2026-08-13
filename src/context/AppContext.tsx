@@ -32,7 +32,7 @@ interface AppContextType {
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
   updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
-  updateProfile: (fields: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (fields: Partial<UserProfile>) => Promise<{error: string | null}>;
   createChapter: (title: string) => Promise<void>;
   updateChapter: (chapterId: string, fields: Partial<Pick<Chapter, 'title' | 'content' | 'position'>>) => Promise<void>;
   createEntity: (name: string, type: WikiEntity['type'], description: string, content: Record<string, string>, imageUrl?: string) => Promise<void>;
@@ -239,12 +239,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateProfile = async (fields: Partial<UserProfile>) => {
-    if (!user) return;
+    if (!user) return { error: 'No active user' };
     try {
       const updated = await databaseService.updateProfile(user.id, fields);
       setProfile(updated);
-    } catch (err) {
+      return { error: null };
+    } catch (err: any) {
       console.error('Error updating profile:', err);
+      return { error: err.message || 'Failed to update profile' };
     }
   };
 

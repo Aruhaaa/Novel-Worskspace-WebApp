@@ -26,15 +26,20 @@ export const ProfileView: React.FC = () => {
     setIsSaving(true);
     setMessage('');
     
-    await updateProfile({
+    const result = await updateProfile({
       display_name: displayName,
       bio,
       daily_word_goal: dailyGoal,
     });
     
     setIsSaving(false);
-    setMessage('Profile updated successfully!');
-    setTimeout(() => setMessage(''), 3000);
+    
+    if (result?.error) {
+      setMessage(`Error: ${result.error}`);
+    } else {
+      setMessage('Profile updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   if (!user) return null;
@@ -51,6 +56,21 @@ export const ProfileView: React.FC = () => {
             Manage your public author persona and writing goals.
           </p>
         </header>
+
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 border ${
+            message.startsWith('Error') 
+              ? 'bg-rose-500/10 border-rose-500/20' 
+              : 'bg-emerald-500/10 border-emerald-500/20'
+          }`}>
+            <UserIcon className={`w-5 h-5 shrink-0 mt-0.5 ${
+              message.startsWith('Error') ? 'text-rose-400' : 'text-emerald-400'
+            }`} />
+            <p className={`text-sm ${
+              message.startsWith('Error') ? 'text-rose-300' : 'text-emerald-300'
+            }`}>{message}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 space-y-6">
           
