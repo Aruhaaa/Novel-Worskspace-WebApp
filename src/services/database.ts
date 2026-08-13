@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Project, Chapter, WikiEntity, WordCountLog } from './types';
+import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile } from './types';
 
 // Mock Data Initializer for Local Storage fallback
 const MOCK_PROJECT_ID = 'p1-mock-project';
@@ -125,21 +125,62 @@ const setLocalData = <T>(key: string, data: T): void => {
 };
 
 export const databaseService = {
-  // --- PROJECTS ---
-  async getProjects(): Promise<Project[]> {
+  async getProfile(userId: string): Promise<UserProfile | null> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+      }
+      return data || null;
     } else {
-      return getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const profiles = getLocalData<UserProfile[]>('novel_profiles', []);
+      return profiles.find(p => p.id === userId) || null;
     }
   },
 
-  async createProject(title: string, description: string): Promise<Project> {
+  async updateProfile(userId: string, fields: Partial<UserProfile>): Promise<UserProfile> {
     if (isSupabaseConfigured && supabase) {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id || 'anonymous';
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ id: userId, ...fields })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const profiles = getLocalData<UserProfile[]>('novel_profiles', []);
+      const index = profiles.findIndex(p => p.id === userId);
+      let updated: UserProfile;
+      if (index === -1) {
+        updated = { id: userId, display_name: '', bio: '', daily_word_goal: 1000, ...fields };
+        profiles.push(updated);
+      } else {
+        updated = { ...profiles[index], ...fields };
+        profiles[index] = updated;
+      }
+      setLocalData('novel_profiles', profiles);
+      return updated;
+    }
+  },
+
+  // --- PROJECTS ---
+  async getProjects(userId: string): Promise<Project[]> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('projects').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } else {
+      const allProjects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      return allProjects.filter(p => p.user_id === userId);
+    }
+  },
+
+  async createProject(userId: string, title: string, description: string): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
         .insert([{ title, description, user_id: userId }])
@@ -151,7 +192,7 @@ export const databaseService = {
       const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
       const newProj: Project = {
         id: `p-${Math.random().toString(36).substr(2, 9)}`,
-        user_id: 'user-mock',
+        user_id: userId,
         title,
         description,
         created_at: new Date().toISOString(),
@@ -163,6 +204,108 @@ export const databaseService = {
     }
   },
 
+  async getPublicProjects(): Promise<Project[]> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('projects').select('*').eq('is_published', true).order('updated_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } else {
+      const allProjects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      return allProjects.filter(p => p.is_published === true).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    }
+  },
+
+  async publishProject(projectId: string, isPublished: boolean, authorName: string): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ is_published: isPublished, author_name: authorName, updated_at: new Date().toISOString() })
+        .eq('id', projectId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const index = projects.findIndex(p => p.id === projectId);
+      if (index === -1) throw new Error('Project not found');
+      
+      const updated = {
+        ...projects[index],
+        is_published: isPublished,
+        author_name: authorName,
+        updated_at: new Date().toISOString()
+      };
+      projects[index] = updated;
+      setLocalData('novel_projects', projects);
+      return updated;
+    }
+  },
+  async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'cover_url'>>): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ ...fields, updated_at: new Date().toISOString() })
+        .eq('id', projectId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const index = projects.findIndex(p => p.id === projectId);
+      if (index === -1) throw new Error('Project not found');
+      
+      const updated = {
+        ...projects[index],
+        ...fields,
+        updated_at: new Date().toISOString()
+      };
+      projects[index] = updated;
+      setLocalData('novel_projects', projects);
+      return updated;
+    }
+  },
+
+  async toggleLikeProject(projectId: string, userId: string): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
+      // Fetch current likes
+      const { data: proj, error: fetchErr } = await supabase.from('projects').select('likes').eq('id', projectId).single();
+      if (fetchErr) throw fetchErr;
+      
+      let currentLikes = proj?.likes || [];
+      if (currentLikes.includes(userId)) {
+        currentLikes = currentLikes.filter((id: string) => id !== userId);
+      } else {
+        currentLikes = [...currentLikes, userId];
+      }
+
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ likes: currentLikes })
+        .eq('id', projectId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const index = projects.findIndex(p => p.id === projectId);
+      if (index === -1) throw new Error('Project not found');
+      
+      let currentLikes = projects[index].likes || [];
+      if (currentLikes.includes(userId)) {
+        currentLikes = currentLikes.filter(id => id !== userId);
+      } else {
+        currentLikes = [...currentLikes, userId];
+      }
+
+      const updated = { ...projects[index], likes: currentLikes };
+      projects[index] = updated;
+      setLocalData('novel_projects', projects);
+      return updated;
+    }
+  },
   // --- CHAPTERS ---
   async getChapters(projectId: string): Promise<Chapter[]> {
     if (isSupabaseConfigured && supabase) {

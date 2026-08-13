@@ -3,17 +3,43 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Dashboard/Sidebar';
 import { EditorView } from './components/Editor/EditorView';
 import { PlannerView } from './components/Planner/PlannerView';
+import { HomeView } from './components/Dashboard/HomeView';
 import { TrackerView } from './components/Tracker/TrackerView';
+import { AuthView } from './components/Auth/AuthView';
+import { LibraryView } from './components/Library/LibraryView';
+import { LibraryReaderView } from './components/Library/LibraryReaderView';
+import { ProfileView } from './components/Profile/ProfileView';
+import { PrintView } from './components/Export/PrintView';
 import { Feather, Loader2 } from 'lucide-react';
 
 const WorkspaceContent: React.FC = () => {
   const { activeView, loading, activeProject, activeChapter } = useApp();
 
+  if (activeView === 'home') {
+    return <HomeView />;
+  }
+
+  if (activeView === 'library') {
+    return <LibraryView />;
+  }
+
+  if (activeView === 'reader') {
+    return <LibraryReaderView />;
+  }
+
+  if (activeView === 'profile') {
+    return <ProfileView />;
+  }
+
+  if (activeView === 'print') {
+    return <PrintView />;
+  }
+
   if (loading && !activeProject) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400">
         <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-        <p className="text-sm font-medium">Opening your workspace...</p>
+        <p className="text-sm font-medium">Loading workspace...</p>
       </div>
     );
   }
@@ -42,18 +68,36 @@ const WorkspaceContent: React.FC = () => {
   }
 };
 
+const AuthWrapper: React.FC = () => {
+  const { user, loading } = useApp();
+
+  if (loading && !user) {
+    return (
+      <div className="flex w-screen h-screen items-center justify-center bg-slate-950 text-slate-400">
+        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthView />;
+  }
+
+  return (
+    <div className="flex w-screen h-screen overflow-hidden bg-slate-950 font-sans">
+      <Sidebar />
+      <WorkspaceContent />
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <AppProvider>
-      <div className="flex w-screen h-screen overflow-hidden bg-slate-950 font-sans">
-        {/* Left Navigation Sidebar */}
-        <Sidebar />
-        
-        {/* Main Work Area */}
-        <WorkspaceContent />
-      </div>
+      <AuthWrapper />
     </AppProvider>
   );
 };
 
 export default App;
+

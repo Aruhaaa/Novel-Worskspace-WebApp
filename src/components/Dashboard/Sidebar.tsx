@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   BookOpen, 
@@ -8,7 +8,12 @@ import {
   Database, 
   ChevronDown, 
   FileText, 
-  BookOpenCheck 
+  BookOpenCheck,
+  LogOut,
+  Globe,
+  User,
+  Printer,
+  Home
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -22,8 +27,12 @@ export const Sidebar: React.FC = () => {
     setActiveView,
     setActiveProject,
     setActiveChapter,
+    updateProjectSettings,
     createProject,
-    createChapter
+    createChapter,
+    publishProject,
+    logout,
+    user
   } = useApp();
 
   const [showProjDropdown, setShowProjDropdown] = useState(false);
@@ -32,6 +41,12 @@ export const Sidebar: React.FC = () => {
   const [newProjDesc, setNewProjDesc] = useState('');
   const [newChapterTitle, setNewChapterTitle] = useState('');
   const [showNewChapterInput, setShowNewChapterInput] = useState(false);
+  const [coverUrlInput, setCoverUrlInput] = useState('');
+
+  // Sync coverUrlInput when activeProject changes
+  useEffect(() => {
+    setCoverUrlInput(activeProject?.cover_url || '');
+  }, [activeProject?.id, activeProject?.cover_url]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +63,12 @@ export const Sidebar: React.FC = () => {
     await createChapter(newChapterTitle);
     setNewChapterTitle('');
     setShowNewChapterInput(false);
+  };
+
+  const handleTogglePublish = async () => {
+    if (!activeProject || !user) return;
+    const authorName = user.email ? user.email.split('@')[0] : 'Anonymous';
+    await publishProject(activeProject.id, !activeProject.is_published, authorName);
   };
 
   return (
@@ -118,16 +139,106 @@ export const Sidebar: React.FC = () => {
       {/* Main Module Nav */}
       <nav className="p-4 flex flex-col gap-1.5">
         <button
-          onClick={() => setActiveView('editor')}
+          onClick={() => setActiveView('home')}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'editor'
+            activeView === 'home'
               ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
               : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
-          <span>Editor</span>
+          <Home className="w-4 h-4" />
+          <span>Home Dashboard</span>
         </button>
+
+        <button
+          onClick={() => setActiveView('library')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+            activeView === 'library'
+              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>Public Library</span>
+        </button>
+
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-1 mt-2">
+          Workspace
+        </div>
+        <div>
+          <button
+            onClick={() => {
+              setActiveView('editor');
+              setActiveChapter(null);
+            }}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeView === 'editor'
+                ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+                : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-4 h-4" />
+              <span>Editor</span>
+            </div>
+            {activeView === 'editor' && (
+              <ChevronDown className="w-4 h-4 text-indigo-400" />
+            )}
+          </button>
+
+          {/* Chapters Accordion */}
+          {activeView === 'editor' && activeProject && (
+            <div className="mt-1 ml-4 pl-3 border-l-2 border-slate-800 space-y-1">
+              <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 uppercase tracking-wider py-1.5 px-2">
+                <span>Chapters</span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowNewChapterInput(!showNewChapterInput);
+                  }}
+                  className="hover:text-indigo-400 transition-colors"
+                  title="Add Chapter"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {showNewChapterInput && (
+                <form onSubmit={handleCreateChapter} className="px-1 py-1">
+                  <input
+                    type="text"
+                    placeholder="Chapter title..."
+                    value={newChapterTitle}
+                    onChange={(e) => setNewChapterTitle(e.target.value)}
+                    className="w-full bg-slate-900 text-xs text-slate-200 border border-slate-800 rounded px-2.5 py-1.5 focus:outline-none focus:border-indigo-600"
+                    autoFocus
+                  />
+                </form>
+              )}
+
+              {chapters.length === 0 ? (
+                <div className="text-[10px] text-slate-500 italic px-2 py-2">
+                  No chapters yet.
+                </div>
+              ) : (
+                chapters.map((chap) => (
+                  <button
+                    key={chap.id}
+                    onClick={() => setActiveChapter(chap)}
+                    className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs text-left transition-all duration-150 group ${
+                      activeChapter?.id === chap.id
+                        ? 'bg-slate-900/80 text-slate-100 font-medium'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+                    }`}
+                  >
+                    <FileText className={`w-3.5 h-3.5 shrink-0 ${activeChapter?.id === chap.id ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
+                    <span className="truncate flex-1">{chap.title}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         <button
           onClick={() => setActiveView('planner')}
@@ -152,59 +263,88 @@ export const Sidebar: React.FC = () => {
           <BarChart2 className="w-4 h-4" />
           <span>Tracker</span>
         </button>
+
+        {activeProject && (
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={handleTogglePublish}
+              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                activeProject.is_published
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Globe className={`w-4 h-4 ${activeProject.is_published ? 'text-emerald-400' : 'text-slate-500'}`} />
+                <span>{activeProject.is_published ? 'Published' : 'Publish Novel'}</span>
+              </div>
+              <div className={`w-8 h-4 rounded-full flex items-center transition-colors ${activeProject.is_published ? 'bg-emerald-500' : 'bg-slate-700'}`}>
+                <div className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform ${activeProject.is_published ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
+            
+            <input
+              type="url"
+              placeholder="Cover Image URL..."
+              value={coverUrlInput}
+              onChange={(e) => setCoverUrlInput(e.target.value)}
+              onBlur={() => {
+                if (coverUrlInput !== (activeProject.cover_url || '')) {
+                  updateProjectSettings(activeProject.id, { cover_url: coverUrlInput });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (coverUrlInput !== (activeProject.cover_url || '')) {
+                    updateProjectSettings(activeProject.id, { cover_url: coverUrlInput });
+                  }
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-full bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600"
+              title="Add a cover image URL for the Public Library"
+            />
+          </div>
+        )}
       </nav>
 
-      {/* Secondary Context Panel (Chapters - Only shown on Editor View) */}
-      {activeView === 'editor' && (
-        <div className="flex-1 flex flex-col border-t border-slate-900 overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between text-xs font-semibold text-slate-400 tracking-wider uppercase">
-            <span>Manuscript Chapters</span>
-            <button 
-              onClick={() => setShowNewChapterInput(!showNewChapterInput)}
-              className="text-slate-400 hover:text-indigo-400 transition-colors p-0.5 hover:bg-slate-900 rounded"
-              title="Add Chapter"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
 
-          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
-            {showNewChapterInput && (
-              <form onSubmit={handleCreateChapter} className="px-2 py-1">
-                <input
-                  type="text"
-                  placeholder="Chapter title..."
-                  value={newChapterTitle}
-                  onChange={(e) => setNewChapterTitle(e.target.value)}
-                  className="w-full bg-slate-900 text-xs text-slate-200 border border-slate-800 rounded px-2.5 py-1.5 focus:outline-none focus:border-indigo-600"
-                  autoFocus
-                />
-              </form>
-            )}
-
-            {chapters.length === 0 ? (
-              <div className="text-xs text-slate-500 text-center py-6 px-4">
-                No chapters. Click the plus icon to write your first chapter.
-              </div>
-            ) : (
-              chapters.map((chap) => (
-                <button
-                  key={chap.id}
-                  onClick={() => setActiveChapter(chap)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs text-left transition-all duration-150 group border ${
-                    activeChapter?.id === chap.id
-                      ? 'bg-slate-900/60 text-slate-100 border-slate-800/80 font-medium'
-                      : 'border-transparent hover:bg-slate-900/30 text-slate-400 hover:text-slate-300'
-                  }`}
-                >
-                  <FileText className={`w-3.5 h-3.5 ${activeChapter?.id === chap.id ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
-                  <span className="truncate flex-1">{chap.title}</span>
-                </button>
-              ))
-            )}
-          </div>
+      {/* Export to PDF Button (Only show if active project exists) */}
+      {activeProject && (
+        <div className="p-4 border-t border-slate-900 shrink-0">
+          <button
+            onClick={() => setActiveView('print')}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-slate-100 bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 transition-all duration-200"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Export PDF</span>
+          </button>
         </div>
       )}
+
+      {/* User Settings & Logout */}
+      <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
+        <button
+          onClick={() => setActiveView('profile')}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            activeView === 'profile'
+              ? 'bg-indigo-600/10 text-indigo-400'
+              : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>My Profile</span>
+        </button>
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-200"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
+      </div>
 
       {/* New Project Modal */}
       {showNewProjModal && (

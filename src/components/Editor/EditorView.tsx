@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Cloud, Check, Loader2, Feather, BarChart } from 'lucide-react';
+import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight } from 'lucide-react';
+
+import { RichTextEditor } from './RichTextEditor';
 
 export const EditorView: React.FC = () => {
-  const { activeChapter, updateChapter, logWordCount, isSupabase } = useApp();
+  const { activeProject, chapters, activeChapter, setActiveChapter, updateChapter, createChapter, logWordCount, isSupabase } = useApp();
   const [localTitle, setLocalTitle] = useState(activeChapter?.title || '');
   const [localContent, setLocalContent] = useState(activeChapter?.content || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
   
   const saveTimeoutRef = useRef<number | null>(null);
+
+  // Sync state if active chapter changes from outside
+  useEffect(() => {
+    if (activeChapter) {
+      setLocalTitle(activeChapter.title || '');
+      setLocalContent(activeChapter.content || '');
+    }
+  }, [activeChapter?.id]);
 
   // Clean timeout on unmount
   useEffect(() => {
@@ -34,7 +44,6 @@ export const EditorView: React.FC = () => {
           content: updatedContent,
         });
         
-        // Calculate total words in this chapter and log to word count logs
         const wordCount = calculateWordCount(updatedContent);
         await logWordCount(wordCount);
 
@@ -43,7 +52,7 @@ export const EditorView: React.FC = () => {
         console.error('Autosave failed:', err);
         setSaveStatus('idle');
       }
-    }, 1000); // 1 second debounce
+    }, 1000);
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,30 +61,100 @@ export const EditorView: React.FC = () => {
     triggerAutosave(val, localContent);
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
+  const handleContentChange = (val: string) => {
     setLocalContent(val);
     triggerAutosave(localTitle, val);
   };
 
   const calculateWordCount = (text: string): number => {
-    const cleaned = text.trim();
+    // Strip HTML tags for accurate word count
+    const cleanedText = text.replace(/<[^>]*>?/gm, ' ');
+    const cleaned = cleanedText.trim();
     if (!cleaned) return 0;
-    return cleaned.split(/\s+/).length;
+    return cleaned.split(/\s+/).filter(word => word.length > 0).length;
   };
 
   const calculateCharCount = (text: string): number => {
-    return text.length;
+    const cleanedText = text.replace(/<[^>]*>?/gm, '');
+    return cleanedText.length;
   };
 
   if (!activeChapter) {
+    if (!activeProject) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
+          <Feather className="w-12 h-12 text-slate-600 mb-4 stroke-[1.5]" />
+          <h3 className="text-lg font-medium text-slate-300">No Project Selected</h3>
+          <p className="text-sm text-slate-500 mt-1 max-w-xs text-center">
+            Select a project from the Home Dashboard or Sidebar to view its chapters.
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
-        <Feather className="w-12 h-12 text-slate-600 mb-4 stroke-[1.5]" />
-        <h3 className="text-lg font-medium text-slate-300">No Chapter Open</h3>
-        <p className="text-sm text-slate-500 mt-1 max-w-xs text-center">
-          Select an existing chapter from the sidebar or click the '+' button to begin writing.
-        </p>
+      <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden relative">
+        <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-900/10 to-transparent pointer-events-none" />
+        
+        <div className="max-w-5xl mx-auto w-full px-8 py-12 relative z-10 overflow-y-auto">
+          <header className="mb-12">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">
+              Chapter Index
+            </h1>
+            <p className="text-slate-400">
+              Manage and access all chapters for <span className="font-semibold text-slate-200">{activeProject.title}</span>.
+            </p>
+          </header>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Create New Chapter Card */}
+            <div 
+              onClick={() => {
+                const title = prompt("Enter new chapter title:");
+                if (title && title.trim()) {
+                  createChapter(title.trim());
+                }
+              }}
+              className="group relative bg-slate-900/40 border-2 border-dashed border-slate-700/60 rounded-xl p-6 hover:bg-slate-800/40 hover:border-indigo-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors mb-3">
+                <Plus className="w-5 h-5" />
+              </div>
+              <span className="font-semibold text-slate-400 group-hover:text-slate-200 transition-colors">
+                Create New Chapter
+              </span>
+            </div>
+
+            {/* Existing Chapters */}
+            {chapters.map((chap, idx) => (
+              <div 
+                key={chap.id}
+                onClick={() => setActiveChapter(chap)}
+                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-6 hover:bg-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
+                
+                <div className="flex items-center gap-3 text-indigo-400 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center font-bold text-xs">
+                    {idx + 1}
+                  </div>
+                  <FileText className="w-4 h-4 opacity-70" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-slate-100 mb-auto line-clamp-2 group-hover:text-indigo-300 transition-colors">
+                  {chap.title}
+                </h3>
+                
+                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-4 mt-4">
+                  <span>{calculateWordCount(chap.content || '')} words</span>
+                  <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                    Write <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -121,13 +200,11 @@ export const EditorView: React.FC = () => {
       </header>
 
       {/* Editor Writing Board */}
-      <main className="flex-1 overflow-y-auto px-8 py-10 flex justify-center">
-        <div className="w-full max-w-3xl flex flex-col h-full">
-          <textarea
-            value={localContent}
-            onChange={handleContentChange}
-            placeholder="Type your story here..."
-            className="w-full flex-1 bg-transparent text-slate-200 focus:outline-none resize-none font-serif text-[19px] leading-[1.75] tracking-wide placeholder-slate-600 pb-24"
+      <main className="flex-1 overflow-hidden px-8 py-8 flex justify-center bg-[#F9F9FB] dark:bg-slate-900 transition-colors">
+        <div className="w-full max-w-3xl flex flex-col h-full relative">
+          <RichTextEditor 
+            content={localContent} 
+            onChange={handleContentChange} 
           />
         </div>
       </main>

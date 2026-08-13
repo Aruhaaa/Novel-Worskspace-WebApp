@@ -1,8 +1,24 @@
+export interface User {
+  id: string;
+  email: string;
+}
+
+export interface UserProfile {
+  id: string;
+  display_name: string;
+  bio: string;
+  daily_word_goal: number;
+}
+
 export interface Project {
   id: string;
   user_id: string;
   title: string;
   description: string;
+  is_published?: boolean;
+  author_name?: string;
+  cover_url?: string;
+  likes?: string[]; // Array of user IDs who liked it
   created_at: string;
   updated_at: string;
 }

@@ -1,24 +1,38 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Project, Chapter, WikiEntity, WordCountLog } from '../services/types';
+import type { User, Project, Chapter, WikiEntity, WordCountLog, UserProfile } from '../services/types';
 import { databaseService } from '../services/database';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { authService } from '../services/auth';
 
 interface AppContextType {
+  user: User | null;
+  profile: UserProfile | null;
   projects: Project[];
   activeProject: Project | null;
   chapters: Chapter[];
   activeChapter: Chapter | null;
   entities: WikiEntity[];
   wordCountLogs: WordCountLog[];
-  activeView: 'editor' | 'planner' | 'tracker';
+  publicProjects: Project[];
+  activePublicProject: Project | null;
+  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print';
   loading: boolean;
   isSupabase: boolean;
-  setActiveView: (view: 'editor' | 'planner' | 'tracker') => void;
+  login: (email: string, password: string) => Promise<{error: string | null}>;
+  signup: (email: string, password: string) => Promise<{error: string | null}>;
+  logout: () => Promise<void>;
+  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print') => void;
   setActiveProject: (project: Project) => void;
   setActiveChapter: (chapter: Chapter | null) => void;
-  loadProjects: () => Promise<void>;
+  setActivePublicProject: (project: Project | null) => void;
+  loadProjects: (userId: string) => Promise<void>;
+  loadPublicProjects: () => Promise<void>;
   loadProjectData: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string) => Promise<void>;
+  publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
+  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'cover_url'>>) => Promise<void>;
+  toggleLikeProject: (projectId: string) => Promise<void>;
+  updateProfile: (fields: Partial<UserProfile>) => Promise<void>;
   createChapter: (title: string) => Promise<void>;
   updateChapter: (chapterId: string, fields: Partial<Pick<Chapter, 'title' | 'content' | 'position'>>) => Promise<void>;
   createEntity: (name: string, type: WikiEntity['type'], description: string, content: Record<string, string>, imageUrl?: string) => Promise<void>;
@@ -30,25 +44,53 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProjectState] = useState<Project | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
   const [entities, setEntities] = useState<WikiEntity[]>([]);
   const [wordCountLogs, setWordCountLogs] = useState<WordCountLog[]>([]);
-  const [activeView, setActiveView] = useState<'editor' | 'planner' | 'tracker'>('editor');
+  const [publicProjects, setPublicProjects] = useState<Project[]>([]);
+  const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
+  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print'>('home');
   const [loading, setLoading] = useState<boolean>(true);
 
-  const loadProjects = async () => {
+  const loadProjects = async (userId: string) => {
     setLoading(true);
     try {
-      const data = await databaseService.getProjects();
+      const data = await databaseService.getProjects(userId);
       setProjects(data);
-      if (data.length > 0 && !activeProject) {
+      if (data.length > 0) {
         setActiveProjectState(data[0]);
       }
+      
+      let p = await databaseService.getProfile(userId);
+      if (!p) {
+        // Initialize default profile
+        p = await databaseService.updateProfile(userId, { 
+          display_name: '', 
+          bio: '', 
+          daily_word_goal: 1000 
+        });
+      }
+      setProfile(p);
+      
     } catch (err) {
       console.error('Error loading projects:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPublicProjects = async () => {
+    setLoading(true);
+    try {
+      const data = await databaseService.getPublicProjects();
+      setPublicProjects(data);
+    } catch (err) {
+      console.error('Error loading public projects:', err);
     } finally {
       setLoading(false);
     }
@@ -80,19 +122,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Load projects on mount
+  // Check auth session on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadProjects();
-    }, 0);
-    return () => clearTimeout(timer);
+    const checkSession = async () => {
+      setLoading(true);
+      const currentUser = await authService.getUser();
+      setUser(currentUser);
+      if (currentUser) {
+        await loadProjects(currentUser.id);
+      } else {
+        setLoading(false);
+      }
+    };
+    checkSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When active project changes, load its child data (chapters, entities, word logs)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (activeProject) {
+      if (activeProject && user) {
         loadProjectData(activeProject.id);
       } else {
         setChapters([]);
@@ -102,7 +151,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [activeProject]);
+  }, [activeProject, user]);
+
+  const login = async (email: string, password: string) => {
+    const { user, error } = await authService.login(email, password);
+    if (user) {
+      setUser(user);
+      await loadProjects(user.id);
+    }
+    return { error };
+  };
+
+  const signup = async (email: string, password: string) => {
+    const { user, error } = await authService.signup(email, password);
+    if (user) {
+      setUser(user);
+      await loadProjects(user.id);
+    }
+    return { error };
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    setUser(null);
+    setProfile(null);
+    setProjects([]);
+    setActiveProjectState(null);
+    setChapters([]);
+    setActiveChapter(null);
+    setEntities([]);
+    setWordCountLogs([]);
+  };
 
   const setActiveProject = (project: Project) => {
     setActiveProjectState(project);
@@ -110,12 +189,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createProject = async (title: string, description: string) => {
+    if (!user) return;
     try {
-      const newProj = await databaseService.createProject(title, description);
+      const newProj = await databaseService.createProject(user.id, title, description);
       setProjects(prev => [newProj, ...prev]);
       setActiveProjectState(newProj);
     } catch (err) {
       console.error('Error creating project:', err);
+    }
+  };
+
+  const publishProject = async (projectId: string, isPublished: boolean, authorName: string) => {
+    try {
+      const updated = await databaseService.publishProject(projectId, isPublished, authorName);
+      setProjects(prev => prev.map(p => p.id === projectId ? updated : p));
+      if (activeProject && activeProject.id === projectId) {
+        setActiveProjectState(updated);
+      }
+      loadPublicProjects(); // Refresh library
+    } catch (err) {
+      console.error('Error publishing project:', err);
+    }
+  };
+
+  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'cover_url'>>) => {
+    try {
+      const updated = await databaseService.updateProjectSettings(projectId, fields);
+      setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
+      if (activeProject && activeProject.id === projectId) {
+        setActiveProjectState(updated);
+      }
+      loadPublicProjects(); // Refresh library if it's public
+    } catch (err) {
+      console.error('Error updating project settings:', err);
+    }
+  };
+
+  const toggleLikeProject = async (projectId: string) => {
+    if (!user) return;
+    try {
+      const updated = await databaseService.toggleLikeProject(projectId, user.id);
+      setPublicProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
+      if (activePublicProject && activePublicProject.id === projectId) {
+        setActivePublicProject(updated);
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+    }
+  };
+
+  const updateProfile = async (fields: Partial<UserProfile>) => {
+    if (!user) return;
+    try {
+      const updated = await databaseService.updateProfile(user.id, fields);
+      setProfile(updated);
+    } catch (err) {
+      console.error('Error updating profile:', err);
     }
   };
 
@@ -205,21 +334,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        user,
+        profile,
         projects,
         activeProject,
         chapters,
         activeChapter,
+        publicProjects,
+        activePublicProject,
         entities,
         wordCountLogs,
         activeView,
         loading,
         isSupabase: isSupabaseConfigured,
+        login,
+        signup,
+        logout,
         setActiveView,
         setActiveProject,
+        setActivePublicProject,
         setActiveChapter,
         loadProjects,
+        loadPublicProjects,
         loadProjectData,
         createProject,
+        publishProject,
+        updateProjectSettings,
+        toggleLikeProject,
+        updateProfile,
         createChapter,
         updateChapter,
         createEntity,

@@ -14,12 +14,11 @@ import {
   TrendingUp, 
   Award, 
   Plus, 
-  Calendar, 
-  CheckCircle
+  Calendar
 } from 'lucide-react';
 
 export const TrackerView: React.FC = () => {
-  const { wordCountLogs, logWordCount } = useApp();
+  const { wordCountLogs, logWordCount, profile } = useApp();
   const [showLogInput, setShowLogInput] = useState(false);
   const [logCount, setLogCount] = useState('');
   const [logDate, setLogDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -87,8 +86,19 @@ export const TrackerView: React.FC = () => {
     ? Math.round(totalWords / wordCountLogs.length) 
     : 0;
 
-  const dailyGoal = 1000; // Mock daily goal
-  const progressPercent = Math.min(100, Math.round(((wordCountLogs[wordCountLogs.length - 1]?.word_count || 0) / dailyGoal) * 100));
+  const dailyGoal = profile?.daily_word_goal || 1000;
+  
+  // Find today's log for the circular progress
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayLog = wordCountLogs.find(l => l.date === todayStr);
+  const todaysWordCount = todayLog ? todayLog.word_count : 0;
+  
+  const progressPercent = Math.min(100, Math.round((todaysWordCount / dailyGoal) * 100));
+
+  // Circular progress SVG calculations
+  const radius = 24;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden text-slate-300">
@@ -147,18 +157,38 @@ export const TrackerView: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 4: Daily Goal */}
+          {/* Card 4: Daily Goal (Circular Progress) */}
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-rose-600/15 text-rose-400 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5" />
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="28"
+                  cy="28"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="transparent"
+                  className="text-slate-800"
+                />
+                <circle
+                  cx="28"
+                  cy="28"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="transparent"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  className="text-rose-500 transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-[9px] font-bold text-slate-300">
+                <span>{progressPercent}%</span>
+              </div>
             </div>
             <div className="flex-1">
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Today's Goal ({progressPercent}%)</span>
-              <strong className="text-slate-100 text-xl font-bold">{wordCountLogs[wordCountLogs.length - 1]?.word_count || 0} / {dailyGoal}</strong>
-              {/* Progress bar */}
-              <div className="w-full bg-slate-900 rounded-full h-1.5 mt-1.5 overflow-hidden border border-slate-800/40">
-                <div className="bg-rose-500 h-full rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
-              </div>
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Today's Goal</span>
+              <strong className="text-slate-100 text-xl font-bold">{todaysWordCount} <span className="text-sm font-normal text-slate-500">/ {dailyGoal}</span></strong>
             </div>
           </div>
         </div>
