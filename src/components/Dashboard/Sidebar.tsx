@@ -16,7 +16,8 @@ import {
   Home,
   Settings,
   X,
-  Bookmark
+  Bookmark,
+  Shield
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -147,6 +148,20 @@ export const Sidebar: React.FC = () => {
           <Bookmark className="w-4 h-4" />
           <span>Your Library</span>
         </button>
+
+        {user?.email === 'aruhaadmin@novelist.com' && (
+          <button
+            onClick={() => setActiveView('admin')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+              activeView === 'admin'
+                ? 'bg-amber-600/10 text-amber-500 border-l-2 border-amber-500 pl-3.5'
+                : 'hover:bg-slate-900 text-amber-500/70 hover:text-amber-500'
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>Admin Dashboard</span>
+          </button>
+        )}
 
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-3 mt-4">
           Workspace

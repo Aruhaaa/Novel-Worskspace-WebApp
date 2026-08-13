@@ -204,6 +204,43 @@ export const databaseService = {
     }
   },
 
+  async createExternalProject(userId: string, title: string, authorName: string, description: string, genre: string, coverUrl: string): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{ 
+          title, 
+          description, 
+          user_id: userId,
+          is_published: true,
+          author_name: authorName,
+          genre,
+          cover_url: coverUrl
+        }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const newProj: Project = {
+        id: `p-ext-${Math.random().toString(36).substr(2, 9)}`,
+        user_id: userId,
+        title,
+        description,
+        is_published: true,
+        author_name: authorName,
+        genre,
+        cover_url: coverUrl,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      projects.unshift(newProj);
+      setLocalData('novel_projects', projects);
+      return newProj;
+    }
+  },
+
   async getPublicProjects(): Promise<Project[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('projects').select('*').eq('is_published', true).order('updated_at', { ascending: false });

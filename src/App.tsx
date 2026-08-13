@@ -11,6 +11,7 @@ import { SavedLibraryView } from './components/Library/SavedLibraryView';
 import { LibraryReaderView } from './components/Library/LibraryReaderView';
 import { ProfileView } from './components/Profile/ProfileView';
 import { PrintView } from './components/Export/PrintView';
+import { AdminView } from './components/Admin/AdminView';
 import { Feather, Loader2 } from 'lucide-react';
 
 const WorkspaceContent: React.FC = () => {
@@ -38,6 +39,10 @@ const WorkspaceContent: React.FC = () => {
 
   if (activeView === 'print') {
     return <PrintView />;
+  }
+
+  if (activeView === 'admin') {
+    return <AdminView />;
   }
 
   if (loading && !activeProject) {

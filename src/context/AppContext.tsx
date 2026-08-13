@@ -15,13 +15,13 @@ interface AppContextType {
   wordCountLogs: WordCountLog[];
   publicProjects: Project[];
   activePublicProject: Project | null;
-  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print';
+  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin';
   loading: boolean;
   isSupabase: boolean;
   login: (email: string, password: string) => Promise<{error: string | null}>;
   signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
-  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print') => void;
+  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin') => void;
   setActiveProject: (project: Project) => void;
   setActiveChapter: (chapter: Chapter | null) => void;
   setActivePublicProject: (project: Project | null) => void;
@@ -29,6 +29,7 @@ interface AppContextType {
   loadPublicProjects: () => Promise<void>;
   loadProjectData: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string) => Promise<void>;
+  createExternalProject: (title: string, authorName: string, description: string, genre: string, coverUrl: string) => Promise<{error: string | null}>;
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
   updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
@@ -54,7 +55,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [wordCountLogs, setWordCountLogs] = useState<WordCountLog[]>([]);
   const [publicProjects, setPublicProjects] = useState<Project[]>([]);
   const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
-  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin'>('home');
   const [loading, setLoading] = useState<boolean>(true);
 
   const loadProjects = async (userId: string) => {
@@ -196,6 +197,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveProjectState(newProj);
     } catch (err) {
       console.error('Error creating project:', err);
+    }
+  };
+
+  const createExternalProject = async (title: string, authorName: string, description: string, genre: string, coverUrl: string) => {
+    if (!user) return { error: 'Not authenticated' };
+    try {
+      await databaseService.createExternalProject(user.id, title, authorName, description, genre, coverUrl);
+      await loadPublicProjects();
+      return { error: null };
+    } catch (err: any) {
+      console.error('Error creating external project:', err);
+      return { error: err.message || 'Failed to create external project' };
     }
   };
 
@@ -379,6 +392,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loadPublicProjects,
         loadProjectData,
         createProject,
+        createExternalProject,
         publishProject,
         updateProjectSettings,
         toggleLikeProject,
