@@ -7,7 +7,6 @@ import { HomeView } from './components/Dashboard/HomeView';
 import { TrackerView } from './components/Tracker/TrackerView';
 import { AuthView } from './components/Auth/AuthView';
 import { LibraryView } from './components/Library/LibraryView';
-import { SavedLibraryView } from './components/Library/SavedLibraryView';
 import { LibraryReaderView } from './components/Library/LibraryReaderView';
 import { ProfileView } from './components/Profile/ProfileView';
 import { PrintView } from './components/Export/PrintView';
@@ -22,10 +21,6 @@ const WorkspaceContent: React.FC = () => {
 
   if (activeView === 'library') {
     return <LibraryView />;
-  }
-
-  if (activeView === 'saved') {
-    return <SavedLibraryView />;
   }
 
   if (activeView === 'reader') {

@@ -15,8 +15,7 @@ import {
   Printer,
   Home,
   Settings,
-  X,
-  Bookmark
+  X
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -107,55 +106,12 @@ export const Sidebar: React.FC = () => {
             <Database className="w-3.5 h-3.5 text-slate-400" />
           </div>
         </div>
-      </div>
 
-      {/* Main Module Nav */}
-      <nav className="flex-1 p-4 flex flex-col gap-1.5 overflow-y-auto">
-        <button
-          onClick={() => setActiveView('home')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'home'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Home className="w-4 h-4" />
-          <span>Home Dashboard</span>
-        </button>
-
-        <button
-          onClick={() => setActiveView('library')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'library'
-              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          <span>Public Library</span>
-        </button>
-
-        <button
-          onClick={() => setActiveView('saved')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
-            activeView === 'saved'
-              ? 'bg-rose-600/10 text-rose-400 border-l-2 border-rose-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Bookmark className="w-4 h-4" />
-          <span>Your Library</span>
-        </button>
-
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-2 mt-4">
-          Workspace
-        </div>
-
-        {/* Project Selector dropdown inside Workspace */}
-        <div className="relative flex gap-2 mb-3">
+        {/* Project Selector dropdown */}
+        <div className="relative flex gap-2">
           <button 
             onClick={() => setShowProjDropdown(!showProjDropdown)}
-            className="flex-1 flex items-center justify-between bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/80 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden"
+            className="flex-1 flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden"
           >
             <span className="truncate text-slate-200">
               {activeProject ? activeProject.title : 'No Project Selected'}
@@ -166,7 +122,7 @@ export const Sidebar: React.FC = () => {
           {activeProject && (
             <button
               onClick={() => setShowProjectSettingsModal(true)}
-              className="px-3 bg-slate-900/50 hover:bg-slate-800 border border-slate-800/80 rounded-lg flex items-center justify-center transition-colors"
+              className="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg flex items-center justify-center transition-colors"
               title="Project Settings"
             >
               <Settings className="w-4 h-4 text-slate-400 hover:text-indigo-400" />
@@ -202,7 +158,37 @@ export const Sidebar: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
 
+      {/* Main Module Nav */}
+      <nav className="p-4 flex flex-col gap-1.5">
+        <button
+          onClick={() => setActiveView('home')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'home'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Home className="w-4 h-4" />
+          <span>Home Dashboard</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('library')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+            activeView === 'library'
+              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>Public Library</span>
+        </button>
+
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-1 mt-2">
+          Workspace
+        </div>
         <div>
           <button
             onClick={() => {

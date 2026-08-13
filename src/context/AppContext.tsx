@@ -15,13 +15,13 @@ interface AppContextType {
   wordCountLogs: WordCountLog[];
   publicProjects: Project[];
   activePublicProject: Project | null;
-  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved' | 'reader' | 'profile' | 'print';
+  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print';
   loading: boolean;
   isSupabase: boolean;
   login: (email: string, password: string) => Promise<{error: string | null}>;
   signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
-  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved' | 'reader' | 'profile' | 'print') => void;
+  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print') => void;
   setActiveProject: (project: Project) => void;
   setActiveChapter: (chapter: Chapter | null) => void;
   setActivePublicProject: (project: Project | null) => void;
@@ -54,7 +54,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [wordCountLogs, setWordCountLogs] = useState<WordCountLog[]>([]);
   const [publicProjects, setPublicProjects] = useState<Project[]>([]);
   const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
-  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved' | 'reader' | 'profile' | 'print'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print'>('home');
   const [loading, setLoading] = useState<boolean>(true);
 
   const loadProjects = async (userId: string) => {
