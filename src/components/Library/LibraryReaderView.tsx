@@ -86,9 +86,16 @@ export const LibraryReaderView: React.FC = () => {
                 <h1 className="text-3xl font-extrabold text-center mb-12 pb-6 border-b border-slate-200 dark:border-slate-800">
                   {chapter.title}
                 </h1>
-                <div className="whitespace-pre-wrap leading-relaxed">
-                  {chapter.content || <span className="italic text-slate-400">This chapter is empty.</span>}
-                </div>
+                {chapter.content ? (
+                  <div 
+                    className="whitespace-pre-wrap leading-relaxed prose-p:my-4"
+                    dangerouslySetInnerHTML={{ __html: chapter.content }}
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    <span className="italic text-slate-400">This chapter is empty.</span>
+                  </div>
+                )}
               </article>
             ))}
             
