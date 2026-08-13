@@ -203,7 +203,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const createExternalProject = async (title: string, authorName: string, description: string, genre: string, coverUrl: string) => {
     if (!user) return { error: 'Not authenticated' };
     try {
-      await databaseService.createExternalProject(user.id, title, authorName, description, genre, coverUrl);
+      const newProj = await databaseService.createExternalProject(user.id, title, authorName, description, genre, coverUrl);
+      setProjects(prev => [newProj, ...prev]);
+      setActiveProjectState(newProj);
       await loadPublicProjects();
       return { error: null };
     } catch (err: any) {
