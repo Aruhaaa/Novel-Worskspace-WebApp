@@ -15,7 +15,8 @@ import {
   Printer,
   Home,
   Settings,
-  X
+  X,
+  Bookmark
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -107,13 +108,57 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Main Module Nav */}
+      <nav className="p-4 flex flex-col gap-1.5">
+        <button
+          onClick={() => setActiveView('home')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'home'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Home className="w-4 h-4" />
+          <span>Home Dashboard</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('library')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeView === 'library'
+              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>Public Library</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('saved_library')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+            activeView === 'saved_library'
+              ? 'bg-rose-600/10 text-rose-400 border-l-2 border-rose-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Bookmark className="w-4 h-4" />
+          <span>Your Library</span>
+        </button>
+
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-3 mt-4">
+          Workspace
+        </div>
+        
         {/* Project Selector dropdown */}
-        <div className="relative flex gap-2">
+        <div className="relative px-4 mb-2 flex gap-2">
           <button 
             onClick={() => setShowProjDropdown(!showProjDropdown)}
-            className="flex-1 flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden"
+            className="flex-1 flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden shadow-sm"
           >
-            <span className="truncate text-slate-200">
+            <span className="truncate text-slate-200 font-bold">
               {activeProject ? activeProject.title : 'No Project Selected'}
             </span>
             <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
@@ -122,7 +167,7 @@ export const Sidebar: React.FC = () => {
           {activeProject && (
             <button
               onClick={() => setShowProjectSettingsModal(true)}
-              className="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg flex items-center justify-center transition-colors"
+              className="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg flex items-center justify-center transition-colors shadow-sm"
               title="Project Settings"
             >
               <Settings className="w-4 h-4 text-slate-400 hover:text-indigo-400" />
@@ -130,7 +175,7 @@ export const Sidebar: React.FC = () => {
           )}
 
           {showProjDropdown && (
-            <div className="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute left-4 right-4 mt-12 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
               {projects.map((proj) => (
                 <button
                   key={proj.id}
@@ -158,37 +203,7 @@ export const Sidebar: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Main Module Nav */}
-      <nav className="p-4 flex flex-col gap-1.5">
-        <button
-          onClick={() => setActiveView('home')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'home'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Home className="w-4 h-4" />
-          <span>Home Dashboard</span>
-        </button>
-
-        <button
-          onClick={() => setActiveView('library')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
-            activeView === 'library'
-              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          <span>Public Library</span>
-        </button>
-
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 mb-1 mt-2">
-          Workspace
-        </div>
         <div>
           <button
             onClick={() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight } from 'lucide-react';
+import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight, X } from 'lucide-react';
 
 import { RichTextEditor } from './RichTextEditor';
 
@@ -9,6 +9,8 @@ export const EditorView: React.FC = () => {
   const [localTitle, setLocalTitle] = useState(activeChapter?.title || '');
   const [localContent, setLocalContent] = useState(activeChapter?.content || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
+  const [showNewChapterModal, setShowNewChapterModal] = useState(false);
+  const [newChapterTitle, setNewChapterTitle] = useState('');
   
   const saveTimeoutRef = useRef<number | null>(null);
 
@@ -109,12 +111,7 @@ export const EditorView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Create New Chapter Card */}
             <div 
-              onClick={() => {
-                const title = prompt("Enter new chapter title:");
-                if (title && title.trim()) {
-                  createChapter(title.trim());
-                }
-              }}
+              onClick={() => setShowNewChapterModal(true)}
               className="group relative bg-slate-900/40 border-2 border-dashed border-slate-700/60 rounded-xl p-6 hover:bg-slate-800/40 hover:border-indigo-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] cursor-pointer"
             >
               <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors mb-3">
@@ -154,6 +151,75 @@ export const EditorView: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {/* New Chapter Modal */}
+          {showNewChapterModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+              <div 
+                className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-6 border-b border-slate-800/60 bg-slate-900/50">
+                  <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-indigo-400" />
+                    New Chapter
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      setShowNewChapterModal(false);
+                      setNewChapterTitle('');
+                    }}
+                    className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-slate-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newChapterTitle.trim()) return;
+                    await createChapter(newChapterTitle.trim());
+                    setShowNewChapterModal(false);
+                    setNewChapterTitle('');
+                  }}
+                  className="p-6"
+                >
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                    Chapter Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newChapterTitle}
+                    onChange={(e) => setNewChapterTitle(e.target.value)}
+                    placeholder="e.g. Chapter 1: The Beginning"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors mb-6"
+                    autoFocus
+                  />
+                  
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewChapterModal(false);
+                        setNewChapterTitle('');
+                      }}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!newChapterTitle.trim()}
+                      className="px-6 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/20"
+                    >
+                      Create Chapter
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
