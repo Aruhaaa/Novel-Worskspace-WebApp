@@ -112,7 +112,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Main Module Nav */}
-      <nav className="p-4 flex flex-col gap-1.5">
+      <nav className="p-4 flex flex-col gap-1.5 flex-1 overflow-y-auto">
         <button
           onClick={() => setActiveView('home')}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
