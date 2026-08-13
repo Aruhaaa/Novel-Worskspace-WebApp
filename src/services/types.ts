@@ -17,6 +17,7 @@ export interface Project {
   description: string;
   is_published?: boolean;
   author_name?: string;
+  genre?: string;
   cover_url?: string;
   likes?: string[]; // Array of user IDs who liked it
   created_at: string;

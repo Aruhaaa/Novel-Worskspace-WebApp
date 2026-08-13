@@ -13,7 +13,9 @@ import {
   Globe,
   User,
   Printer,
-  Home
+  Home,
+  Settings,
+  X
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -37,16 +39,27 @@ export const Sidebar: React.FC = () => {
 
   const [showProjDropdown, setShowProjDropdown] = useState(false);
   const [showNewProjModal, setShowNewProjModal] = useState(false);
+  const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
+  
   const [newProjTitle, setNewProjTitle] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
   const [newChapterTitle, setNewChapterTitle] = useState('');
   const [showNewChapterInput, setShowNewChapterInput] = useState(false);
-  const [coverUrlInput, setCoverUrlInput] = useState('');
+  
+  const [settingsTitle, setSettingsTitle] = useState('');
+  const [settingsDesc, setSettingsDesc] = useState('');
+  const [settingsGenre, setSettingsGenre] = useState('');
+  const [settingsCoverUrl, setSettingsCoverUrl] = useState('');
 
-  // Sync coverUrlInput when activeProject changes
+  // Sync state when opening modal
   useEffect(() => {
-    setCoverUrlInput(activeProject?.cover_url || '');
-  }, [activeProject?.id, activeProject?.cover_url]);
+    if (activeProject && showProjectSettingsModal) {
+      setSettingsTitle(activeProject.title || '');
+      setSettingsDesc(activeProject.description || '');
+      setSettingsGenre(activeProject.genre || '');
+      setSettingsCoverUrl(activeProject.cover_url || '');
+    }
+  }, [showProjectSettingsModal, activeProject]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,16 +107,26 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Project Selector dropdown */}
-        <div className="relative">
+        <div className="relative flex gap-2">
           <button 
             onClick={() => setShowProjDropdown(!showProjDropdown)}
-            className="w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200"
+            className="flex-1 flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden"
           >
             <span className="truncate text-slate-200">
               {activeProject ? activeProject.title : 'No Project Selected'}
             </span>
-            <ChevronDown className="w-4 h-4 text-slate-400" />
+            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
           </button>
+
+          {activeProject && (
+            <button
+              onClick={() => setShowProjectSettingsModal(true)}
+              className="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg flex items-center justify-center transition-colors"
+              title="Project Settings"
+            >
+              <Settings className="w-4 h-4 text-slate-400 hover:text-indigo-400" />
+            </button>
+          )}
 
           {showProjDropdown && (
             <div className="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -283,29 +306,6 @@ export const Sidebar: React.FC = () => {
                 <div className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform ${activeProject.is_published ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </div>
             </button>
-            
-            <input
-              type="url"
-              placeholder="Cover Image URL..."
-              value={coverUrlInput}
-              onChange={(e) => setCoverUrlInput(e.target.value)}
-              onBlur={() => {
-                if (coverUrlInput !== (activeProject.cover_url || '')) {
-                  updateProjectSettings(activeProject.id, { cover_url: coverUrlInput });
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  if (coverUrlInput !== (activeProject.cover_url || '')) {
-                    updateProjectSettings(activeProject.id, { cover_url: coverUrlInput });
-                  }
-                  e.currentTarget.blur();
-                }
-              }}
-              className="w-full bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600"
-              title="Add a cover image URL for the Public Library"
-            />
           </div>
         )}
       </nav>
@@ -392,6 +392,104 @@ export const Sidebar: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Project Settings Modal */}
+      {showProjectSettingsModal && activeProject && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg p-6 shadow-2xl animate-in scale-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-indigo-500" />
+                Project Settings
+              </h3>
+              <button 
+                onClick={() => setShowProjectSettingsModal(false)}
+                className="text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Novel Title</label>
+                <input
+                  type="text"
+                  value={settingsTitle}
+                  onChange={(e) => setSettingsTitle(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description (Synopsis)</label>
+                <textarea
+                  value={settingsDesc}
+                  onChange={(e) => setSettingsDesc(e.target.value)}
+                  rows={4}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Genre</label>
+                  <select
+                    value={settingsGenre}
+                    onChange={(e) => setSettingsGenre(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 appearance-none"
+                  >
+                    <option value="">Select Genre...</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Mystery">Mystery</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="Historical">Historical</option>
+                    <option value="Contemporary">Contemporary</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Cover Image URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={settingsCoverUrl}
+                    onChange={(e) => setSettingsCoverUrl(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowProjectSettingsModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await updateProjectSettings(activeProject.id, {
+                      title: settingsTitle,
+                      description: settingsDesc,
+                      genre: settingsGenre,
+                      cover_url: settingsCoverUrl
+                    });
+                    setShowProjectSettingsModal(false);
+                  }}
+                  className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

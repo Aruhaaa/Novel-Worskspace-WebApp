@@ -30,7 +30,7 @@ interface AppContextType {
   loadProjectData: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string) => Promise<void>;
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
-  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'cover_url'>>) => Promise<void>;
+  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
   updateProfile: (fields: Partial<UserProfile>) => Promise<void>;
   createChapter: (title: string) => Promise<void>;
@@ -212,7 +212,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'cover_url'>>) => {
+  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre'>>) => {
     try {
       const updated = await databaseService.updateProjectSettings(projectId, fields);
       setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
