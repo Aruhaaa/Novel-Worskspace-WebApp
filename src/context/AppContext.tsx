@@ -19,7 +19,7 @@ interface AppContextType {
   loading: boolean;
   isSupabase: boolean;
   login: (email: string, password: string) => Promise<{error: string | null}>;
-  signup: (email: string, password: string) => Promise<{error: string | null}>;
+  signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
   setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'reader' | 'profile' | 'print') => void;
   setActiveProject: (project: Project) => void;
@@ -163,12 +163,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const signup = async (email: string, password: string) => {
-    const { user, error } = await authService.signup(email, password);
+    const { user, error, message } = await authService.signup(email, password);
     if (user) {
       setUser(user);
       await loadProjects(user.id);
     }
-    return { error };
+    return { error, message };
   };
 
   const logout = async () => {

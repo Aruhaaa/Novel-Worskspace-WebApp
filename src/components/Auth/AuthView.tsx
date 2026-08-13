@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Feather, Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { Feather, Lock, Mail, AlertCircle, Loader2, Check } from 'lucide-react';
 
 export const AuthView: React.FC = () => {
   const { login, signup, isSupabase } = useApp();
@@ -8,14 +8,17 @@ export const AuthView: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setMessage(null);
     setLoading(true);
 
     let resError = null;
+    let resMessage = null;
 
     if (isLogin) {
       const result = await login(email, password);
@@ -23,10 +26,14 @@ export const AuthView: React.FC = () => {
     } else {
       const result = await signup(email, password);
       resError = result.error;
+      resMessage = result.message;
     }
 
     if (resError) {
       setError(resError);
+    }
+    if (resMessage) {
+      setMessage(resMessage);
     }
     setLoading(false);
   };
@@ -57,6 +64,13 @@ export const AuthView: React.FC = () => {
           <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-300">{error}</p>
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-3">
+            <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-emerald-300">{message}</p>
           </div>
         )}
 

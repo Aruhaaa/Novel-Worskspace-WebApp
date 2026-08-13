@@ -26,7 +26,7 @@ class AuthService {
     return null;
   }
 
-  async login(email: string, password: string):Promise<{user: User | null, error: string | null}> {
+  async login(email: string, password: string):Promise<{user: User | null, error: string | null, message?: string | null}> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { user: null, error: error.message };
@@ -45,14 +45,14 @@ class AuthService {
     return { user: null, error: 'Invalid mock credentials. Password must be at least 6 characters.' };
   }
 
-  async signup(email: string, password: string):Promise<{user: User | null, error: string | null}> {
+  async signup(email: string, password: string):Promise<{user: User | null, error: string | null, message?: string | null}> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) return { user: null, error: error.message };
       
       // If session is null, it usually means email confirmation is required
       if (!data.session) {
-        return { user: null, error: 'Signup successful! Please check your email to verify your account.' };
+        return { user: null, error: null, message: 'Signup successful! Please check your email to verify your account.' };
       }
       
       if (data.user && data.user.email) {
