@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
 import type { Chapter } from '../../services/types';
 import { ArrowLeft, BookOpen, Loader2 } from 'lucide-react';
 
 export const LibraryReaderView: React.FC = () => {
-  const { activePublicProject, setActiveView, setActivePublicProject } = useApp();
+  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects } = useApp();
+  const { id } = useParams<{ id: string }>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sync URL ID with activePublicProject
+  useEffect(() => {
+    if (id && (!activePublicProject || activePublicProject.id !== id)) {
+      const project = publicProjects.find(p => p.id === id);
+      if (project) {
+        setActivePublicProject(project);
+      }
+    }
+  }, [id, activePublicProject, publicProjects, setActivePublicProject]);
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -45,7 +58,16 @@ export const LibraryReaderView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 bg-[#F9F9FB] dark:bg-slate-950 overflow-y-auto relative font-serif text-slate-800 dark:text-slate-200 transition-colors duration-300">
+    <>
+      <Helmet>
+        <title>{activePublicProject.title} | Novelist</title>
+        <meta name="description" content={activePublicProject.description || `Read ${activePublicProject.title} on Novelist.`} />
+        <meta property="og:title" content={`${activePublicProject.title} | Novelist`} />
+        <meta property="og:description" content={activePublicProject.description || `Read ${activePublicProject.title} on Novelist.`} />
+        {activePublicProject.cover_url && <meta property="og:image" content={activePublicProject.cover_url} />}
+      </Helmet>
+      
+      <div className="flex-1 bg-[#F9F9FB] dark:bg-slate-950 overflow-y-auto relative font-serif text-slate-800 dark:text-slate-200 transition-colors duration-300">
       {/* Reader Header */}
       <div className="sticky top-0 z-50 bg-[#F9F9FB]/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 flex items-center justify-between">
         <button
@@ -106,5 +128,6 @@ export const LibraryReaderView: React.FC = () => {
         )}
       </div>
     </div>
+    </>
   );
 };

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { User, Project, Chapter, WikiEntity, WordCountLog, UserProfile } from '../services/types';
 import { databaseService } from '../services/database';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -55,8 +56,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [wordCountLogs, setWordCountLogs] = useState<WordCountLog[]>([]);
   const [publicProjects, setPublicProjects] = useState<Project[]>([]);
   const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
-  const [activeView, setActiveView] = useState<'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin'>('home');
   const [loading, setLoading] = useState<boolean>(true);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  type ViewType = 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin';
+
+  const getActiveView = (): ViewType => {
+    const path = location.pathname;
+    if (path === '/') return 'home';
+    if (path.startsWith('/library/novel/')) return 'reader';
+    if (path === '/library') return 'library';
+    if (path === '/saved') return 'saved_library';
+    if (path === '/editor') return 'editor';
+    if (path === '/planner') return 'planner';
+    if (path === '/tracker') return 'tracker';
+    if (path === '/profile') return 'profile';
+    if (path === '/print') return 'print';
+    if (path === '/admin') return 'admin';
+    return 'home';
+  };
+
+  const activeView = getActiveView();
+
+  const setActiveView = (view: string) => {
+    switch (view) {
+      case 'home': navigate('/'); break;
+      case 'library': navigate('/library'); break;
+      case 'saved_library': navigate('/saved'); break;
+      case 'editor': navigate('/editor'); break;
+      case 'planner': navigate('/planner'); break;
+      case 'tracker': navigate('/tracker'); break;
+      case 'profile': navigate('/profile'); break;
+      case 'print': navigate('/print'); break;
+      case 'admin': navigate('/admin'); break;
+      case 'reader': 
+        if (activePublicProject) {
+          navigate(`/library/novel/${activePublicProject.id}`);
+        }
+        break;
+      default: navigate('/'); break;
+    }
+  };
 
   const loadProjects = async (userId: string) => {
     setLoading(true);

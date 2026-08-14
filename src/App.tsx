@@ -13,37 +13,10 @@ import { ProfileView } from './components/Profile/ProfileView';
 import { PrintView } from './components/Export/PrintView';
 import { AdminView } from './components/Admin/AdminView';
 import { Feather, Loader2 } from 'lucide-react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 const WorkspaceContent: React.FC = () => {
-  const { activeView, loading, activeProject, activeChapter } = useApp();
-
-  if (activeView === 'home') {
-    return <HomeView />;
-  }
-
-  if (activeView === 'library') {
-    return <LibraryView />;
-  }
-
-  if (activeView === 'saved_library') {
-    return <SavedLibraryView />;
-  }
-
-  if (activeView === 'reader') {
-    return <LibraryReaderView />;
-  }
-
-  if (activeView === 'profile') {
-    return <ProfileView />;
-  }
-
-  if (activeView === 'print') {
-    return <PrintView />;
-  }
-
-  if (activeView === 'admin') {
-    return <AdminView />;
-  }
+  const { loading, activeProject, activeChapter } = useApp();
 
   if (loading && !activeProject) {
     return (
@@ -54,28 +27,35 @@ const WorkspaceContent: React.FC = () => {
     );
   }
 
-  if (!activeProject) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
-        <Feather className="w-12 h-12 text-slate-700 mb-4 stroke-[1.5]" />
-        <h3 className="text-lg font-medium text-slate-200">No Active Project</h3>
-        <p className="text-sm text-slate-500 mt-1 max-w-sm text-center">
-          Create a new project from the sidebar to get started on your next masterpiece.
-        </p>
-      </div>
-    );
-  }
+  const NoProjectView = () => (
+    <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
+      <Feather className="w-12 h-12 text-slate-700 mb-4 stroke-[1.5]" />
+      <h3 className="text-lg font-medium text-slate-200">No Active Project</h3>
+      <p className="text-sm text-slate-500 mt-1 max-w-sm text-center">
+        Create a new project from the sidebar to get started on your next masterpiece.
+      </p>
+    </div>
+  );
 
-  switch (activeView) {
-    case 'editor':
-      return <EditorView key={activeChapter?.id} />;
-    case 'planner':
-      return <PlannerView key={activeProject?.id} />;
-    case 'tracker':
-      return <TrackerView key={activeProject?.id} />;
-    default:
-      return <EditorView key={activeChapter?.id} />;
-  }
+  return (
+    <Routes>
+      <Route path="/" element={<HomeView />} />
+      <Route path="/library" element={<LibraryView />} />
+      <Route path="/library/novel/:id" element={<LibraryReaderView />} />
+      <Route path="/saved" element={<SavedLibraryView />} />
+      <Route path="/profile" element={<ProfileView />} />
+      <Route path="/admin" element={<AdminView />} />
+      
+      {/* Project required routes */}
+      <Route path="/editor" element={activeProject ? <EditorView key={activeChapter?.id} /> : <NoProjectView />} />
+      <Route path="/planner" element={activeProject ? <PlannerView key={activeProject?.id} /> : <NoProjectView />} />
+      <Route path="/tracker" element={activeProject ? <TrackerView key={activeProject?.id} /> : <NoProjectView />} />
+      <Route path="/print" element={activeProject ? <PrintView /> : <NoProjectView />} />
+      
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 };
 
 const AuthWrapper: React.FC = () => {
