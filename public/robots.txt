@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://novel-worskspace-web-app.vercel.app/sitemap.xml
