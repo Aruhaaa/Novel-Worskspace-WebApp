@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
 import { 
   Bold, 
   Italic, 
@@ -11,7 +13,13 @@ import {
   ListOrdered, 
   Quote, 
   Undo, 
-  Redo 
+  Redo,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  AlignJustify,
+  Highlighter,
+  MoreHorizontal
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -99,6 +107,61 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <button
         type="button"
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        className={toggleBtnClass(editor.isActive({ textAlign: 'left' }))}
+        title="Align Left"
+      >
+        <AlignLeft className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        className={toggleBtnClass(editor.isActive({ textAlign: 'center' }))}
+        title="Align Center"
+      >
+        <AlignCenter className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        className={toggleBtnClass(editor.isActive({ textAlign: 'right' }))}
+        title="Align Right"
+      >
+        <AlignRight className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+        className={toggleBtnClass(editor.isActive({ textAlign: 'justify' }))}
+        title="Justify"
+      >
+        <AlignJustify className="w-4 h-4" />
+      </button>
+
+      <div className="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().toggleHighlight().run()}
+        className={toggleBtnClass(editor.isActive('highlight'))}
+        title="Highlight"
+      >
+        <Highlighter className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        className="p-2 rounded hover:bg-slate-800 text-slate-400 transition-colors"
+        title="Insert Scene Separator"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      <div className="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <button
+        type="button"
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().chain().focus().undo().run()}
         className="p-2 rounded hover:bg-slate-800 text-slate-400 disabled:opacity-50 transition-colors"
@@ -126,6 +189,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
       Placeholder.configure({
         placeholder,
       }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Highlight,
     ],
     content,
     editorProps: {

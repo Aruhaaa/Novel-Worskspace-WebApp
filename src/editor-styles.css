@@ -1,0 +1,15 @@
+/* Novel Editor Separator */
+.prose hr {
+  border: none !important;
+  border-top: 1px solid #475569 !important; /* slate-600 */
+  width: 25% !important;
+  margin: 3rem auto !important;
+}
+
+/* TipTap Highlight Extension */
+mark {
+  background-color: rgba(250, 204, 21, 0.3) !important;
+  color: inherit !important;
+  border-radius: 2px;
+  padding: 0.1em 0.2em;
+}
