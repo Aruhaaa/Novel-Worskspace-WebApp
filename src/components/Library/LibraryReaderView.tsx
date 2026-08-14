@@ -70,7 +70,7 @@ export const LibraryReaderView: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{activePublicProject.title} | Novelist</title>
+        <title>{`${activePublicProject.title} | Novelist`}</title>
         <meta name="description" content={activePublicProject.description || `Read ${activePublicProject.title} on Novelist.`} />
         <meta property="og:title" content={`${activePublicProject.title} | Novelist`} />
         <meta property="og:description" content={activePublicProject.description || `Read ${activePublicProject.title} on Novelist.`} />
