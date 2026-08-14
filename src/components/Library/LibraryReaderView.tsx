@@ -159,6 +159,53 @@ export const LibraryReaderView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Settings Toggle Button */}
+      <button
+        onClick={() => setShowSettings(!showSettings)}
+        className="fixed bottom-6 right-6 w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg shadow-indigo-600/30 flex items-center justify-center transition-all z-40"
+      >
+        <Settings2 className="w-6 h-6" />
+      </button>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="fixed bottom-24 right-6 w-72 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-5 z-40 text-slate-200 animate-in slide-in-from-bottom-2 fade-in">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Reading Settings</h3>
+          
+          {/* Theme */}
+          <div className="mb-5">
+            <label className="text-xs font-semibold mb-2 block text-slate-400">Theme</label>
+            <div className="flex gap-2">
+              <button onClick={() => setTheme('light')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'light' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Sun className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('dark')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'dark' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Moon className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('system')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'system' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Monitor className="w-4 h-4" /></button>
+            </div>
+          </div>
+
+          {/* Font Family */}
+          <div className="mb-5">
+            <label className="text-xs font-semibold mb-2 block text-slate-400">Font</label>
+            <div className="flex gap-2">
+              <button onClick={() => setFontFamily('sans')} className={`flex-1 py-1.5 rounded text-sm font-sans border ${fontFamily === 'sans' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>Sans</button>
+              <button onClick={() => setFontFamily('serif')} className={`flex-1 py-1.5 rounded text-sm font-serif border ${fontFamily === 'serif' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>Serif</button>
+              <button onClick={() => setFontFamily('times')} className={`flex-1 py-1.5 rounded text-sm border ${fontFamily === 'times' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`} style={{ fontFamily: '"Times New Roman", Times, serif' }}>Times</button>
+            </div>
+          </div>
+
+          {/* Font Size */}
+          <div>
+            <label className="text-xs font-semibold mb-2 block text-slate-400">Size</label>
+            <div className="flex gap-2">
+              <button onClick={() => setFontSize('text-base')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-base' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-3 h-3" /></button>
+              <button onClick={() => setFontSize('text-lg')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-lg' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-4 h-4" /></button>
+              <button onClick={() => setFontSize('text-xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-5 h-5" /></button>
+              <button onClick={() => setFontSize('text-2xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-2xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-6 h-6" /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
     </>
   );

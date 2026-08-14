@@ -1,4 +1,4 @@
-import { Project, Chapter } from '../services/types';
+import type { Project, Chapter } from '../services/types';
 
 export const exportNovelToHTML = (project: Project, chapters: Chapter[]) => {
   const sortedChapters = [...chapters].sort((a, b) => a.position - b.position);
