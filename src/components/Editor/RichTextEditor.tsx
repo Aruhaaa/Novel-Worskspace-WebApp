@@ -19,8 +19,14 @@ import {
   AlignRight,
   AlignJustify,
   Highlighter,
-  MoreHorizontal
+  MoreHorizontal,
+  Search
 } from 'lucide-react';
+import Mention from '@tiptap/extension-mention';
+import { ReactRenderer } from '@tiptap/react';
+import tippy from 'tippy.js';
+import MentionList from './MentionList';
+import { useApp } from '../../context/AppContext';
 
 interface RichTextEditorProps {
   content: string;
@@ -28,7 +34,7 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-const MenuBar = ({ editor }: { editor: any }) => {
+const MenuBar = ({ editor, onToggleFindReplace }: { editor: any, onToggleFindReplace: () => void }) => {
   if (!editor) {
     return null;
   }
@@ -178,11 +184,80 @@ const MenuBar = ({ editor }: { editor: any }) => {
       >
         <Redo className="w-4 h-4" />
       </button>
+
+      <div className="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <button
+        type="button"
+        onClick={onToggleFindReplace}
+        className="p-2 rounded hover:bg-slate-800 text-slate-400 transition-colors"
+        title="Find & Replace"
+      >
+        <Search className="w-4 h-4" />
+      </button>
     </div>
   );
 };
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = 'Write your story here...' }) => {
+  const [showFindReplace, setShowFindReplace] = React.useState(false);
+  const [findText, setFindText] = React.useState('');
+  const [replaceText, setReplaceText] = React.useState('');
+
+  const { entities } = useApp();
+
+  const suggestion = {
+    items: ({ query }: { query: string }) => {
+      return entities.filter(item => item.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+    },
+    render: () => {
+      let component: any;
+      let popup: any;
+
+      return {
+        onStart: (props: any) => {
+          component = new ReactRenderer(MentionList, {
+            props,
+            editor: props.editor,
+          });
+
+          if (!props.clientRect) {
+            return;
+          }
+
+          popup = tippy('body', {
+            getReferenceClientRect: props.clientRect,
+            appendTo: () => document.body,
+            content: component.element,
+            showOnCreate: true,
+            interactive: true,
+            trigger: 'manual',
+            placement: 'bottom-start',
+            theme: 'light-border',
+          });
+        },
+        onUpdate(props: any) {
+          component.updateProps(props);
+          if (!props.clientRect) return;
+          popup[0].setProps({
+            getReferenceClientRect: props.clientRect,
+          });
+        },
+        onKeyDown(props: any) {
+          if (props.event.key === 'Escape') {
+            popup[0].hide();
+            return true;
+          }
+          return component.ref?.onKeyDown(props);
+        },
+        onExit() {
+          if (popup) popup[0].destroy();
+          if (component) component.destroy();
+        },
+      };
+    },
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -193,6 +268,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
         types: ['heading', 'paragraph'],
       }),
       Highlight,
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'mention bg-indigo-500/20 text-indigo-400 font-semibold px-1 rounded cursor-pointer hover:bg-indigo-500/30 transition-colors',
+        },
+        suggestion,
+      }),
     ],
     content,
     editorProps: {
@@ -216,9 +297,72 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
     }
   }, [content, editor]);
 
+  const handleReplaceAll = () => {
+    if (!editor || !findText) return;
+    
+    let tr = editor.state.tr;
+    let modified = false;
+    
+    // Collect all text nodes
+    const nodes: {node: any, pos: number}[] = [];
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.isText) {
+        nodes.push({ node, pos });
+      }
+    });
+
+    // Iterate backwards so replacing doesn't shift positions of previous nodes we haven't processed yet
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const { node, pos } = nodes[i];
+      const text = node.text || '';
+      
+      let matchIndex = text.lastIndexOf(findText);
+      while (matchIndex !== -1) {
+        tr = tr.replaceWith(
+          pos + matchIndex,
+          pos + matchIndex + findText.length,
+          editor.schema.text(replaceText)
+        );
+        modified = true;
+        matchIndex = text.lastIndexOf(findText, matchIndex - 1);
+      }
+    }
+
+    if (modified) {
+      editor.view.dispatch(tr);
+    }
+  };
+
   return (
     <div className="flex flex-col border border-slate-800 rounded-lg bg-slate-950/50 shadow-inner overflow-hidden">
-      <MenuBar editor={editor} />
+      <MenuBar editor={editor} onToggleFindReplace={() => setShowFindReplace(!showFindReplace)} />
+      
+      {showFindReplace && (
+        <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center gap-3 text-sm">
+          <input 
+            type="text" 
+            value={findText}
+            onChange={(e) => setFindText(e.target.value)}
+            placeholder="Find..." 
+            className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 w-48"
+          />
+          <input 
+            type="text" 
+            value={replaceText}
+            onChange={(e) => setReplaceText(e.target.value)}
+            placeholder="Replace with..." 
+            className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 w-48"
+          />
+          <button 
+            onClick={handleReplaceAll}
+            disabled={!findText}
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded font-medium transition-colors"
+          >
+            Replace All
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto max-h-[70vh]">
         <EditorContent editor={editor} />
       </div>

@@ -19,6 +19,10 @@ interface AppContextType {
   activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin';
   loading: boolean;
   isSupabase: boolean;
+  zenMode: boolean;
+  setZenMode: (val: boolean) => void;
+  recentlyRead: string[];
+  setRecentlyRead: (val: string[]) => void;
   login: (email: string, password: string) => Promise<{error: string | null}>;
   signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
@@ -58,6 +62,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [publicProjects, setPublicProjects] = useState<Project[]>([]);
   const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [zenMode, setZenMode] = useState<boolean>(false);
+  const [recentlyRead, setRecentlyReadState] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('novelist_recently_read');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const setRecentlyRead = (val: string[]) => {
+    setRecentlyReadState(val);
+    localStorage.setItem('novelist_recently_read', JSON.stringify(val));
+  };
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -442,6 +460,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeView,
         loading,
         isSupabase: isSupabaseConfigured,
+        zenMode,
+        setZenMode,
+        recentlyRead,
+        setRecentlyRead,
         login,
         signup,
         logout,

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users } from 'lucide-react';
+import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users, Download, Clock } from 'lucide-react';
 import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
 import type { Project } from '../../services/types';
+import { databaseService } from '../../services/database';
+import { exportNovelToHTML } from '../../utils/exportUtils';
 
 export const HomeView: React.FC = () => {
-  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject } = useApp();
+  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject } = useApp();
   
   const [showNewProjModal, setShowNewProjModal] = useState(false);
   const [newProjTitle, setNewProjTitle] = useState('');
@@ -18,6 +20,10 @@ export const HomeView: React.FC = () => {
   const todayLog = wordCountLogs.find(l => l.date === todayStr);
   const todaysWordCount = todayLog ? todayLog.word_count : 0;
   const progressPercent = Math.min(100, Math.round((todaysWordCount / dailyGoal) * 100));
+
+  const recentlyReadProjects = recentlyRead
+    .map(id => publicProjects.find(p => p.id === id))
+    .filter((p): p is Project => p !== undefined);
 
   // Determine greeting name
   const greetingName = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'Author');
@@ -35,6 +41,21 @@ export const HomeView: React.FC = () => {
     setNewProjTitle('');
     setNewProjDesc('');
     setShowNewProjModal(false);
+  };
+
+  const handleExportProject = async (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    try {
+      const chaps = await databaseService.getChapters(project.id);
+      exportNovelToHTML(project, chaps);
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  };
+
+  const handleContinueReading = (project: Project) => {
+    setActivePublicProject(project);
+    setActiveView('reader');
   };
 
   return (
@@ -120,9 +141,16 @@ export const HomeView: React.FC = () => {
                             className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold px-2 py-1 rounded-md hover:bg-emerald-500/10 transition-colors"
                           >
                             <Users className="w-3.5 h-3.5" />
-                            Audience
+                            <span className="hidden sm:inline">Audience</span>
                           </button>
                         )}
+                        <button
+                          onClick={(e) => handleExportProject(e, project)}
+                          className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold px-2 py-1 rounded-md hover:bg-amber-500/10 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Export</span>
+                        </button>
                         <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
                           Open <ChevronRight className="w-3.5 h-3.5" />
                         </div>
@@ -137,6 +165,37 @@ export const HomeView: React.FC = () => {
           {/* Right Column: Widgets */}
           <div className="space-y-6">
             
+            {/* Continue Reading Widget */}
+            {recentlyReadProjects.length > 0 && (
+              <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-6">
+                  <Clock className="w-4 h-4 text-indigo-400" />
+                  Continue Reading
+                </h3>
+                <div className="space-y-4">
+                  {recentlyReadProjects.map(proj => (
+                    <div 
+                      key={proj.id}
+                      onClick={() => handleContinueReading(proj)}
+                      className="group cursor-pointer flex gap-4 p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700"
+                    >
+                      {proj.cover_url ? (
+                        <img src={proj.cover_url} alt={proj.title} className="w-12 h-16 object-cover rounded-md shrink-0" />
+                      ) : (
+                        <div className="w-12 h-16 bg-slate-800 rounded-md shrink-0 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-slate-600" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-slate-200 truncate group-hover:text-indigo-400 transition-colors">{proj.title}</h4>
+                        <p className="text-xs text-slate-500 truncate mt-1">By {proj.author_name || 'Unknown'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Daily Goal Widget */}
             <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-6">

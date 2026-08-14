@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight, X } from 'lucide-react';
+import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight, X, Maximize, Minimize } from 'lucide-react';
 
 import { RichTextEditor } from './RichTextEditor';
 
 export const EditorView: React.FC = () => {
-  const { activeProject, chapters, activeChapter, setActiveChapter, updateChapter, createChapter, logWordCount, isSupabase } = useApp();
+  const { activeProject, chapters, activeChapter, setActiveChapter, updateChapter, createChapter, logWordCount, isSupabase, zenMode, setZenMode } = useApp();
   const [localTitle, setLocalTitle] = useState(activeChapter?.title || '');
   const [localContent, setLocalContent] = useState(activeChapter?.content || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
@@ -242,26 +242,41 @@ export const EditorView: React.FC = () => {
           />
         </div>
 
-        {/* Autosave Status Badge */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/80 border border-slate-800/50 px-3.5 py-1.5 rounded-full select-none">
-          {saveStatus === 'saved' && (
-            <>
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Saved {isSupabase ? 'to Cloud' : 'locally'}</span>
-            </>
-          )}
-          {saveStatus === 'saving' && (
-            <>
-              <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
-              <span>Saving...</span>
-            </>
-          )}
-          {saveStatus === 'idle' && (
-            <>
-              <Cloud className="w-3.5 h-3.5 text-slate-500" />
-              <span>Changes pending</span>
-            </>
-          )}
+        {/* Header Actions */}
+        <div className="flex items-center gap-3">
+          {/* Zen Mode Toggle */}
+          <button 
+            onClick={() => setZenMode(!zenMode)}
+            className={`p-1.5 rounded-lg transition-colors flex items-center gap-2 text-xs font-semibold ${zenMode ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
+            title={zenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+          >
+            {zenMode ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            <span className="hidden sm:inline">Zen Mode</span>
+          </button>
+
+          {/* Autosave Status Badge */}
+          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/80 border border-slate-800/50 px-3.5 py-1.5 rounded-full select-none">
+            {saveStatus === 'saved' && (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Saved {isSupabase ? 'to Cloud' : 'locally'}</span>
+                <span className="sm:hidden">Saved</span>
+              </>
+            )}
+            {saveStatus === 'saving' && (
+              <>
+                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                <span>Saving...</span>
+              </>
+            )}
+            {saveStatus === 'idle' && (
+              <>
+                <Cloud className="w-3.5 h-3.5 text-slate-500" />
+                <span className="hidden sm:inline">Changes pending</span>
+                <span className="sm:hidden">Pending</span>
+              </>
+            )}
+          </div>
         </div>
       </header>
 

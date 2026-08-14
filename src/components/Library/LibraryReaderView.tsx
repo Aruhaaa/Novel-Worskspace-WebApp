@@ -4,16 +4,21 @@ import { Helmet } from 'react-helmet-async';
 import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
 import type { Chapter } from '../../services/types';
-import { ArrowLeft, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Loader2, Settings2, Moon, Sun, Monitor, Type } from 'lucide-react';
 import { ReaderReviews } from './ReaderReviews';
 import { ReaderComments } from './ReaderComments';
 
 export const LibraryReaderView: React.FC = () => {
-  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects, trackProjectView } = useApp();
+  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects, trackProjectView, recentlyRead, setRecentlyRead } = useApp();
   const { id } = useParams<{ id: string }>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const hasTrackedView = useRef<string | null>(null);
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [fontSize, setFontSize] = useState<'text-base' | 'text-lg' | 'text-xl' | 'text-2xl'>('text-lg');
+  const [fontFamily, setFontFamily] = useState<'sans' | 'serif' | 'times'>('serif');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
 
   // Sync URL ID with activePublicProject and track view
   useEffect(() => {
@@ -29,8 +34,11 @@ export const LibraryReaderView: React.FC = () => {
     if (activePublicProject?.id && hasTrackedView.current !== activePublicProject.id) {
       hasTrackedView.current = activePublicProject.id;
       trackProjectView(activePublicProject.id);
+      
+      const current = recentlyRead.filter(pid => pid !== activePublicProject.id);
+      setRecentlyRead([activePublicProject.id, ...current].slice(0, 5));
     }
-  }, [activePublicProject?.id, trackProjectView]);
+  }, [activePublicProject?.id, trackProjectView, recentlyRead, setRecentlyRead]);
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -77,27 +85,42 @@ export const LibraryReaderView: React.FC = () => {
         {activePublicProject.cover_url && <meta property="og:image" content={activePublicProject.cover_url} />}
       </Helmet>
       
-      <div className="flex-1 bg-[#F9F9FB] dark:bg-slate-950 overflow-y-auto relative font-serif text-slate-800 dark:text-slate-200 transition-colors duration-300">
-      {/* Reader Header */}
-      <div className="sticky top-0 z-50 bg-[#F9F9FB]/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 flex items-center justify-between">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 text-sm font-sans font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Library
-        </button>
-        <div className="text-center flex-1 px-4">
-          <h2 className="text-lg font-bold truncate">{activePublicProject.title}</h2>
-          <p className="text-xs font-sans text-slate-500 dark:text-slate-400">
-            By {activePublicProject.author_name || 'Anonymous'}
-          </p>
-        </div>
-        <div className="w-24" /> {/* Spacer for centering */}
-      </div>
+      <div 
+        className={`flex-1 overflow-y-auto relative transition-colors duration-300 ${
+          theme === 'dark' ? 'bg-slate-950 text-slate-200' : 
+          theme === 'light' ? 'bg-[#F9F9FB] text-slate-900' : 
+          'bg-[#F9F9FB] dark:bg-slate-950 text-slate-900 dark:text-slate-200'
+        } ${
+          fontFamily === 'sans' ? 'font-sans' : 
+          fontFamily === 'serif' ? 'font-serif' : ''
+        }`}
+        style={fontFamily === 'times' ? { fontFamily: '"Times New Roman", Times, serif' } : {}}
+      >
+        <div className="max-w-4xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-16 relative z-10">
+          
+          <button 
+            onClick={handleBack}
+            className={`flex items-center gap-2 text-sm font-semibold mb-8 transition-colors ${
+              theme === 'dark' ? 'text-slate-400 hover:text-slate-200' :
+              theme === 'light' ? 'text-slate-500 hover:text-slate-800' :
+              'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Library
+          </button>
 
-      {/* Reader Content */}
-      <div className="max-w-3xl mx-auto px-8 py-16">
+          <header className={`mb-16 pb-8 border-b transition-colors ${
+            theme === 'dark' ? 'border-slate-800' :
+            theme === 'light' ? 'border-slate-200' :
+            'border-slate-200 dark:border-slate-800'
+          }`}>
+            <h2 className="text-lg font-bold truncate">{activePublicProject.title}</h2>
+            <p className="text-xs font-sans text-slate-500 dark:text-slate-400">
+              By {activePublicProject.author_name || 'Anonymous'}
+            </p>
+          </header>
+
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
@@ -114,20 +137,16 @@ export const LibraryReaderView: React.FC = () => {
         ) : (
           <div className="space-y-24">
             {chapters.map((chapter) => (
-              <article key={chapter.id} className="prose prose-slate dark:prose-invert prose-lg max-w-none">
-                <h1 className="text-3xl font-extrabold text-center mb-12 pb-6 border-b border-slate-200 dark:border-slate-800">
-                  {chapter.title}
-                </h1>
-                {chapter.content ? (
-                  <div 
-                    className="whitespace-pre-wrap leading-relaxed prose-p:my-4"
-                    dangerouslySetInnerHTML={{ __html: chapter.content }}
-                  />
-                ) : (
-                  <div className="whitespace-pre-wrap leading-relaxed">
-                    <span className="italic text-slate-400">This chapter is empty.</span>
-                  </div>
-                )}
+              <article key={chapter.id}>
+                <h1 className="text-3xl font-bold mb-8 text-center">{chapter.title}</h1>
+                <div 
+                  className={`prose prose-slate max-w-none prose-p:leading-relaxed prose-p:mb-6 ${fontSize} ${
+                    theme === 'dark' ? 'prose-invert' :
+                    theme === 'light' ? '' :
+                    'dark:prose-invert'
+                  }`}
+                  dangerouslySetInnerHTML={{ __html: chapter.content || '' }} 
+                />
                 <ReaderComments projectId={activePublicProject.id} chapterId={chapter.id} />
               </article>
             ))}
