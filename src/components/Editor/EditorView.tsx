@@ -98,8 +98,8 @@ export const EditorView: React.FC = () => {
       <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden relative">
         <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-900/10 to-transparent pointer-events-none" />
         
-        <div className="max-w-5xl mx-auto w-full px-8 py-12 relative z-10 overflow-y-auto">
-          <header className="mb-12">
+        <div className="max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 relative z-10 overflow-y-auto">
+          <header className="mb-8 sm:mb-12">
             <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">
               Chapter Index
             </h1>
@@ -231,7 +231,7 @@ export const EditorView: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden">
       {/* Editor Header */}
-      <header className="h-16 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0 bg-slate-900/50 backdrop-blur-md">
+      <header className="h-16 border-b border-slate-800/80 px-4 sm:px-8 flex items-center justify-between shrink-0 bg-slate-900/50 backdrop-blur-md">
         <div className="flex-1 max-w-xl">
           <input
             type="text"
@@ -266,7 +266,7 @@ export const EditorView: React.FC = () => {
       </header>
 
       {/* Editor Writing Board */}
-      <main className="flex-1 overflow-hidden px-8 py-8 flex justify-center bg-[#F9F9FB] dark:bg-slate-900 transition-colors">
+      <main className="flex-1 overflow-hidden px-2 sm:px-8 py-4 sm:py-8 flex justify-center bg-[#F9F9FB] dark:bg-slate-900 transition-colors">
         <div className="w-full max-w-3xl flex flex-col h-full relative">
           <RichTextEditor 
             content={localContent} 
@@ -276,7 +276,7 @@ export const EditorView: React.FC = () => {
       </main>
 
       {/* Editor Footer / Info Bar */}
-      <footer className="h-11 border-t border-slate-800/60 bg-slate-950/60 backdrop-blur-sm shrink-0 px-8 flex items-center justify-between text-xs text-slate-500 select-none">
+      <footer className="h-11 border-t border-slate-800/60 bg-slate-950/60 backdrop-blur-sm shrink-0 px-4 sm:px-8 flex items-center justify-between text-xs text-slate-500 select-none">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <Feather className="w-3.5 h-3.5" />

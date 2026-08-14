@@ -12,7 +12,7 @@ import { LibraryReaderView } from './components/Library/LibraryReaderView';
 import { ProfileView } from './components/Profile/ProfileView';
 import { PrintView } from './components/Export/PrintView';
 import { AdminView } from './components/Admin/AdminView';
-import { Feather, Loader2 } from 'lucide-react';
+import { Feather, Loader2, Menu } from 'lucide-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 const WorkspaceContent: React.FC = () => {
@@ -60,6 +60,7 @@ const WorkspaceContent: React.FC = () => {
 
 const AuthWrapper: React.FC = () => {
   const { user, loading } = useApp();
+  const [isSidebarOpen, setSidebarOpen] = React.useState(false);
 
   if (loading && !user) {
     return (
@@ -74,9 +75,24 @@ const AuthWrapper: React.FC = () => {
   }
 
   return (
-    <div className="flex w-screen h-screen overflow-hidden bg-slate-950 font-sans">
-      <Sidebar />
-      <WorkspaceContent />
+    <div className="flex flex-col md:flex-row w-screen h-[100dvh] overflow-hidden bg-slate-950 font-sans">
+      
+      {/* Mobile Top Bar */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-slate-950 border-b border-slate-800 shrink-0 z-40 relative">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">N</div>
+          <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
+        </div>
+        <button onClick={() => setSidebarOpen(true)} className="p-2 -mr-2 text-slate-300 hover:text-white transition-colors">
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+        <WorkspaceContent />
+      </div>
     </div>
   );
 };

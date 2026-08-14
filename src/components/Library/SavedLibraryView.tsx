@@ -26,7 +26,7 @@ export const SavedLibraryView: React.FC = () => {
       {/* Background aesthetics */}
       <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-rose-900/10 to-transparent pointer-events-none" />
       
-      <div className="max-w-6xl mx-auto px-8 py-12 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 relative z-10">
         <header className="mb-8 text-center">
           <div className="inline-flex items-center justify-center p-3 bg-rose-500/10 rounded-2xl mb-4 border border-rose-500/20">
             <Bookmark className="w-8 h-8 text-rose-400 stroke-[1.5]" />
