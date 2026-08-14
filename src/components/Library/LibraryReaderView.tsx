@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useApp } from '../../context/AppContext';
@@ -13,6 +13,7 @@ export const LibraryReaderView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasTrackedView = useRef<string | null>(null);
 
   // Sync URL ID with activePublicProject and track view
   useEffect(() => {
@@ -25,10 +26,11 @@ export const LibraryReaderView: React.FC = () => {
   }, [id, activePublicProject, publicProjects, setActivePublicProject]);
 
   useEffect(() => {
-    if (activePublicProject) {
+    if (activePublicProject?.id && hasTrackedView.current !== activePublicProject.id) {
+      hasTrackedView.current = activePublicProject.id;
       trackProjectView(activePublicProject.id);
     }
-  }, [activePublicProject, trackProjectView]);
+  }, [activePublicProject?.id, trackProjectView]);
 
   useEffect(() => {
     const fetchChapters = async () => {
