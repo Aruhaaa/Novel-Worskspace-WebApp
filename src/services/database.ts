@@ -608,7 +608,7 @@ export const databaseService = {
 
   async trackProjectView(projectId: string, userId: string): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
-      const { data: proj, error: fetchErr } = await supabase.from('projects').select('views, id').eq('id', projectId).single();
+      const { data: proj, error: fetchErr } = await supabase.from('projects').select('*').eq('id', projectId).single();
       if (fetchErr) throw fetchErr;
       
       let currentViews = proj?.views || [];
