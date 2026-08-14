@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe } from 'lucide-react';
+import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users } from 'lucide-react';
+import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
+import type { Project } from '../../services/types';
 
 export const HomeView: React.FC = () => {
   const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject } = useApp();
@@ -8,6 +10,7 @@ export const HomeView: React.FC = () => {
   const [showNewProjModal, setShowNewProjModal] = useState(false);
   const [newProjTitle, setNewProjTitle] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
+  const [analyticsProject, setAnalyticsProject] = useState<Project | null>(null);
 
   // Daily Goal Calculations
   const dailyGoal = profile?.daily_word_goal || 1000;
@@ -110,8 +113,19 @@ export const HomeView: React.FC = () => {
                     
                     <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-3">
                       <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
-                      <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                        Open <ChevronRight className="w-3.5 h-3.5" />
+                      <div className="flex items-center gap-3">
+                        {project.is_published && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setAnalyticsProject(project); }}
+                            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold px-2 py-1 rounded-md hover:bg-emerald-500/10 transition-colors"
+                          >
+                            <Users className="w-3.5 h-3.5" />
+                            Audience
+                          </button>
+                        )}
+                        <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                          Open <ChevronRight className="w-3.5 h-3.5" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -225,6 +239,14 @@ export const HomeView: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Analytics Modal */}
+      {analyticsProject && (
+        <AudienceAnalyticsModal 
+          project={analyticsProject} 
+          onClose={() => setAnalyticsProject(null)} 
+        />
       )}
     </div>
   );

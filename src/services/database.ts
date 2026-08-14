@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile } from './types';
+import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment } from './types';
 
 // Mock Data Initializer for Local Storage fallback
 const MOCK_PROJECT_ID = 'p1-mock-project';
@@ -81,6 +81,30 @@ const INITIAL_ENTITIES: WikiEntity[] = [
     },
     created_at: new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
+  }
+];
+
+const INITIAL_REVIEWS: Review[] = [
+  {
+    id: 'r1-mock',
+    project_id: MOCK_PROJECT_ID,
+    user_id: 'user-mock-2',
+    rating: 5,
+    content: 'Absolutely incredible world-building! I could not put it down.',
+    created_at: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+const INITIAL_COMMENTS: Comment[] = [
+  {
+    id: 'cm1-mock',
+    project_id: MOCK_PROJECT_ID,
+    chapter_id: 'c1-mock',
+    user_id: 'user-mock-2',
+    content: 'The imagery in this first chapter is stunning!',
+    created_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
@@ -566,6 +590,127 @@ export const databaseService = {
         setLocalData('novel_word_logs', logs);
         return newLog;
       }
+    }
+  },
+
+  // --- ENGAGEMENT & COMMUNITY ---
+  async getProfilesByIds(userIds: string[]): Promise<UserProfile[]> {
+    if (!userIds || userIds.length === 0) return [];
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('profiles').select('*').in('id', userIds);
+      if (error) throw error;
+      return data || [];
+    } else {
+      const profiles = getLocalData<UserProfile[]>('novel_profiles', []);
+      return profiles.filter(p => userIds.includes(p.id));
+    }
+  },
+
+  async trackProjectView(projectId: string, userId: string): Promise<Project> {
+    if (isSupabaseConfigured && supabase) {
+      const { data: proj, error: fetchErr } = await supabase.from('projects').select('views, id').eq('id', projectId).single();
+      if (fetchErr) throw fetchErr;
+      
+      let currentViews = proj?.views || [];
+      if (!currentViews.includes(userId)) {
+        currentViews = [...currentViews, userId];
+        const { data, error } = await supabase.from('projects').update({ views: currentViews }).eq('id', projectId).select().single();
+        if (error) throw error;
+        return data;
+      }
+      return proj as any;
+    } else {
+      const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+      const index = projects.findIndex(p => p.id === projectId);
+      if (index === -1) throw new Error('Project not found');
+      
+      let currentViews = projects[index].views || [];
+      if (!currentViews.includes(userId)) {
+        currentViews = [...currentViews, userId];
+        const updated = { ...projects[index], views: currentViews };
+        projects[index] = updated;
+        setLocalData('novel_projects', projects);
+        return updated;
+      }
+      return projects[index];
+    }
+  },
+
+  async getReviews(projectId: string): Promise<Review[]> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('reviews').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } else {
+      const reviews = getLocalData<Review[]>('novel_reviews', INITIAL_REVIEWS);
+      return reviews.filter(r => r.project_id === projectId).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  },
+
+  async createReview(projectId: string, userId: string, rating: number, content: string): Promise<Review> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('reviews').insert([{ project_id: projectId, user_id: userId, rating, content }]).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const reviews = getLocalData<Review[]>('novel_reviews', INITIAL_REVIEWS);
+      const newReview: Review = {
+        id: `r-${Math.random().toString(36).substr(2, 9)}`,
+        project_id: projectId,
+        user_id: userId,
+        rating,
+        content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      reviews.unshift(newReview);
+      setLocalData('novel_reviews', reviews);
+      return newReview;
+    }
+  },
+
+  async getComments(projectId: string, chapterId?: string): Promise<Comment[]> {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from('comments').select('*').eq('project_id', projectId);
+      if (chapterId) {
+        query = query.eq('chapter_id', chapterId);
+      } else {
+        query = query.is('chapter_id', null);
+      }
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } else {
+      const comments = getLocalData<Comment[]>('novel_comments', INITIAL_COMMENTS);
+      let filtered = comments.filter(c => c.project_id === projectId);
+      if (chapterId) {
+        filtered = filtered.filter(c => c.chapter_id === chapterId);
+      } else {
+        filtered = filtered.filter(c => !c.chapter_id);
+      }
+      return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  },
+
+  async createComment(projectId: string, userId: string, content: string, chapterId?: string): Promise<Comment> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('comments').insert([{ project_id: projectId, user_id: userId, content, chapter_id: chapterId }]).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const comments = getLocalData<Comment[]>('novel_comments', INITIAL_COMMENTS);
+      const newComment: Comment = {
+        id: `cm-${Math.random().toString(36).substr(2, 9)}`,
+        project_id: projectId,
+        user_id: userId,
+        content,
+        chapter_id: chapterId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      comments.unshift(newComment);
+      setLocalData('novel_comments', comments);
+      return newComment;
     }
   }
 };

@@ -5,14 +5,16 @@ import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
 import type { Chapter } from '../../services/types';
 import { ArrowLeft, BookOpen, Loader2 } from 'lucide-react';
+import { ReaderReviews } from './ReaderReviews';
+import { ReaderComments } from './ReaderComments';
 
 export const LibraryReaderView: React.FC = () => {
-  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects } = useApp();
+  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects, trackProjectView } = useApp();
   const { id } = useParams<{ id: string }>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sync URL ID with activePublicProject
+  // Sync URL ID with activePublicProject and track view
   useEffect(() => {
     if (id && (!activePublicProject || activePublicProject.id !== id)) {
       const project = publicProjects.find(p => p.id === id);
@@ -21,6 +23,12 @@ export const LibraryReaderView: React.FC = () => {
       }
     }
   }, [id, activePublicProject, publicProjects, setActivePublicProject]);
+
+  useEffect(() => {
+    if (activePublicProject) {
+      trackProjectView(activePublicProject.id);
+    }
+  }, [activePublicProject, trackProjectView]);
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -118,11 +126,14 @@ export const LibraryReaderView: React.FC = () => {
                     <span className="italic text-slate-400">This chapter is empty.</span>
                   </div>
                 )}
+                <ReaderComments projectId={activePublicProject.id} chapterId={chapter.id} />
               </article>
             ))}
             
-            <div className="text-center pt-16 pb-8 border-t border-slate-200 dark:border-slate-800">
-              <p className="italic text-slate-500">End of published content.</p>
+            <ReaderReviews projectId={activePublicProject.id} />
+            
+            <div className="text-center pb-8 border-t border-slate-200 dark:border-slate-800">
+              <p className="italic text-slate-500 mt-8">End of published content.</p>
             </div>
           </div>
         )}

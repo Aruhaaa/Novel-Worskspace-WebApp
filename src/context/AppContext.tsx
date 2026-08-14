@@ -34,6 +34,7 @@ interface AppContextType {
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
   updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
+  trackProjectView: (projectId: string) => Promise<void>;
   updateProfile: (fields: Partial<UserProfile>) => Promise<{error: string | null}>;
   createChapter: (title: string) => Promise<void>;
   updateChapter: (chapterId: string, fields: Partial<Pick<Chapter, 'title' | 'content' | 'position'>>) => Promise<void>;
@@ -295,6 +296,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const trackProjectView = async (projectId: string) => {
+    if (!user) return;
+    try {
+      const updated = await databaseService.trackProjectView(projectId, user.id);
+      // Update in public projects list
+      setPublicProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
+      // Also update in projects list just in case author reads their own book
+      setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
+      if (activePublicProject && activePublicProject.id === projectId) {
+        setActivePublicProject(updated);
+      }
+    } catch (err) {
+      console.error('Error tracking view:', err);
+    }
+  };
+
   const updateProfile = async (fields: Partial<UserProfile>) => {
     if (!user) return { error: 'No active user' };
     try {
@@ -440,6 +457,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         publishProject,
         updateProjectSettings,
         toggleLikeProject,
+        trackProjectView,
         updateProfile,
         createChapter,
         updateChapter,
