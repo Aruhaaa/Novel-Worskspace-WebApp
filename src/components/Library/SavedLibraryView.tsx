@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { User as UserIcon, Clock, ChevronRight, Heart, Search, Filter, Hash, Bookmark } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const SavedLibraryView: React.FC = () => {
-  const { user, publicProjects, loadPublicProjects, setActivePublicProject, setActiveView, toggleLikeProject } = useApp();
+  const { user, publicProjects, loadPublicProjects, setActiveView, toggleLikeProject } = useApp();
+  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('All');
@@ -15,8 +17,7 @@ export const SavedLibraryView: React.FC = () => {
   }, []);
 
   const handleReadNovel = (project: any) => {
-    setActivePublicProject(project);
-    setActiveView('reader');
+    navigate(`/library/novel/${project.id}`);
   };
 
   const savedProjects = publicProjects.filter(p => user && p.likes?.includes(user.id));
