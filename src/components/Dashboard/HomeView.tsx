@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users, Download, Clock } from 'lucide-react';
 import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
@@ -9,7 +8,6 @@ import { exportNovelToHTML } from '../../utils/exportUtils';
 
 export const HomeView: React.FC = () => {
   const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject } = useApp();
-  const navigate = useNavigate();
   
   const [showNewProjModal, setShowNewProjModal] = useState(false);
   const [newProjTitle, setNewProjTitle] = useState('');
@@ -57,7 +55,7 @@ export const HomeView: React.FC = () => {
 
   const handleContinueReading = (project: Project) => {
     setActivePublicProject(project);
-    navigate(`/library/novel/${project.id}`);
+    setActiveView('reader');
   };
 
   return (

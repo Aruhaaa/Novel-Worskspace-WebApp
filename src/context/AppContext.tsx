@@ -341,9 +341,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
         setProjects(updatedProjects);
         setActiveProjectState(prev => {
-          if (!prev) return prev;
-          const syncedActive = updatedProjects.find(p => p.id === prev.id);
-          return syncedActive || prev;
+          const synced = updatedProjects.find(p => p.id === prev?.id);
+          return synced || prev;
         });
       }
 
