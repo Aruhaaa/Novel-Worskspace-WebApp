@@ -7,9 +7,11 @@ import type { Chapter } from '../../services/types';
 import { ArrowLeft, BookOpen, Loader2, Settings2, Moon, Sun, Monitor, Type } from 'lucide-react';
 import { ReaderReviews } from './ReaderReviews';
 import { ReaderComments } from './ReaderComments';
+import { useNavigate } from 'react-router-dom';
 
 export const LibraryReaderView: React.FC = () => {
-  const { activePublicProject, setActiveView, setActivePublicProject, publicProjects, trackProjectView, recentlyRead, setRecentlyRead } = useApp();
+  const { activePublicProject, setActivePublicProject, publicProjects, trackProjectView, recentlyRead, setRecentlyRead } = useApp();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,23 +58,18 @@ export const LibraryReaderView: React.FC = () => {
     fetchChapters();
   }, [activePublicProject]);
 
-  if (!activePublicProject) {
+  if (!activePublicProject || activePublicProject.id !== id) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-400">
-        <p>No project selected for reading.</p>
-        <button 
-          onClick={() => setActiveView('library')}
-          className="mt-4 text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
-          Return to Library
-        </button>
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
+        <p>Loading novel...</p>
       </div>
     );
   }
 
   const handleBack = () => {
     setActivePublicProject(null);
-    setActiveView('library');
+    navigate('/library');
   };
 
   return (
