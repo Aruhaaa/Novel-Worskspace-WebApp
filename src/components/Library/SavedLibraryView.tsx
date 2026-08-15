@@ -4,7 +4,7 @@ import { User as UserIcon, Clock, ChevronRight, Heart, Search, Filter, Hash, Boo
 import { useNavigate } from 'react-router-dom';
 
 export const SavedLibraryView: React.FC = () => {
-  const { user, publicProjects, loadPublicProjects, setActiveView, toggleLikeProject } = useApp();
+  const { user, publicProjects, loadPublicProjects, toggleLikeProject } = useApp();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');

@@ -8,7 +8,7 @@ import { databaseService } from '../../services/database';
 import { exportNovelToHTML } from '../../utils/exportUtils';
 
 export const HomeView: React.FC = () => {
-  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject } = useApp();
+  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects } = useApp();
   const navigate = useNavigate();
   
   const [showNewProjModal, setShowNewProjModal] = useState(false);
