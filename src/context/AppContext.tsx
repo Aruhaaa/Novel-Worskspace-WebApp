@@ -279,9 +279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await databaseService.publishProject(projectId, isPublished, authorName);
       setProjects(prev => prev.map(p => p.id === projectId ? updated : p));
-      if (activeProject && activeProject.id === projectId) {
-        setActiveProjectState(updated);
-      }
+      setActiveProjectState(prev => prev?.id === projectId ? updated : prev);
       loadPublicProjects(); // Refresh library
     } catch (err) {
       console.error('Error publishing project:', err);
@@ -292,9 +290,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await databaseService.updateProjectSettings(projectId, fields);
       setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
-      if (activeProject && activeProject.id === projectId) {
-        setActiveProjectState(updated);
-      }
+      setActiveProjectState(prev => prev?.id === projectId ? updated : prev);
       loadPublicProjects(); // Refresh library if it's public
     } catch (err) {
       console.error('Error updating project settings:', err);
@@ -306,9 +302,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await databaseService.toggleLikeProject(projectId, user.id);
       setPublicProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
-      if (activePublicProject && activePublicProject.id === projectId) {
-        setActivePublicProject(updated);
-      }
+      setActivePublicProject(prev => prev?.id === projectId ? updated : prev);
     } catch (err) {
       console.error('Error toggling like:', err);
     }
@@ -322,9 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPublicProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
       // Also update in projects list just in case author reads their own book
       setProjects(prev => prev.map(p => (p.id === projectId ? updated : p)));
-      if (activePublicProject && activePublicProject.id === projectId) {
-        setActivePublicProject(updated);
-      }
+      setActivePublicProject(prev => prev?.id === projectId ? updated : prev);
     } catch (err) {
       console.error('Error tracking view:', err);
     }
@@ -348,10 +340,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           })
         );
         setProjects(updatedProjects);
-        if (activeProject) {
-          const syncedActive = updatedProjects.find(p => p.id === activeProject.id);
-          if (syncedActive) setActiveProject(syncedActive);
-        }
+        setActiveProjectState(prev => {
+          if (!prev) return prev;
+          const syncedActive = updatedProjects.find(p => p.id === prev.id);
+          return syncedActive || prev;
+        });
       }
 
       return { error: null };
@@ -376,9 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await databaseService.updateChapter(chapterId, fields);
       setChapters(prev => prev.map(c => c.id === chapterId ? updated : c));
-      if (activeChapter?.id === chapterId) {
-        setActiveChapter(updated);
-      }
+      setActiveChapter(prev => prev?.id === chapterId ? updated : prev);
     } catch (err) {
       console.error('Error updating chapter:', err);
     }
