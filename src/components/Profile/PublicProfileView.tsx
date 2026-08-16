@@ -60,18 +60,24 @@ export const PublicProfileView: React.FC = () => {
 
   const handleFollow = async () => {
     if (!user) return;
-    const nowFollowing = await toggleFollow(authorProfile.id);
-    // Optimistically update local state for the follower count
+    
+    const isCurrentlyFollowing = profile?.following?.includes(authorProfile.id);
+    const nowFollowing = !isCurrentlyFollowing;
+
+    // Optimistically update local state for the follower count immediately
     setAuthorProfile(prev => {
       if (!prev) return prev;
-      let newFollowers = prev.followers || [];
+      let newFollowers = prev.followers ? [...prev.followers] : [];
       if (nowFollowing) {
-        newFollowers.push(user.id);
+        if (!newFollowers.includes(user.id)) newFollowers.push(user.id);
       } else {
         newFollowers = newFollowers.filter(fid => fid !== user.id);
       }
       return { ...prev, followers: newFollowers };
     });
+
+    // The context will optimistically update the button state, while the DB call runs in the background
+    await toggleFollow(authorProfile.id);
   };
 
   const handleMessage = () => {

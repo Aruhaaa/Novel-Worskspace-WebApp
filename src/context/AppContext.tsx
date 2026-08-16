@@ -365,12 +365,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleFollow = async (targetUserId: string): Promise<boolean> => {
-    if (!user) return false;
+    if (!user || !profile) return false;
     try {
-      const isNowFollowing = await databaseService.toggleFollowUser(user.id, targetUserId);
+      const isCurrentlyFollowing = profile.following?.includes(targetUserId);
+      const isNowFollowing = !isCurrentlyFollowing;
+
+      // Optimistically update the context profile instantly
+      setProfile(prev => {
+        if (!prev) return prev;
+        let newFollowing = prev.following ? [...prev.following] : [];
+        if (isNowFollowing) {
+          newFollowing.push(targetUserId);
+        } else {
+          newFollowing = newFollowing.filter(id => id !== targetUserId);
+        }
+        return { ...prev, following: newFollowing };
+      });
+
+      // Perform actual database update
+      const actualNowFollowing = await databaseService.toggleFollowUser(user.id, targetUserId);
+      
+      // Keep it in sync
       const p = await databaseService.getProfile(user.id);
       setProfile(p);
-      return isNowFollowing;
+      return actualNowFollowing;
     } catch (err) {
       console.error('Failed to toggle follow:', err);
       return false;
