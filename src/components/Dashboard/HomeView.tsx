@@ -174,7 +174,7 @@ export const HomeView: React.FC = () => {
                   <Clock className="w-4 h-4 text-indigo-400" />
                   Continue Reading
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
                   {recentlyReadProjects.map(proj => (
                     <div 
                       key={proj.id}
