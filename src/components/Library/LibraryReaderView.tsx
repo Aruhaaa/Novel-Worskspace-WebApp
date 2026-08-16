@@ -114,7 +114,13 @@ export const LibraryReaderView: React.FC = () => {
           }`}>
             <h2 className="text-lg font-bold truncate">{activePublicProject.title}</h2>
             <p className="text-xs font-sans text-slate-500 dark:text-slate-400">
-              By {activePublicProject.author_name || 'Anonymous'}
+              By{' '}
+              <span 
+                className="hover:text-indigo-400 hover:underline cursor-pointer transition-colors"
+                onClick={() => navigate(`/library/author/${activePublicProject.user_id}`)}
+              >
+                {activePublicProject.author_name || 'Anonymous'}
+              </span>
             </p>
           </header>
 

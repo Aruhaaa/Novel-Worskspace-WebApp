@@ -16,7 +16,7 @@ interface AppContextType {
   wordCountLogs: WordCountLog[];
   publicProjects: Project[];
   activePublicProject: Project | null;
-  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin';
+  activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'messages' | 'print' | 'admin';
   loading: boolean;
   isSupabase: boolean;
   zenMode: boolean;
@@ -26,7 +26,7 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<{error: string | null}>;
   signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
-  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin') => void;
+  setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'messages' | 'print' | 'admin') => void;
   setActiveProject: (project: Project) => void;
   setActiveChapter: (chapter: Chapter | null) => void;
   setActivePublicProject: (project: Project | null) => void;
@@ -40,6 +40,7 @@ interface AppContextType {
   toggleLikeProject: (projectId: string) => Promise<void>;
   trackProjectView: (projectId: string) => Promise<void>;
   updateProfile: (fields: Partial<UserProfile>) => Promise<{error: string | null}>;
+  toggleFollow: (targetUserId: string) => Promise<boolean>;
   createChapter: (title: string) => Promise<void>;
   updateChapter: (chapterId: string, fields: Partial<Pick<Chapter, 'title' | 'content' | 'position'>>) => Promise<void>;
   createEntity: (name: string, type: WikiEntity['type'], description: string, content: Record<string, string>, imageUrl?: string) => Promise<void>;
@@ -80,7 +81,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const navigate = useNavigate();
   const location = useLocation();
 
-  type ViewType = 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'print' | 'admin';
+  type ViewType = 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'messages' | 'print' | 'admin';
 
   const getActiveView = (): ViewType => {
     const path = location.pathname;
@@ -91,6 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (path === '/editor') return 'editor';
     if (path === '/planner') return 'planner';
     if (path === '/tracker') return 'tracker';
+    if (path.startsWith('/messages')) return 'messages';
     if (path === '/profile') return 'profile';
     if (path === '/print') return 'print';
     if (path === '/admin') return 'admin';
@@ -108,6 +110,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       case 'planner': navigate('/planner'); break;
       case 'tracker': navigate('/tracker'); break;
       case 'profile': navigate('/profile'); break;
+      case 'messages': navigate('/messages'); break;
       case 'print': navigate('/print'); break;
       case 'admin': navigate('/admin'); break;
       case 'reader': 
@@ -361,6 +364,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const toggleFollow = async (targetUserId: string): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const isNowFollowing = await databaseService.toggleFollowUser(user.id, targetUserId);
+      const p = await databaseService.getProfile(user.id);
+      setProfile(p);
+      return isNowFollowing;
+    } catch (err) {
+      console.error('Failed to toggle follow:', err);
+      return false;
+    }
+  };
+
   const createChapter = async (title: string) => {
     if (!activeProject) return;
     try {
@@ -481,6 +497,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleLikeProject,
         trackProjectView,
         updateProfile,
+        toggleFollow,
         createChapter,
         updateChapter,
         createEntity,

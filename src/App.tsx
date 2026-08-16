@@ -12,6 +12,8 @@ import { LibraryReaderView } from './components/Library/LibraryReaderView';
 import { ProfileView } from './components/Profile/ProfileView';
 import { PrintView } from './components/Export/PrintView';
 import { AdminView } from './components/Admin/AdminView';
+import { PublicProfileView } from './components/Profile/PublicProfileView';
+import { MessagesView } from './components/Chat/MessagesView';
 import { Feather, Loader2, Menu } from 'lucide-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -42,8 +44,11 @@ const WorkspaceContent: React.FC = () => {
       <Route path="/" element={<HomeView />} />
       <Route path="/library" element={<LibraryView />} />
       <Route path="/library/novel/:id" element={<LibraryReaderView />} />
+      <Route path="/library/author/:id" element={<PublicProfileView />} />
       <Route path="/saved" element={<SavedLibraryView />} />
       <Route path="/profile" element={<ProfileView />} />
+      <Route path="/messages" element={<MessagesView />} />
+      <Route path="/messages/:id" element={<MessagesView />} />
       <Route path="/admin" element={<AdminView />} />
       
       {/* Project required routes */}

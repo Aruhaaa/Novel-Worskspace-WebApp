@@ -8,6 +8,8 @@ export interface UserProfile {
   display_name: string;
   bio: string;
   daily_word_goal: number;
+  followers?: string[];
+  following?: string[];
 }
 
 export interface Project {
@@ -74,4 +76,12 @@ export interface WordCountLog {
   word_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
 }

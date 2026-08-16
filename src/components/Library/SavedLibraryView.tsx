@@ -21,6 +21,11 @@ export const SavedLibraryView: React.FC = () => {
     navigate(`/library/novel/${project.id}`);
   };
 
+  const handleAuthorClick = (e: React.MouseEvent, authorId: string) => {
+    e.stopPropagation();
+    navigate(`/library/author/${authorId}`);
+  };
+
   const savedProjects = publicProjects.filter(p => user && p.likes?.includes(user.id));
 
   return (
@@ -142,7 +147,10 @@ export const SavedLibraryView: React.FC = () => {
                 </h3>
                 
                 <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-rose-400/80 mb-4 font-medium">
-                  <div className="flex items-center gap-1.5">
+                  <div 
+                    className="flex items-center gap-1.5 hover:text-indigo-300 hover:underline cursor-pointer"
+                    onClick={(e) => handleAuthorClick(e, project.user_id)}
+                  >
                     <UserIcon className="w-4 h-4" />
                     <span>{project.author_name || 'Anonymous'}</span>
                   </div>

@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment } from './types';
+import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment, ChatMessage } from './types';
 
 // Mock Data Initializer for Local Storage fallback
 const MOCK_PROJECT_ID = 'p1-mock-project';
@@ -711,6 +711,87 @@ export const databaseService = {
       comments.unshift(newComment);
       setLocalData('novel_comments', comments);
       return newComment;
+    }
+  },
+
+  // --- FOLLOWERS & CHAT ---
+  async toggleFollowUser(currentUserId: string, targetUserId: string): Promise<boolean> {
+    const pCurrent = await this.getProfile(currentUserId) || { id: currentUserId, display_name: '', bio: '', daily_word_goal: 1000, following: [], followers: [] };
+    const pTarget = await this.getProfile(targetUserId) || { id: targetUserId, display_name: '', bio: '', daily_word_goal: 1000, following: [], followers: [] };
+    
+    let currentFollowing = pCurrent.following || [];
+    let targetFollowers = pTarget.followers || [];
+
+    const isFollowing = currentFollowing.includes(targetUserId);
+
+    if (isFollowing) {
+      currentFollowing = currentFollowing.filter(id => id !== targetUserId);
+      targetFollowers = targetFollowers.filter(id => id !== currentUserId);
+    } else {
+      currentFollowing.push(targetUserId);
+      targetFollowers.push(currentUserId);
+    }
+
+    await this.updateProfile(currentUserId, { following: currentFollowing });
+    await this.updateProfile(targetUserId, { followers: targetFollowers });
+
+    return !isFollowing; // returns true if now following
+  },
+
+  async deleteExpiredMessages(): Promise<void> {
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('chat_messages').delete().lt('created_at', twoWeeksAgo.toISOString());
+    } else {
+      let messages = getLocalData<ChatMessage[]>('novel_chats', []);
+      messages = messages.filter(m => new Date(m.created_at) >= twoWeeksAgo);
+      setLocalData('novel_chats', messages);
+    }
+  },
+
+  async getChatMessages(userId1: string, userId2: string): Promise<ChatMessage[]> {
+    await this.deleteExpiredMessages(); // Clean up on read
+    
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } else {
+      const messages = getLocalData<ChatMessage[]>('novel_chats', []);
+      return messages.filter(m => 
+        (m.sender_id === userId1 && m.receiver_id === userId2) ||
+        (m.sender_id === userId2 && m.receiver_id === userId1)
+      ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+  },
+
+  async sendChatMessage(senderId: string, receiverId: string, content: string): Promise<ChatMessage> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([{ sender_id: senderId, receiver_id: receiverId, content }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const messages = getLocalData<ChatMessage[]>('novel_chats', []);
+      const newMsg: ChatMessage = {
+        id: `msg-${Math.random().toString(36).substr(2, 9)}`,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        content,
+        created_at: new Date().toISOString()
+      };
+      messages.push(newMsg);
+      setLocalData('novel_chats', messages);
+      return newMsg;
     }
   }
 };

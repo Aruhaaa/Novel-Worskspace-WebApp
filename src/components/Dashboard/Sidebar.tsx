@@ -17,7 +17,8 @@ import {
   Settings,
   X,
   Bookmark,
-  Shield
+  Shield,
+  MessageSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -176,6 +177,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <Bookmark className="w-4 h-4" />
           <span>Your Library</span>
+        </button>
+
+        <button
+          onClick={() => handleNavClick('messages')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
+            activeView === 'messages'
+              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
+              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Messages</span>
         </button>
 
         {user?.email === 'aruhaadmin@novelist.com' && (
@@ -339,14 +352,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <button
           onClick={() => handleNavClick('tracker')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-6 ${
             activeView === 'tracker'
               ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
               : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
           }`}
         >
           <BarChart2 className="w-4 h-4" />
-          <span>Tracker</span>
+          <span>Progress Tracker</span>
         </button>
 
         {activeProject && (
