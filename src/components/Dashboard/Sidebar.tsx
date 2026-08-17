@@ -12,7 +12,6 @@ import {
   LogOut,
   Globe,
   User,
-  Printer,
   Home,
   Settings,
   X,
