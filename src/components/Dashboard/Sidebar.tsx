@@ -385,14 +385,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
       </nav>
 
-      {/* Download Desktop App */}
-      <div className="p-4 border-t border-slate-900 shrink-0">
+      {/* Download Apps */}
+      <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
         <a
           href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0/Novelist.Workspace.Setup.0.0.0.exe"
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-slate-100 bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all duration-200"
         >
           <Download className="w-4 h-4" />
           <span>Get Windows App</span>
+        </a>
+        <a
+          href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0-android/app-debug.apk"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-slate-100 bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 transition-all duration-200"
+        >
+          <Download className="w-4 h-4" />
+          <span>Get Android App</span>
         </a>
       </div>
 
