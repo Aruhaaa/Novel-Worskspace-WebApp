@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
@@ -18,6 +18,14 @@ interface StoryboardProps {
 
 export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
   const { entities, createEntity, updateEntity, deleteEntity, activeProject } = useApp();
+  
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [activeColumnId, setActiveColumnId] = useState('');
+  const [newSceneName, setNewSceneName] = useState('');
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sceneToDelete, setSceneToDelete] = useState<string | null>(null);
+
   
   // Filter only scenes
   const scenes = entities.filter(e => e.type === 'scene');
@@ -65,18 +73,31 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
     });
   };
 
-  const handleAddScene = async (statusId: string) => {
-    if (!activeProject) return;
-    const name = prompt("Enter scene name:");
-    if (!name) return;
-    
-    await createEntity(name, 'scene', '', { status: statusId, order: '999' });
+  const handleAddClick = (statusId: string) => {
+    setActiveColumnId(statusId);
+    setNewSceneName('');
+    setShowAddModal(true);
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const submitAddScene = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeProject || !newSceneName.trim()) return;
+    
+    await createEntity(newSceneName.trim(), 'scene', '', { status: activeColumnId, order: '999' });
+    setShowAddModal(false);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this scene?")) {
-      await deleteEntity(id);
+    setSceneToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (sceneToDelete) {
+      await deleteEntity(sceneToDelete);
+      setShowDeleteModal(false);
+      setSceneToDelete(null);
     }
   };
 
@@ -141,7 +162,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button 
-                                  onClick={(e) => handleDelete(e, scene.id)}
+                                  onClick={(e) => handleDeleteClick(e, scene.id)}
                                   className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-600 rounded"
                                   title="Delete"
                                 >
@@ -161,7 +182,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
               {/* Footer */}
               <div className="p-3 shrink-0">
                 <button 
-                  onClick={() => handleAddScene(column.id)}
+                  onClick={() => handleAddClick(column.id)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-slate-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20"
                 >
                   <Plus className="w-4 h-4" />
@@ -172,6 +193,77 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
           ))}
         </div>
       </DragDropContext>
+
+      {/* Add Scene Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">Create New Scene</h3>
+              <form onSubmit={submitAddScene}>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Scene name..."
+                  value={newSceneName}
+                  onChange={(e) => setNewSceneName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                />
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newSceneName.trim()}
+                    className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    Create Scene
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-rose-400 mb-2 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Delete Scene?
+              </h3>
+              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                Are you sure you want to delete this scene? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSceneToDelete(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-lg shadow-rose-600/20"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
