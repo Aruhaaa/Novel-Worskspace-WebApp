@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
       {/* Main Module Nav */}
-      <nav className="p-4 flex flex-col gap-1.5 flex-1 overflow-y-auto">
+      <nav className="p-4 flex flex-col gap-1.5 flex-1 overflow-y-auto tour-sidebar-nav">
         <button
           onClick={() => handleNavClick('home')}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -404,7 +404,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* User Settings & Logout */}
-      <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
+      <div className="p-4 border-t border-slate-900 shrink-0 space-y-2 tour-user-profile">
         <button
           onClick={() => handleNavClick('profile')}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${

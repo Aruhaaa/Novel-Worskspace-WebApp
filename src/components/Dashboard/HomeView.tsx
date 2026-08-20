@@ -95,7 +95,7 @@ export const HomeView: React.FC = () => {
       {/* Dashboard Grid */}
       <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Column: Recent Projects */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 tour-project-grid">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-indigo-400" />

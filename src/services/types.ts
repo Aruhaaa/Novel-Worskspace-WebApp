@@ -10,6 +10,7 @@ export interface UserProfile {
   daily_word_goal: number;
   followers?: string[];
   following?: string[];
+  tutorial_completed?: boolean;
 }
 
 export interface Project {
@@ -61,7 +62,7 @@ export interface WikiEntity {
   id: string;
   project_id: string;
   name: string;
-  type: 'character' | 'location' | 'item' | 'lore';
+  type: 'character' | 'location' | 'item' | 'lore' | 'scene';
   description: string;
   content: Record<string, string>;
   image_url?: string;

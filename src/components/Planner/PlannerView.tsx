@@ -10,12 +10,14 @@ import {
   Trash2, 
   Tag, 
   Info, 
-  X
+  X,
+  Layout
 } from 'lucide-react';
+import { StoryboardBoard } from './StoryboardBoard';
 
 export const PlannerView: React.FC = () => {
   const { entities, createEntity, deleteEntity, updateEntity } = useApp();
-  const [activeTab, setActiveTab] = useState<'all' | 'character' | 'location' | 'item' | 'lore'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'character' | 'location' | 'item' | 'lore' | 'scene'>('all');
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
 
   // Derive selectedEntity from entities list and ID state
@@ -25,7 +27,7 @@ export const PlannerView: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEntity, setEditingEntity] = useState<WikiEntity | null>(null);
   const [newName, setNewName] = useState('');
-  const [newType, setNewType] = useState<WikiEntity['type']>('character');
+  const [newType, setNewType] = useState<WikiEntity['type'] | 'scene'>('character');
   const [newDesc, setNewDesc] = useState('');
   
   // Custom properties for character/location
@@ -94,6 +96,7 @@ export const PlannerView: React.FC = () => {
       case 'location': return <MapPin className="w-4 h-4" />;
       case 'item': return <Sparkles className="w-4 h-4" />;
       case 'lore': return <BookOpen className="w-4 h-4" />;
+      case 'scene': return <Layout className="w-4 h-4" />;
     }
   };
 
@@ -103,6 +106,7 @@ export const PlannerView: React.FC = () => {
       case 'location': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'item': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
       case 'lore': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      case 'scene': return 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20';
     }
   };
 
@@ -116,14 +120,14 @@ export const PlannerView: React.FC = () => {
         <header className="min-h-[4rem] py-4 sm:py-0 sm:h-16 border-b border-slate-800/80 px-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 bg-slate-900/50 backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
             <h2 className="text-lg font-semibold text-slate-100 shrink-0">World Planner & Wiki</h2>
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-lg p-1 text-xs w-full sm:w-auto">
-              {(['all', 'character', 'location', 'item', 'lore'] as const).map((tab) => (
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-lg p-1 text-xs w-full sm:w-auto overflow-x-auto">
+              {(['all', 'scene', 'character', 'location', 'item', 'lore'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 sm:flex-none px-3 py-1.5 sm:py-1 text-center rounded-md font-medium capitalize transition-colors ${activeTab === tab ? 'bg-indigo-600 text-white shadow-sm' : 'hover:text-slate-200 text-slate-400'}`}
+                  className={`shrink-0 px-3 py-1.5 sm:py-1 text-center rounded-md font-medium transition-colors ${activeTab === tab ? 'bg-indigo-600 text-white shadow-sm' : 'hover:text-slate-200 text-slate-400'}`}
                 >
-                  {tab}
+                  {tab === 'scene' ? 'Storyboard' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
               ))}
             </div>
@@ -145,9 +149,19 @@ export const PlannerView: React.FC = () => {
           </button>
         </header>
 
-        {/* Wiki Grid */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-8">
-          {filteredEntities.length === 0 ? (
+        {/* Workspace Area */}
+        <main className={`flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-8 ${activeTab === 'scene' ? 'overflow-x-auto' : ''}`}>
+          {activeTab === 'scene' ? (
+            <StoryboardBoard
+              scenes={entities.filter(e => e.type === 'scene')}
+              onCreateScene={async (columnId, name) => {
+                const count = entities.filter(e => e.type === 'scene' && (e.content?.columnId || 'brainstorming') === columnId).length;
+                await createEntity(name, 'scene', '', { columnId, position: count.toString() });
+              }}
+              onUpdateScene={(id, updates) => updateEntity(id, updates)}
+              onDeleteScene={deleteEntity}
+            />
+          ) : filteredEntities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-500">
               <Info className="w-10 h-10 text-slate-700 mb-3" />
               <p className="text-sm">No wiki entities found in this category.</p>
@@ -315,6 +329,7 @@ export const PlannerView: React.FC = () => {
                     <option value="location">Location</option>
                     <option value="item">Item</option>
                     <option value="lore">Lore</option>
+                    <option value="scene">Scene</option>
                   </select>
                 </div>
               </div>
