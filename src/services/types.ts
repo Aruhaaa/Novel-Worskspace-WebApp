@@ -10,7 +10,6 @@ export interface UserProfile {
   daily_word_goal: number;
   followers?: string[];
   following?: string[];
-  tutorial_completed?: boolean;
 }
 
 export interface Project {

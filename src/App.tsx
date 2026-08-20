@@ -14,7 +14,6 @@ import { PrintView } from './components/Export/PrintView';
 import { AdminView } from './components/Admin/AdminView';
 import { PublicProfileView } from './components/Profile/PublicProfileView';
 import { MessagesView } from './components/Chat/MessagesView';
-import { OnboardingGuide } from './components/Tutorial/OnboardingGuide';
 import { Feather, Loader2, Menu } from 'lucide-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -82,7 +81,6 @@ const AuthWrapper: React.FC = () => {
 
   return (
     <div className="flex flex-col md:flex-row w-screen h-[100dvh] overflow-hidden bg-slate-950 font-sans">
-      <OnboardingGuide />
       
       {/* Mobile Top Bar */}
       {!zenMode && (
