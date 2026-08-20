@@ -246,6 +246,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveChapter(null);
     setEntities([]);
     setWordCountLogs([]);
+    window.location.hash = '#/';
   };
 
   const setActiveProject = (project: Project) => {
