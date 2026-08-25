@@ -14,13 +14,17 @@ import { PrintView } from './components/Export/PrintView';
 import { AdminView } from './components/Admin/AdminView';
 import { PublicProfileView } from './components/Profile/PublicProfileView';
 import { MessagesView } from './components/Chat/MessagesView';
+import { LandingView } from './components/Marketing/LandingView';
 import { Feather, Loader2, Menu } from 'lucide-react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 const WorkspaceContent: React.FC = () => {
   const { loading, activeProject, activeChapter } = useApp();
+  const location = useLocation();
 
-  if (loading && !activeProject) {
+  const isProjectRoute = ['/editor', '/planner', '/tracker', '/print'].includes(location.pathname);
+
+  if (loading && !activeProject && isProjectRoute) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400">
         <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
@@ -76,7 +80,14 @@ const AuthWrapper: React.FC = () => {
   }
 
   if (!user) {
-    return <AuthView />;
+    return (
+      <Routes>
+        <Route path="/" element={<LandingView />} />
+        <Route path="/login" element={<AuthView />} />
+        {/* If they hit a protected route while logged out, send them to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   return (

@@ -3,15 +3,17 @@ import { useApp } from '../../context/AppContext';
 import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users, Download, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
+import { GuestGateModal } from '../Auth/GuestGateModal';
 import type { Project } from '../../services/types';
 import { databaseService } from '../../services/database';
 import { exportNovelToHTML } from '../../utils/exportUtils';
 
 export const HomeView: React.FC = () => {
-  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject } = useApp();
+  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject, isGuest } = useApp();
   const navigate = useNavigate();
   
   const [showNewProjModal, setShowNewProjModal] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
   const [newProjTitle, setNewProjTitle] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
   const [analyticsProject, setAnalyticsProject] = useState<Project | null>(null);
@@ -83,7 +85,13 @@ export const HomeView: React.FC = () => {
             Public Library
           </button>
           <button
-            onClick={() => setShowNewProjModal(true)}
+            onClick={() => {
+              if (isGuest) {
+                setShowGuestModal(true);
+              } else {
+                setShowNewProjModal(true);
+              }
+            }}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -111,7 +119,13 @@ export const HomeView: React.FC = () => {
                   You haven't created any novels. Start your writing journey by creating your first project!
                 </p>
                 <button
-                  onClick={() => setShowNewProjModal(true)}
+                  onClick={() => {
+                    if (isGuest) {
+                      setShowGuestModal(true);
+                    } else {
+                      setShowNewProjModal(true);
+                    }
+                  }}
                   className="px-5 py-2 rounded-lg text-sm font-semibold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors"
                 >
                   Create New Project
@@ -309,6 +323,13 @@ export const HomeView: React.FC = () => {
           onClose={() => setAnalyticsProject(null)} 
         />
       )}
+
+      <GuestGateModal 
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        title="Account Required"
+        message="You must create a free account to start writing and saving your own novels. Don't worry, it only takes 10 seconds!"
+      />
     </div>
   );
 };

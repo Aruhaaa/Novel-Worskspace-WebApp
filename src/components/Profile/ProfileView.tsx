@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { User as UserIcon, Save, Loader2 } from 'lucide-react';
+import { GuestGateModal } from '../Auth/GuestGateModal';
 
 export const ProfileView: React.FC = () => {
-  const { user, profile, updateProfile } = useApp();
+  const { user, profile, updateProfile, isGuest } = useApp();
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [dailyGoal, setDailyGoal] = useState(1000);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -23,6 +25,12 @@ export const ProfileView: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isGuest) {
+      setShowGuestModal(true);
+      return;
+    }
+
     setIsSaving(true);
     setMessage('');
     
@@ -137,6 +145,13 @@ export const ProfileView: React.FC = () => {
           </div>
         </form>
       </div>
+
+      <GuestGateModal 
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        title="Account Required"
+        message="You must create a free account to customize your public author profile!"
+      />
     </div>
   );
 };

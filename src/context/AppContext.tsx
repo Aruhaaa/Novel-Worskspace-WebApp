@@ -18,12 +18,14 @@ interface AppContextType {
   activePublicProject: Project | null;
   activeView: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'messages' | 'print' | 'admin';
   loading: boolean;
+  isGuest: boolean;
   isSupabase: boolean;
   zenMode: boolean;
   setZenMode: (val: boolean) => void;
   recentlyRead: string[];
   setRecentlyRead: (val: string[]) => void;
   login: (email: string, password: string) => Promise<{error: string | null}>;
+  loginAsGuest: () => void;
   signup: (email: string, password: string) => Promise<{error: string | null, message?: string | null}>;
   logout: () => Promise<void>;
   setActiveView: (view: 'home' | 'editor' | 'planner' | 'tracker' | 'library' | 'saved_library' | 'reader' | 'profile' | 'messages' | 'print' | 'admin') => void;
@@ -63,6 +65,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [publicProjects, setPublicProjects] = useState<Project[]>([]);
   const [activePublicProject, setActivePublicProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isGuest, setIsGuest] = useState<boolean>(false);
   const [zenMode, setZenMode] = useState<boolean>(false);
   const [recentlyRead, setRecentlyReadState] = useState<string[]>(() => {
     try {
@@ -222,6 +225,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { user, error } = await authService.login(email, password);
     if (user) {
       setUser(user);
+      setIsGuest(false);
       await loadProjects(user.id);
     }
     return { error };
@@ -236,9 +240,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { error, message };
   };
 
+  const loginAsGuest = () => {
+    // Create a dummy guest user
+    const guestUser: User = {
+      id: 'guest_user',
+      role: 'authenticated',
+      email: 'guest@novelist.local',
+      app_metadata: {},
+      user_metadata: {},
+      created_at: new Date().toISOString()
+    } as User;
+    setUser(guestUser);
+    setIsGuest(true);
+    navigate('/');
+  };
+
   const logout = async () => {
-    await authService.logout();
+    if (!isGuest) {
+      await authService.logout();
+    }
     setUser(null);
+    setIsGuest(false);
     setProfile(null);
     setProjects([]);
     setActiveProjectState(null);
@@ -494,12 +516,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         wordCountLogs,
         activeView,
         loading,
+        isGuest,
         isSupabase: isSupabaseConfigured,
         zenMode,
         setZenMode,
         recentlyRead,
         setRecentlyRead,
         login,
+        loginAsGuest,
         signup,
         logout,
         setActiveView,

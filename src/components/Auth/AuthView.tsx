@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Feather, Lock, Mail, AlertCircle, Loader2, Check } from 'lucide-react';
 
 export const AuthView: React.FC = () => {
-  const { login, signup, isSupabase } = useApp();
+  const { login, signup, isSupabase, loginAsGuest } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -115,7 +115,7 @@ export const AuthView: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-800/60 text-center">
+        <div className="mt-8 pt-6 border-t border-slate-800/60 text-center space-y-4">
           <p className="text-sm text-slate-400">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
@@ -129,6 +129,14 @@ export const AuthView: React.FC = () => {
               {isLogin ? 'Sign up' : 'Sign in'}
             </button>
           </p>
+
+          <button
+            type="button"
+            onClick={loginAsGuest}
+            className="text-xs text-slate-500 font-medium hover:text-slate-300 transition-colors"
+          >
+            Or continue as a Guest
+          </button>
         </div>
       </div>
       
