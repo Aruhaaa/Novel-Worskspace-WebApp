@@ -127,7 +127,7 @@ export const EditorView: React.FC = () => {
               <div 
                 key={chap.id}
                 onClick={() => setActiveChapter(chap)}
-                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-6 hover:bg-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden min-h-[160px]"
+                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-6 hover:bg-white hover:shadow-md hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden min-h-[160px]"
               >
                 <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
                 

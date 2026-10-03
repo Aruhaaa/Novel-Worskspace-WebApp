@@ -106,11 +106,11 @@ export const LibraryView: React.FC = () => {
               {filteredProjects.map((project) => (
                 <div 
                 key={project.id}
-                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:bg-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 flex flex-col h-full cursor-pointer overflow-hidden"
+                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:bg-white hover:shadow-md hover:border-indigo-500/50 transition-all duration-300 flex flex-col h-full cursor-pointer overflow-hidden"
                 onClick={() => handleReadNovel(project)}
               >
                 {/* Hover Glow */}
-                <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
+                <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
                 
                 {/* Cover Image */}
                 {project.cover_url && (

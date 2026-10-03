@@ -67,7 +67,7 @@ export const HomeView: React.FC = () => {
       <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
       
       {/* Welcome Header */}
-      <header className="p-6 sm:p-8 bg-slate-900/50 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="p-4 sm:p-6 lg:p-8 bg-slate-900/50 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2 font-serif">
             Welcome back, {greetingName}
@@ -137,7 +137,7 @@ export const HomeView: React.FC = () => {
                   <div
                     key={project.id}
                     onClick={() => handleOpenProject(project)}
-                    className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:bg-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden"
+                    className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:bg-white hover:shadow-md hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden"
                   >
                     <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
                     

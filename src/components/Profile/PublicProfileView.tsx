@@ -158,7 +158,7 @@ export const PublicProfileView: React.FC = () => {
                 <div 
                   key={project.id}
                   onClick={() => handleReadNovel(project)}
-                  className="bg-slate-900 border border-slate-800 p-5 rounded-2xl cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all group shadow-xl shadow-black/20"
+                  className="bg-slate-900 border border-slate-800 p-5 rounded-2xl cursor-pointer hover:border-indigo-500/50 hover:bg-white hover:shadow-md transition-all group shadow-xl shadow-black/20"
                 >
                   <h4 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-indigo-400 transition-colors line-clamp-1">{project.title}</h4>
                   <p className="text-sm text-slate-400 line-clamp-2 mb-4 h-10 font-sans">{project.description}</p>
