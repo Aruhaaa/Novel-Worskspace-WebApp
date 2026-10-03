@@ -185,7 +185,7 @@ export const PlannerView: React.FC = () => {
                         {ent.type}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-slate-100 group-hover:text-white text-base truncate mb-1">{ent.name}</h3>
+                    <h3 className="font-semibold text-slate-100 group-hover:text-slate-100 text-base truncate mb-1">{ent.name}</h3>
                     <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed mb-4">{ent.description || 'No description provided.'}</p>
                   </div>
 
@@ -388,7 +388,7 @@ export const PlannerView: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleAddProperty}
-                    className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition-colors"
+                    className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 rounded-lg text-xs font-semibold border border-slate-700 transition-colors"
                   >
                     Add
                   </button>

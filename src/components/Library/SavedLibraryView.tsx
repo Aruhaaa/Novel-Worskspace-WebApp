@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { User as UserIcon, Clock, ChevronRight, Heart, Search, Filter, Hash, Bookmark } from 'lucide-react';
+import { User as UserIcon, Clock, ChevronRight, Heart, Search, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { GenreFilter, GenreTag } from './GenreChips';
 
 export const SavedLibraryView: React.FC = () => {
   const { user, publicProjects, loadPublicProjects, toggleLikeProject, setActivePublicProject } = useApp();
@@ -38,7 +39,7 @@ export const SavedLibraryView: React.FC = () => {
           <div className="inline-flex items-center justify-center p-3 bg-rose-500/10 rounded-2xl mb-4 border border-rose-500/20">
             <Bookmark className="w-8 h-8 text-rose-400 stroke-[1.5]" />
           </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-3">Your Library</h1>
+          <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight mb-3">Your Library</h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Novels you've saved and loved from the community.
           </p>
@@ -58,25 +59,6 @@ export const SavedLibraryView: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-48">
-              <Filter className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <select 
-                value={filterGenre}
-                onChange={(e) => setFilterGenre(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-8 py-3 text-sm text-slate-300 focus:outline-none focus:border-rose-500 appearance-none cursor-pointer"
-              >
-                <option value="All">All Genres</option>
-                <option value="Fantasy">Fantasy</option>
-                <option value="Sci-Fi">Sci-Fi</option>
-                <option value="Romance">Romance</option>
-                <option value="Mystery">Mystery</option>
-                <option value="Horror">Horror</option>
-                <option value="Thriller">Thriller</option>
-                <option value="Historical">Historical</option>
-                <option value="Contemporary">Contemporary</option>
-              </select>
-            </div>
-
             <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
@@ -87,6 +69,10 @@ export const SavedLibraryView: React.FC = () => {
               <option value="az">A-Z</option>
             </select>
           </div>
+        </div>
+
+        <div className="mb-10 -mt-4">
+          <GenreFilter value={filterGenre} onChange={setFilterGenre} />
         </div>
 
         {(() => {
@@ -155,10 +141,7 @@ export const SavedLibraryView: React.FC = () => {
                     <span>{project.author_name || 'Anonymous'}</span>
                   </div>
                   {project.genre && (
-                    <div className="flex items-center gap-1 text-slate-400 bg-slate-950/50 px-2 py-0.5 rounded-full border border-slate-800">
-                      <Hash className="w-3.5 h-3.5" />
-                      <span className="text-xs">{project.genre}</span>
-                    </div>
+                    <GenreTag genre={project.genre} />
                   )}
                 </div>
                 

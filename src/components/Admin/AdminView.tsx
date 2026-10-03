@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { getGenrePalette } from '../../lib/genres';
 import { useApp } from '../../context/AppContext';
-import { Shield, BarChart2, Plus, Database, Hash, Check } from 'lucide-react';
+import { Shield, BarChart2, Plus, Database, Check } from 'lucide-react';
 
 export const AdminView: React.FC = () => {
   const { user, publicProjects, createExternalProject } = useApp();
@@ -71,7 +72,7 @@ export const AdminView: React.FC = () => {
             <Shield className="w-8 h-8 text-amber-500 stroke-[1.5]" />
           </div>
           <div>
-            <h1 className="text-4xl font-extrabold text-white tracking-tight">Admin Dashboard</h1>
+            <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight">Admin Dashboard</h1>
             <p className="text-slate-400 mt-1">Platform analytics and management tools</p>
           </div>
         </header>
@@ -88,7 +89,7 @@ export const AdminView: React.FC = () => {
               
               <div className="mb-6">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Novels</p>
-                <p className="text-4xl font-extrabold text-white">{stats.total}</p>
+                <p className="text-4xl font-extrabold text-slate-100">{stats.total}</p>
               </div>
 
               <div>
@@ -100,7 +101,7 @@ export const AdminView: React.FC = () => {
                     stats.genres.map(([g, count]) => (
                       <div key={g} className="flex items-center justify-between text-sm">
                         <span className="text-slate-300 flex items-center gap-2">
-                          <Hash className="w-3.5 h-3.5 text-slate-500" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getGenrePalette(g).base }} />
                           {g}
                         </span>
                         <span className="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded font-bold">

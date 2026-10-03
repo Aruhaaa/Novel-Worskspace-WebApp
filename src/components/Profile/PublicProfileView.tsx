@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { GenreTag } from '../Library/GenreChips';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
@@ -110,7 +111,7 @@ export const PublicProfileView: React.FC = () => {
           </div>
           
           <div className="flex-1">
-            <h1 className="text-3xl font-extrabold text-white mb-2">{authorProfile.display_name || 'Anonymous Author'}</h1>
+            <h1 className="text-3xl font-extrabold text-slate-100 mb-2">{authorProfile.display_name || 'Anonymous Author'}</h1>
             <div className="flex items-center gap-4 text-sm font-medium text-slate-400">
               <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {(authorProfile.followers || []).length} Followers</span>
               <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {authorProjects.length} Published Works</span>
@@ -162,7 +163,7 @@ export const PublicProfileView: React.FC = () => {
                   <h4 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-indigo-400 transition-colors line-clamp-1">{project.title}</h4>
                   <p className="text-sm text-slate-400 line-clamp-2 mb-4 h-10 font-sans">{project.description}</p>
                   <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
-                    <span>{project.genre || 'Uncategorized'}</span>
+                    {project.genre ? <GenreTag genre={project.genre} /> : <span>Uncategorized</span>}
                     <span>{(project.likes || []).length} Likes</span>
                     <span>{(project.views || []).length} Views</span>
                   </div>

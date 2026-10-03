@@ -213,7 +213,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 transition-colors"
                   >
                     Cancel
                   </button>
@@ -249,7 +249,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                     setShowDeleteModal(false);
                     setSceneToDelete(null);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-slate-100 transition-colors"
                 >
                   Cancel
                 </button>

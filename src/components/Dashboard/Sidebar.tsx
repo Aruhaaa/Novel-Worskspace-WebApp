@@ -21,6 +21,28 @@ import {
   Download
 } from 'lucide-react';
 
+type Tone = 'blue' | 'red' | 'yellow' | 'green' | 'purple';
+
+// Full class strings so Tailwind can see them. One tile colour per primary.
+const TONES: Record<Tone, { tile: string; active: string }> = {
+  blue: { tile: 'bg-pal-blue text-white', active: 'bg-pal-blue/10 text-slate-100' },
+  red: { tile: 'bg-pal-red text-white', active: 'bg-pal-red/10 text-slate-100' },
+  yellow: { tile: 'bg-pal-yellow text-slate-100', active: 'bg-pal-yellow/15 text-slate-100' },
+  green: { tile: 'bg-pal-green text-white', active: 'bg-pal-green/10 text-slate-100' },
+  purple: { tile: 'bg-pal-purple text-white', active: 'bg-pal-purple/10 text-slate-100' },
+};
+
+const NavIcon: React.FC<{ tone: Tone; children: React.ReactNode }> = ({ tone, children }) => (
+  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${TONES[tone].tile}`}>
+    {children}
+  </span>
+);
+
+const navClass = (isActive: boolean, tone: Tone) =>
+  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+    isActive ? TONES[tone].active : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
+  }`;
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -113,20 +135,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 border-r border-slate-800 flex flex-col h-full text-slate-300 select-none
         transform transition-transform duration-300 ease-in-out
         md:relative md:translate-x-0
-        ${isOpen ? 'translate-x-0 shadow-2xl shadow-indigo-500/10' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0 shadow-2xl shadow-black/10' : '-translate-x-full'}
       `}>
         {/* App Header & Project Selector */}
         <div className="p-5 border-b border-slate-900 flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
+              <div className="w-8 h-8 rounded-lg bg-pal-blue flex items-center justify-center text-white font-bold text-lg">
                 N
               </div>
               <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
             </div>
             
             {/* Mobile Close Button */}
-            <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -145,62 +167,42 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <nav className="p-4 flex flex-col gap-1.5 flex-1 overflow-y-auto">
         <button
           onClick={() => handleNavClick('home')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'home'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'home', 'blue')} w-full`}
         >
-          <Home className="w-4 h-4" />
+          <NavIcon tone="blue"><Home className="w-4 h-4" /></NavIcon>
           <span>Home Dashboard</span>
         </button>
 
         <button
           onClick={() => handleNavClick('library')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'library'
-              ? 'bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'library', 'green')} w-full`}
         >
-          <Globe className="w-4 h-4" />
+          <NavIcon tone="green"><Globe className="w-4 h-4" /></NavIcon>
           <span>Public Library</span>
         </button>
 
         <button
           onClick={() => handleNavClick('saved_library')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
-            activeView === 'saved_library'
-              ? 'bg-rose-600/10 text-rose-400 border-l-2 border-rose-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'saved_library', 'red')} w-full`}
         >
-          <Bookmark className="w-4 h-4" />
+          <NavIcon tone="red"><Bookmark className="w-4 h-4" /></NavIcon>
           <span>Your Library</span>
         </button>
 
         <button
           onClick={() => handleNavClick('messages')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
-            activeView === 'messages'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'messages', 'yellow')} w-full`}
         >
-          <MessageSquare className="w-4 h-4" />
+          <NavIcon tone="yellow"><MessageSquare className="w-4 h-4" /></NavIcon>
           <span>Messages</span>
         </button>
 
         {user?.email === 'aruhaadmin@novelist.com' && (
           <button
             onClick={() => handleNavClick('admin')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2 ${
-              activeView === 'admin'
-                ? 'bg-amber-600/10 text-amber-500 border-l-2 border-amber-500 pl-3.5'
-                : 'hover:bg-slate-900 text-amber-500/70 hover:text-amber-500'
-            }`}
+            className={`${navClass(activeView === 'admin', 'purple')} w-full`}
           >
-            <Shield className="w-4 h-4" />
+            <NavIcon tone="purple"><Shield className="w-4 h-4" /></NavIcon>
             <span>Admin Dashboard</span>
           </button>
         )}
@@ -266,18 +268,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             onClick={() => {
               handleNavClick('editor');
             }}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeView === 'editor'
-                ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-                : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-            }`}
+            className={`${navClass(activeView === 'editor', 'purple')} w-full justify-between`}
           >
             <div className="flex items-center gap-3">
-              <BookOpen className="w-4 h-4" />
+              <NavIcon tone="purple"><BookOpen className="w-4 h-4" /></NavIcon>
               <span>Editor</span>
             </div>
             {activeView === 'editor' && (
-              <ChevronDown className="w-4 h-4 text-indigo-400" />
+              <ChevronDown className="w-4 h-4 text-slate-500" />
             )}
           </button>
 
@@ -340,25 +338,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
         <button
           onClick={() => handleNavClick('planner')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            activeView === 'planner'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'planner', 'blue')} w-full`}
         >
-          <Compass className="w-4 h-4" />
+          <NavIcon tone="blue"><Compass className="w-4 h-4" /></NavIcon>
           <span>Planner (Wiki)</span>
         </button>
 
         <button
           onClick={() => handleNavClick('tracker')}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-6 ${
-            activeView === 'tracker'
-              ? 'bg-indigo-600/10 text-indigo-400 border-l-2 border-indigo-500 pl-3.5'
-              : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'tracker', 'green')} w-full`}
         >
-          <BarChart2 className="w-4 h-4" />
+          <NavIcon tone="green"><BarChart2 className="w-4 h-4" /></NavIcon>
           <span>Progress Tracker</span>
         </button>
 
@@ -389,14 +379,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
         <a
           href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0/Novelist.Workspace.Setup.0.0.0.exe"
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-slate-100 bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-white bg-pal-blue hover:opacity-90 transition-opacity duration-200"
         >
           <Download className="w-4 h-4" />
           <span>Get Windows App</span>
         </a>
         <a
           href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0-android/app-debug.apk"
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-slate-100 bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-white bg-pal-green hover:opacity-90 transition-opacity duration-200"
         >
           <Download className="w-4 h-4" />
           <span>Get Android App</span>
@@ -407,13 +397,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
         <button
           onClick={() => handleNavClick('profile')}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-            activeView === 'profile'
-              ? 'bg-indigo-600/10 text-indigo-400'
-              : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-          }`}
+          className={`${navClass(activeView === 'profile', 'red')} w-full`}
         >
-          <User className="w-4 h-4" />
+          <NavIcon tone="red"><User className="w-4 h-4" /></NavIcon>
           <span>My Profile</span>
         </button>
         <button

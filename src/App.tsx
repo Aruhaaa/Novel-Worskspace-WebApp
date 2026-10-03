@@ -100,7 +100,7 @@ const AuthWrapper: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">N</div>
             <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
           </div>
-          <button onClick={() => setSidebarOpen(true)} className="p-2 -mr-2 text-slate-300 hover:text-white transition-colors">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 -mr-2 text-slate-300 hover:text-slate-100 transition-colors">
             <Menu className="w-6 h-6" />
           </button>
         </div>

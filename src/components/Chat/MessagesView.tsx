@@ -129,7 +129,7 @@ export const MessagesView: React.FC = () => {
       {/* Sidebar: Contacts List */}
       <div className="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col hidden md:flex shrink-0">
         <div className="p-4 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-indigo-400" />
             Messages
           </h2>
@@ -156,7 +156,7 @@ export const MessagesView: React.FC = () => {
                   {contact.display_name?.charAt(0).toUpperCase() || <UserIcon className="w-5 h-5" />}
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm truncate text-white">{contact.display_name || 'Anonymous'}</h4>
+                  <h4 className="font-semibold text-sm truncate text-slate-100">{contact.display_name || 'Anonymous'}</h4>
                   <p className="text-xs text-slate-500 truncate">
                     {profile?.following?.includes(contact.id) && profile?.followers?.includes(contact.id) 
                       ? 'Mutual Connection' 
@@ -190,7 +190,7 @@ export const MessagesView: React.FC = () => {
               </div>
               <div>
                 <h3 
-                  className="font-bold text-white cursor-pointer hover:underline"
+                  className="font-bold text-slate-100 cursor-pointer hover:underline"
                   onClick={() => navigate(`/library/author/${activeContact.id}`)}
                 >
                   {activeContact.display_name || 'Anonymous'}

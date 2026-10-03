@@ -58,20 +58,20 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
     : 'New';
 
   return (
-    <div className="mt-16 pt-12 border-t border-slate-200 dark:border-slate-800">
+    <div className="mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800">
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-2xl font-bold font-sans">Reviews</h3>
         <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-full">
           <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
           <span className="font-bold text-lg">{avgRating}</span>
-          <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">({reviews.length})</span>
+          <span className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">({reviews.length})</span>
         </div>
       </div>
 
       {/* Review Form */}
       {user ? (
-        <form onSubmit={handleSubmit} className="mb-10 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <h4 className="font-sans font-semibold mb-3 text-sm uppercase tracking-wider text-slate-500">Leave a Review</h4>
+        <form onSubmit={handleSubmit} className="mb-10 bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h4 className="font-sans font-semibold mb-3 text-sm uppercase tracking-wider text-zinc-500">Leave a Review</h4>
           
           <div className="flex items-center gap-2 mb-4">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -79,7 +79,7 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
                 key={star}
                 type="button"
                 onClick={() => setNewRating(star)}
-                className={`transition-colors ${star <= newRating ? 'text-amber-500' : 'text-slate-300 dark:text-slate-700'}`}
+                className={`transition-colors ${star <= newRating ? 'text-amber-500' : 'text-zinc-300 dark:text-zinc-700'}`}
               >
                 <Star className={`w-6 h-6 ${star <= newRating ? 'fill-amber-500' : ''}`} />
               </button>
@@ -90,7 +90,7 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="What did you think of this novel?"
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 font-sans text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none min-h-[100px]"
+            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 font-sans text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none min-h-[100px]"
           />
           
           <div className="flex justify-end mt-3">
@@ -105,17 +105,17 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
           </div>
         </form>
       ) : (
-        <div className="mb-10 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
-          <p className="font-sans text-sm text-slate-500">Sign in to leave a review.</p>
+        <div className="mb-10 bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 text-center">
+          <p className="font-sans text-sm text-zinc-500">Sign in to leave a review.</p>
         </div>
       )}
 
       {/* Reviews List */}
       <div className="space-y-6">
         {loading ? (
-          <div className="text-center text-slate-500 animate-pulse font-sans text-sm">Loading reviews...</div>
+          <div className="text-center text-zinc-500 animate-pulse font-sans text-sm">Loading reviews...</div>
         ) : reviews.length === 0 ? (
-          <div className="text-center text-slate-500 italic font-sans">No reviews yet. Be the first!</div>
+          <div className="text-center text-zinc-500 italic font-sans">No reviews yet. Be the first!</div>
         ) : (
           reviews.map(review => (
             <div key={review.id} className="flex gap-4">
@@ -125,14 +125,14 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold font-sans text-sm">{review.profile?.display_name || 'Anonymous Reader'}</span>
-                  <span className="text-xs text-slate-400 font-sans">{new Date(review.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-zinc-400 font-sans">{new Date(review.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center gap-0.5 mb-2">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300 dark:text-slate-700'}`} />
+                    <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-zinc-300 dark:text-zinc-700'}`} />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans">
+                <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 font-sans">
                   {review.content}
                 </p>
               </div>

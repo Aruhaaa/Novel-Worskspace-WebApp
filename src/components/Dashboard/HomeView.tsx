@@ -63,13 +63,13 @@ export const HomeView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0b111e] relative">
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-900/10 to-transparent pointer-events-none" />
+    <div className="flex-1 overflow-y-auto bg-white relative">
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
       
       {/* Welcome Header */}
       <header className="p-6 sm:p-8 bg-slate-900/50 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 font-serif">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2 font-serif">
             Welcome back, {greetingName}
           </h1>
           <p className="text-sm text-slate-400">
@@ -210,7 +210,7 @@ export const HomeView: React.FC = () => {
                 </div>
                 
                 <div>
-                  <div className="text-3xl font-extrabold text-white mb-1">
+                  <div className="text-3xl font-extrabold text-slate-100 mb-1">
                     {todaysWordCount.toLocaleString()}
                   </div>
                   <div className="text-sm text-slate-400">

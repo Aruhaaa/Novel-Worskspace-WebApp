@@ -213,12 +213,12 @@ export const TrackerView: React.FC = () => {
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b/40" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="formattedDate" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px', color: '#f3f4f6' }}
-                      labelStyle={{ fontWeight: 'bold', color: '#818cf8' }}
+                      contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb", borderRadius: "8px", fontSize: "12px", color: "#111827" }}
+                      labelStyle={{ fontWeight: 'bold', color: '#4f46e5' }}
                     />
                     <Area type="monotone" dataKey="word_count" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorWord)" name="Words Written" />
                   </AreaChart>

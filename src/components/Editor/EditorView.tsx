@@ -96,11 +96,11 @@ export const EditorView: React.FC = () => {
 
     return (
       <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden relative">
-        <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-900/10 to-transparent pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
         
         <div className="max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 relative z-10 overflow-y-auto">
           <header className="mb-8 sm:mb-12">
-            <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">
+            <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight mb-2">
               Chapter Index
             </h1>
             <p className="text-slate-400">
@@ -281,7 +281,7 @@ export const EditorView: React.FC = () => {
       </header>
 
       {/* Editor Writing Board */}
-      <main className="flex-1 overflow-hidden px-2 sm:px-8 py-4 sm:py-8 flex justify-center bg-[#F9F9FB] dark:bg-slate-900 transition-colors">
+      <main className="flex-1 overflow-hidden px-2 sm:px-8 py-4 sm:py-8 flex justify-center bg-slate-900 transition-colors">
         <div className="w-full max-w-3xl flex flex-col h-full relative">
           <RichTextEditor 
             content={localContent} 

@@ -278,7 +278,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
     content,
     editorProps: {
       attributes: {
-        className: 'prose prose-slate dark:prose-invert prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
+        className: 'prose prose-slate prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
       },
     },
     onUpdate: ({ editor }) => {

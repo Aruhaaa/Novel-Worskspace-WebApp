@@ -60,7 +60,7 @@ export const LibraryReaderView: React.FC = () => {
 
   if (!activePublicProject || activePublicProject.id !== id) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-400">
+      <div className="flex-1 flex flex-col items-center justify-center bg-zinc-950 text-zinc-400">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
         <p>Loading novel...</p>
       </div>
@@ -84,9 +84,9 @@ export const LibraryReaderView: React.FC = () => {
       
       <div 
         className={`flex-1 overflow-y-auto relative transition-colors duration-300 ${
-          theme === 'dark' ? 'bg-slate-950 text-slate-200' : 
-          theme === 'light' ? 'bg-[#F9F9FB] text-slate-900' : 
-          'bg-[#F9F9FB] dark:bg-slate-950 text-slate-900 dark:text-slate-200'
+          theme === 'dark' ? 'bg-zinc-950 text-zinc-200' : 
+          theme === 'light' ? 'bg-[#F9F9FB] text-zinc-900' : 
+          'bg-[#F9F9FB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-200'
         } ${
           fontFamily === 'sans' ? 'font-sans' : 
           fontFamily === 'serif' ? 'font-serif' : ''
@@ -98,9 +98,9 @@ export const LibraryReaderView: React.FC = () => {
           <button 
             onClick={handleBack}
             className={`flex items-center gap-2 text-sm font-semibold mb-8 transition-colors ${
-              theme === 'dark' ? 'text-slate-400 hover:text-slate-200' :
-              theme === 'light' ? 'text-slate-500 hover:text-slate-800' :
-              'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              theme === 'dark' ? 'text-zinc-400 hover:text-zinc-200' :
+              theme === 'light' ? 'text-zinc-500 hover:text-zinc-800' :
+              'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -108,12 +108,12 @@ export const LibraryReaderView: React.FC = () => {
           </button>
 
           <header className={`mb-16 pb-8 border-b transition-colors ${
-            theme === 'dark' ? 'border-slate-800' :
-            theme === 'light' ? 'border-slate-200' :
-            'border-slate-200 dark:border-slate-800'
+            theme === 'dark' ? 'border-zinc-800' :
+            theme === 'light' ? 'border-zinc-200' :
+            'border-zinc-200 dark:border-zinc-800'
           }`}>
             <h2 className="text-lg font-bold truncate">{activePublicProject.title}</h2>
-            <p className="text-xs font-sans text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-sans text-zinc-500 dark:text-zinc-400">
               By{' '}
               <span 
                 className="hover:text-indigo-400 hover:underline cursor-pointer transition-colors"
@@ -125,15 +125,15 @@ export const LibraryReaderView: React.FC = () => {
           </header>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
             <p className="font-sans text-sm">Loading chapters...</p>
           </div>
         ) : chapters.length === 0 ? (
           <div className="text-center py-24">
-            <BookOpen className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-6" />
+            <BookOpen className="w-16 h-16 text-zinc-300 dark:text-zinc-700 mx-auto mb-6" />
             <h3 className="text-xl font-bold mb-2">No Chapters Yet</h3>
-            <p className="text-slate-500 font-sans">
+            <p className="text-zinc-500 font-sans">
               The author hasn't written any chapters for this novel yet.
             </p>
           </div>
@@ -156,8 +156,8 @@ export const LibraryReaderView: React.FC = () => {
             
             <ReaderReviews projectId={activePublicProject.id} />
             
-            <div className="text-center pb-8 border-t border-slate-200 dark:border-slate-800">
-              <p className="italic text-slate-500 mt-8">End of published content.</p>
+            <div className="text-center pb-8 border-t border-zinc-200 dark:border-zinc-800">
+              <p className="italic text-zinc-500 mt-8">End of published content.</p>
             </div>
           </div>
         )}
@@ -173,37 +173,37 @@ export const LibraryReaderView: React.FC = () => {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="fixed bottom-24 right-6 w-72 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-5 z-40 text-slate-200 animate-in slide-in-from-bottom-2 fade-in">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Reading Settings</h3>
+        <div className="fixed bottom-24 right-6 w-72 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-5 z-40 text-zinc-200 animate-in slide-in-from-bottom-2 fade-in">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-4">Reading Settings</h3>
           
           {/* Theme */}
           <div className="mb-5">
-            <label className="text-xs font-semibold mb-2 block text-slate-400">Theme</label>
+            <label className="text-xs font-semibold mb-2 block text-zinc-400">Theme</label>
             <div className="flex gap-2">
-              <button onClick={() => setTheme('light')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'light' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Sun className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('dark')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'dark' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Moon className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('system')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'system' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Monitor className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('light')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'light' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Sun className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('dark')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'dark' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Moon className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('system')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${theme === 'system' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Monitor className="w-4 h-4" /></button>
             </div>
           </div>
 
           {/* Font Family */}
           <div className="mb-5">
-            <label className="text-xs font-semibold mb-2 block text-slate-400">Font</label>
+            <label className="text-xs font-semibold mb-2 block text-zinc-400">Font</label>
             <div className="flex gap-2">
-              <button onClick={() => setFontFamily('sans')} className={`flex-1 py-1.5 rounded text-sm font-sans border ${fontFamily === 'sans' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>Sans</button>
-              <button onClick={() => setFontFamily('serif')} className={`flex-1 py-1.5 rounded text-sm font-serif border ${fontFamily === 'serif' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>Serif</button>
-              <button onClick={() => setFontFamily('times')} className={`flex-1 py-1.5 rounded text-sm border ${fontFamily === 'times' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`} style={{ fontFamily: '"Times New Roman", Times, serif' }}>Times</button>
+              <button onClick={() => setFontFamily('sans')} className={`flex-1 py-1.5 rounded text-sm font-sans border ${fontFamily === 'sans' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}>Sans</button>
+              <button onClick={() => setFontFamily('serif')} className={`flex-1 py-1.5 rounded text-sm font-serif border ${fontFamily === 'serif' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}>Serif</button>
+              <button onClick={() => setFontFamily('times')} className={`flex-1 py-1.5 rounded text-sm border ${fontFamily === 'times' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`} style={{ fontFamily: '"Times New Roman", Times, serif' }}>Times</button>
             </div>
           </div>
 
           {/* Font Size */}
           <div>
-            <label className="text-xs font-semibold mb-2 block text-slate-400">Size</label>
+            <label className="text-xs font-semibold mb-2 block text-zinc-400">Size</label>
             <div className="flex gap-2">
-              <button onClick={() => setFontSize('text-base')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-base' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-3 h-3" /></button>
-              <button onClick={() => setFontSize('text-lg')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-lg' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-4 h-4" /></button>
-              <button onClick={() => setFontSize('text-xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-5 h-5" /></button>
-              <button onClick={() => setFontSize('text-2xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-2xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}><Type className="w-6 h-6" /></button>
+              <button onClick={() => setFontSize('text-base')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-base' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Type className="w-3 h-3" /></button>
+              <button onClick={() => setFontSize('text-lg')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-lg' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Type className="w-4 h-4" /></button>
+              <button onClick={() => setFontSize('text-xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Type className="w-5 h-5" /></button>
+              <button onClick={() => setFontSize('text-2xl')} className={`flex-1 py-1.5 rounded flex items-center justify-center border ${fontSize === 'text-2xl' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-zinc-950 border-zinc-800 text-zinc-400'}`}><Type className="w-6 h-6" /></button>
             </div>
           </div>
         </div>

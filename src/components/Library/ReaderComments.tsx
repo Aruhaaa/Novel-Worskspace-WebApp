@@ -56,23 +56,23 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
   };
 
   return (
-    <div className="mt-12 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden font-sans">
+    <div className="mt-12 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden font-sans">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
       >
-        <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-2 font-semibold text-zinc-700 dark:text-zinc-300">
           <MessageSquare className="w-5 h-5 text-indigo-500" />
           Chapter Comments
         </div>
-        <div className="flex items-center gap-3 text-slate-500">
+        <div className="flex items-center gap-3 text-zinc-500">
           <span className="text-sm">{isOpen ? 'Hide' : 'Show'}</span>
           {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
 
       {isOpen && (
-        <div className="px-6 pb-6 border-t border-slate-200 dark:border-slate-800 pt-6">
+        <div className="px-6 pb-6 border-t border-zinc-200 dark:border-zinc-800 pt-6">
           {/* Comment Form */}
           {user ? (
             <form onSubmit={handleSubmit} className="mb-8 flex gap-3">
@@ -84,20 +84,20 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   placeholder="Share your thoughts on this chapter..."
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4 pr-12 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-[42px] min-h-[42px] max-h-[120px] leading-relaxed transition-all"
+                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg py-2.5 px-4 pr-12 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-[42px] min-h-[42px] max-h-[120px] leading-relaxed transition-all"
                   style={{ height: Math.max(42, newContent.split('\n').length * 24 + 18) + 'px' }}
                 />
                 <button
                   type="submit"
                   disabled={!newContent.trim()}
-                  className="absolute right-2 bottom-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white rounded-md transition-colors"
+                  className="absolute right-2 bottom-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 text-white rounded-md transition-colors"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
             </form>
           ) : (
-            <div className="mb-8 text-sm text-center text-slate-500 bg-white dark:bg-slate-950 py-3 rounded-lg border border-slate-200 dark:border-slate-800">
+            <div className="mb-8 text-sm text-center text-zinc-500 bg-white dark:bg-zinc-950 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
               Sign in to join the discussion.
             </div>
           )}
@@ -105,21 +105,21 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
           {/* Comments List */}
           <div className="space-y-5">
             {loading ? (
-              <div className="text-center text-slate-500 animate-pulse text-sm">Loading comments...</div>
+              <div className="text-center text-zinc-500 animate-pulse text-sm">Loading comments...</div>
             ) : comments.length === 0 ? (
-              <div className="text-center text-slate-500 text-sm italic">No comments yet. Be the first to share your thoughts!</div>
+              <div className="text-center text-zinc-500 text-sm italic">No comments yet. Be the first to share your thoughts!</div>
             ) : (
               comments.map(comment => (
                 <div key={comment.id} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-bold shrink-0 text-xs">
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 font-bold shrink-0 text-xs">
                     {(comment.profile?.display_name || 'A')[0].toUpperCase()}
                   </div>
                   <div>
                     <div className="flex items-baseline gap-2 mb-0.5">
-                      <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{comment.profile?.display_name || 'Anonymous Reader'}</span>
-                      <span className="text-[10px] text-slate-400">{new Date(comment.created_at).toLocaleDateString()}</span>
+                      <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">{comment.profile?.display_name || 'Anonymous Reader'}</span>
+                      <span className="text-[10px] text-zinc-400">{new Date(comment.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
                       {comment.content}
                     </p>
                   </div>

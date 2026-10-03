@@ -1,7 +1,7 @@
 /* Novel Editor Separator */
 .prose hr {
   border: none !important;
-  border-top: 1px solid #475569 !important; /* slate-600 */
+  border-top: 1px solid #9ca3af !important;
   width: 25% !important;
   margin: 3rem auto !important;
 }

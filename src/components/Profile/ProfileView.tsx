@@ -59,7 +59,7 @@ export const ProfileView: React.FC = () => {
           <div className="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl mb-4 border border-indigo-500/20">
             <UserIcon className="w-8 h-8 text-indigo-400 stroke-[1.5]" />
           </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">My Profile</h1>
+          <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight mb-2">My Profile</h1>
           <p className="text-slate-400">
             Manage your public author persona and writing goals.
           </p>
