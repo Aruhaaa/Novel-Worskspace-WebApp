@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid 
-} from 'recharts';
-import { 
-  Flame, 
-  TrendingUp, 
-  Award, 
-  Plus, 
-  Calendar
-} from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Plus } from 'lucide-react';
+import { Dialog } from '../ui/Dialog';
+import { PageHead } from '../ui/PageHead';
+import { localDate } from '../../lib/dates';
+import { countWords } from '../../lib/text';
+import { planGoal } from '../../lib/projectGoal';
+import { useToast } from '../ui/toastContext';
 
 export const TrackerView: React.FC = () => {
-  const { wordCountLogs, logWordCount, profile } = useApp();
+  const { wordCountLogs, logWordCount, profile, chapters, projectGoal, setProjectGoal } = useApp();
+  const { toast } = useToast();
+  const [showGoal, setShowGoal] = useState(false);
+  const [goalTarget, setGoalTarget] = useState('');
+  const [goalDeadline, setGoalDeadline] = useState('');
   const [showLogInput, setShowLogInput] = useState(false);
   const [logCount, setLogCount] = useState('');
-  const [logDate, setLogDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [logDate, setLogDate] = useState(() => localDate());
   const [streak, setStreak] = useState(0);
 
   // Simple streak calculation (non-zero word logs in continuous days) in an effect to preserve render purity
@@ -35,8 +31,8 @@ export const TrackerView: React.FC = () => {
       // Sort logs descending by date
       const sortedLogs = [...wordCountLogs].sort((a, b) => b.date.localeCompare(a.date));
       let calculatedStreak = 0;
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().split('T')[0];
+      const today = localDate();
+      const yesterday = localDate(new Date(Date.now() - 24 * 3600 * 1000));
 
       // Check if wrote today or yesterday to continue streak
       const latestDate = sortedLogs[0].date;
@@ -45,11 +41,11 @@ export const TrackerView: React.FC = () => {
         return;
       }
 
-      const expectedDate = new Date(latestDate);
+      const expectedDate = new Date(latestDate + 'T00:00:00');
       for (let i = 0; i < sortedLogs.length; i++) {
         const log = sortedLogs[i];
         const logDateStr = log.date;
-        const expectedStr = expectedDate.toISOString().split('T')[0];
+        const expectedStr = localDate(expectedDate);
 
         if (logDateStr === expectedStr && log.word_count > 0) {
           calculatedStreak++;
@@ -89,223 +85,191 @@ export const TrackerView: React.FC = () => {
   const dailyGoal = profile?.daily_word_goal || 1000;
   
   // Find today's log for the circular progress
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDate();
   const todayLog = wordCountLogs.find(l => l.date === todayStr);
   const todaysWordCount = todayLog ? todayLog.word_count : 0;
   
   const progressPercent = Math.min(100, Math.round((todaysWordCount / dailyGoal) * 100));
 
-  // Circular progress SVG calculations
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+  const manuscriptWords = chapters.reduce((sum, ch) => sum + countWords(ch.content), 0);
+  const plan = projectGoal ? planGoal(projectGoal, manuscriptWords) : null;
+
+  const openGoal = () => {
+    setGoalTarget(projectGoal ? String(projectGoal.target) : '');
+    setGoalDeadline(projectGoal?.deadline || '');
+    setShowGoal(true);
+  };
+
+  const recentLogs = [...wordCountLogs].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden text-slate-300">
-      
-      {/* Tracker Header */}
-      <header className="h-16 border-b border-slate-800/80 px-8 flex items-center justify-between shrink-0 bg-slate-900/50 backdrop-blur-md">
-        <h2 className="text-lg font-semibold text-slate-100">Writing Progress & Tracker</h2>
-        
-        <button
-          onClick={() => setShowLogInput(true)}
-          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg shadow-lg shadow-indigo-600/15 transition-all duration-200"
-        >
-          <Plus className="w-4 h-4" />
-          Log Word Count
-        </button>
-      </header>
+    <div className="studio-view">
+      <div className="page page-wide">
+        <PageHead
+          eyebrow="A PRACTICE, NOT A PERFORMANCE"
+          title={
+            <>
+              Your writing, <em>over time.</em>
+            </>
+          }
+          lead="Real totals from your daily log. A few good words count, too."
+          actions={
+            <button className="small-btn is-primary" onClick={() => setShowLogInput(true)}>
+              <Plus /> Log word count
+            </button>
+          }
+        />
 
-      {/* Tracker Body */}
-      <main className="flex-1 overflow-y-auto px-8 py-8 space-y-6">
-        
-        {/* KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: Total Words */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-indigo-600/15 text-indigo-400 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Total Written</span>
-              <strong className="text-slate-100 text-xl font-bold">{totalWords.toLocaleString()}</strong>
-              <span className="text-[10px] text-slate-500 block mt-0.5">words accumulated</span>
-            </div>
+        <div className="grid-4">
+          <div className="stat">
+            <span className="eyebrow">TOTAL WRITTEN</span>
+            <strong>{totalWords.toLocaleString()}</strong>
+            <span>words accumulated</span>
           </div>
-
-          {/* Card 2: Streak */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-orange-600/15 text-orange-400 flex items-center justify-center">
-              <Flame className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Writing Streak</span>
-              <strong className="text-slate-100 text-xl font-bold">{streak} {streak === 1 ? 'day' : 'days'}</strong>
-              <span className="text-[10px] text-slate-500 block mt-0.5">active write streak</span>
-            </div>
+          <div className="stat">
+            <span className="eyebrow">WRITING STREAK</span>
+            <strong>{streak}</strong>
+            <span>{streak === 1 ? 'day in a row' : 'days in a row'}</span>
           </div>
-
-          {/* Card 3: Daily Average */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-emerald-600/15 text-emerald-400 flex items-center justify-center">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Daily Average</span>
-              <strong className="text-slate-100 text-xl font-bold">{dailyAverage.toLocaleString()}</strong>
-              <span className="text-[10px] text-slate-500 block mt-0.5">words per day</span>
-            </div>
+          <div className="stat">
+            <span className="eyebrow">DAILY AVERAGE</span>
+            <strong>{dailyAverage.toLocaleString()}</strong>
+            <span>words per day</span>
           </div>
-
-          {/* Card 4: Daily Goal (Circular Progress) */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="relative w-14 h-14 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="28"
-                  cy="28"
-                  r={radius}
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="transparent"
-                  className="text-slate-800"
-                />
-                <circle
-                  cx="28"
-                  cy="28"
-                  r={radius}
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="transparent"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  className="text-rose-500 transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-[9px] font-bold text-slate-300">
-                <span>{progressPercent}%</span>
+          <div className="stat" style={{ textAlign: 'center' }}>
+            <span className="eyebrow">TODAY'S GOAL</span>
+            <div className="goal-ring" style={{ ['--pct' as string]: progressPercent, width: 96, height: 96, margin: '10px auto 4px' } as React.CSSProperties}>
+              <div style={{ width: 76, height: 76 }}>
+                <strong style={{ fontSize: 26, margin: 0 }}>{progressPercent}%</strong>
               </div>
             </div>
-            <div className="flex-1">
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 block">Today's Goal</span>
-              <strong className="text-slate-100 text-xl font-bold">{todaysWordCount} <span className="text-sm font-normal text-slate-500">/ {dailyGoal}</span></strong>
-            </div>
+            <span>
+              {todaysWordCount.toLocaleString()} / {dailyGoal.toLocaleString()} words
+            </span>
           </div>
         </div>
 
-        {/* Charts & Details Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main word count chart */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 lg:col-span-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-5">Daily Word Count Trend</h3>
-            <div className="h-72 w-full">
-              {chartData.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-slate-500 text-xs">
-                  No log entries. Please log some word counts.
-                </div>
-              ) : (
+        <section className="card" aria-labelledby="goal-h" style={{ marginTop: 30 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div>
+              <h3 id="goal-h">Manuscript goal</h3>
+              <p style={{ margin: '6px 0 0' }}>
+                {plan
+                  ? `${manuscriptWords.toLocaleString()} of ${plan.target.toLocaleString()} words (${plan.percent}%)`
+                  : 'Set a length for this book and a date to finish it. We will work out the pace.'}
+              </p>
+            </div>
+            <button className="small-btn" onClick={openGoal}>{projectGoal ? 'Change goal' : 'Set a goal'}</button>
+          </div>
+          {plan && projectGoal && (
+            <>
+              <progress max={plan.target} value={Math.min(plan.written, plan.target)} aria-label="Progress toward the manuscript goal" style={{ width: '100%', marginTop: 14 }} />
+              <p className="meta" style={{ marginTop: 10 }} role="status">
+                {plan.state === 'reached' && 'You have reached your target length.'}
+                {plan.state === 'no-deadline' && `${plan.remaining.toLocaleString()} words to go. Add a finish date to see a daily pace.`}
+                {plan.state === 'on-track' &&
+                  `${plan.remaining.toLocaleString()} words to go by ${new Date(projectGoal.deadline + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}: about ${plan.perDay?.toLocaleString()} words a day for ${plan.daysLeft} ${plan.daysLeft === 1 ? 'day' : 'days'}.`}
+                {plan.state === 'overdue' && `${plan.remaining.toLocaleString()} words to go, and the finish date has passed. Pick a new one when you are ready.`}
+              </p>
+            </>
+          )}
+        </section>
+
+        <div className="split" style={{ marginTop: 30 }}>
+          <section className="card" aria-labelledby="trend-h">
+            <h3 id="trend-h">Daily word count trend</h3>
+            <p style={{ margin: '6px 0 14px' }}>Words logged each day</p>
+            {chartData.length === 0 ? (
+              <p className="meta">No log entries yet. Log some word counts to see your trend.</p>
+            ) : (
+              <div style={{ height: 240 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorWord" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0}/>
+                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b/40" />
-                    <XAxis dataKey="formattedDate" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px', color: '#f3f4f6' }}
-                      labelStyle={{ fontWeight: 'bold', color: '#818cf8' }}
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                    <XAxis dataKey="formattedDate" stroke="var(--muted)" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--muted)" fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--sheet)', borderColor: 'var(--line)', borderRadius: 3, fontSize: 12, color: 'var(--ink)' }}
+                      labelStyle={{ fontWeight: 'bold', color: 'var(--ink)' }}
                     />
-                    <Area type="monotone" dataKey="word_count" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorWord)" name="Words Written" />
+                    <Area type="monotone" dataKey="word_count" stroke="var(--accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorWord)" name="Words written" />
                   </AreaChart>
                 </ResponsiveContainer>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
+          </section>
 
-          {/* Daily Logs Table */}
-          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-5 flex flex-col overflow-hidden h-[345px]">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Log History</h3>
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-              {[...wordCountLogs].sort((a, b) => b.date.localeCompare(a.date)).map((log) => (
-                <div 
-                  key={log.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 border border-slate-900 hover:border-slate-800 transition-all duration-150 text-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="font-semibold text-slate-200">
-                      {new Date(log.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <strong className="text-indigo-400 font-semibold">{log.word_count.toLocaleString()} words</strong>
-                </div>
-              ))}
-              {wordCountLogs.length === 0 && (
-                <div className="text-xs text-slate-500 text-center py-10 italic">
-                  No log history available.
-                </div>
-              )}
-            </div>
-          </div>
+          <section className="card" aria-labelledby="hist-h">
+            <h3 id="hist-h">Log history</h3>
+            {recentLogs.length === 0 ? (
+              <p className="meta" style={{ marginTop: 14 }}>No log history yet.</p>
+            ) : (
+              <table className="log-table" style={{ marginTop: 14 }}>
+                <thead>
+                  <tr>
+                    <th>DATE</th>
+                    <th>WORDS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentLogs.slice(0, 14).map((log) => (
+                    <tr key={log.id || log.date}>
+                      <td>{new Date(log.date + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td>{log.word_count.toLocaleString()} words</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </div>
+      </div>
 
-      </main>
-
-      {/* Log Word Count Dialog */}
-      {showLogInput && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-sm p-6 shadow-2xl animate-in scale-in duration-200">
-            <h3 className="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-indigo-500" />
-              Log Daily Writing Progress
-            </h3>
-            <form onSubmit={handleLogCount} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Date</label>
-                <input
-                  type="date"
-                  value={logDate}
-                  onChange={(e) => setLogDate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Total Words Logged</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 1500"
-                  value={logCount}
-                  onChange={(e) => setLogCount(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowLogInput(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
-                >
-                  Submit Log
-                </button>
-              </div>
-            </form>
+      <Dialog open={showGoal} onClose={() => setShowGoal(false)} labelledBy="gl-h">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const target = parseInt(goalTarget, 10);
+            const previous = projectGoal;
+            setProjectGoal(target > 0 ? { target, deadline: goalDeadline || null } : null);
+            setShowGoal(false);
+            toast({ message: target > 0 ? 'Goal saved.' : 'Goal cleared.', actionLabel: 'Undo', onAction: () => setProjectGoal(previous) });
+          }}
+        >
+          <p className="eyebrow">THE WHOLE BOOK</p>
+          <h2 id="gl-h">Manuscript goal</h2>
+          <label htmlFor="gl-target">Target length (words)</label>
+          <input id="gl-target" type="number" min="1" step="1" value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} placeholder="80000" autoFocus />
+          <label htmlFor="gl-date">Finish by (optional)</label>
+          <input id="gl-date" type="date" min={localDate()} value={goalDeadline} onChange={(e) => setGoalDeadline(e.target.value)} />
+          <p className="meta" style={{ marginTop: 10 }}>Saved on this device for this project. Leave the length empty to clear the goal.</p>
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowGoal(false)}>Cancel</button>
+            <button className="button button-primary button-small">Save goal</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Dialog>
 
+      <Dialog open={showLogInput} onClose={() => setShowLogInput(false)} labelledBy="lg-h">
+        <form onSubmit={handleLogCount}>
+          <p className="eyebrow">LOG</p>
+          <h2 id="lg-h">Log your progress</h2>
+          <label htmlFor="log-date">Date</label>
+          <input id="log-date" type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)} />
+          <label htmlFor="log-words">Total words logged</label>
+          <input id="log-words" type="number" min="0" value={logCount} onChange={(e) => setLogCount(e.target.value)} placeholder="1500" required autoFocus />
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowLogInput(false)}>Cancel</button>
+            <button className="button button-primary button-small">Save log</button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 };

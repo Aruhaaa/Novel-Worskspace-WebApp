@@ -7,7 +7,8 @@ export default forwardRef((props: any, ref) => {
     const item = props.items[index];
 
     if (item) {
-      props.command({ id: item.name });
+      // Link by id so the mention still points at the entry if it is renamed later
+      props.command({ id: item.id, label: item.name });
     }
   };
 
@@ -47,21 +48,21 @@ export default forwardRef((props: any, ref) => {
   }));
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col min-w-[200px] z-50">
+    <div className="mention-pop" role="listbox" aria-label="Mention suggestions" style={{ position: 'static' }}>
       {props.items.length ? (
         props.items.map((item: any, index: number) => (
           <button
-            className={`text-left px-4 py-2 text-sm transition-colors ${
-              index === selectedIndex ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
-            }`}
+            role="option"
+            aria-selected={index === selectedIndex}
             key={index}
             onClick={() => selectItem(index)}
           >
             {item.name}
+            {item.type && <small style={{ textTransform: 'capitalize' }}>{item.type}</small>}
           </button>
         ))
       ) : (
-        <div className="px-4 py-2 text-sm text-slate-500">No result</div>
+        <p style={{ padding: '8px 10px', fontSize: 12, color: 'var(--muted)', margin: 0 }}>No result</p>
       )}
     </div>
   );

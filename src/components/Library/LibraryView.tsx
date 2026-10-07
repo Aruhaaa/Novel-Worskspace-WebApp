@@ -1,199 +1,159 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { BookOpen, User as UserIcon, Clock, ChevronRight, Heart, Search, Filter, Hash } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import type { Project } from '../../services/types';
+import { EmptyState } from '../ui/EmptyState';
+import { PageHead } from '../ui/PageHead';
+import { GenreFilter, GenreTag } from './GenreChips';
 
-export const LibraryView: React.FC = () => {
-  const { user, publicProjects, loadPublicProjects, toggleLikeProject, setActivePublicProject } = useApp();
+type SortBy = 'newest' | 'liked' | 'az';
+
+/** One novel in the library grids: cover, author, genre, blurb, like and read. */
+export const NovelCard: React.FC<{ project: Project; index: number }> = ({ project, index }) => {
+  const { user, toggleLikeProject, setActivePublicProject } = useApp();
   const navigate = useNavigate();
+  const liked = !!user && !!project.likes?.includes(user.id);
+
+  const handleRead = () => {
+    setActivePublicProject(project);
+    navigate(`/library/novel/${project.id}`);
+  };
+
+  return (
+    <article className="novel-card">
+      <div
+        className={`novel-cover c${(index % 6) + 1}`}
+        style={project.cover_url ? { backgroundImage: `url(${project.cover_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      >
+        {!project.cover_url && project.title}
+      </div>
+      <div className="novel-body">
+        <h3>{project.title}</h3>
+        <Link className="by" to={`/library/author/${project.user_id}`}>
+          {project.author_name || 'Anonymous'}
+        </Link>
+        {project.genre && <GenreTag genre={project.genre} />}
+        <p>{project.description || 'No description provided for this novel.'}</p>
+        <div className="novel-foot">
+          <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
+          <span>
+            <button className="like-btn" aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} onClick={() => toggleLikeProject(project.id)}>
+              <Heart />
+              <span>{project.likes?.length || 0}</span>
+            </button>{' '}
+            <button className="link-accent" onClick={handleRead}>Read</button>
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+/** The Public Library and Your Library are two tabs of one screen. */
+export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) => {
+  const { user, publicProjects, loadPublicProjects } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('All');
-  const [sortBy, setSortBy] = useState<'newest' | 'liked' | 'az'>('newest');
+  const [sortBy, setSortBy] = useState<SortBy>('newest');
 
   useEffect(() => {
     loadPublicProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleReadNovel = (project: any) => {
-    setActivePublicProject(project);
-    navigate(`/library/novel/${project.id}`);
-  };
+  const source = mode === 'saved' ? publicProjects.filter((p) => user && p.likes?.includes(user.id)) : publicProjects;
 
-  const handleAuthorClick = (e: React.MouseEvent, authorId: string) => {
-    e.stopPropagation();
-    navigate(`/library/author/${authorId}`);
-  };
+  const projects = source
+    .filter((p) => filterGenre === 'All' || p.genre === filterGenre)
+    .filter(
+      (p) =>
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.author_name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      if (sortBy === 'liked') return (b.likes?.length || 0) - (a.likes?.length || 0);
+      return a.title.localeCompare(b.title);
+    });
 
   return (
-    <div className="flex-1 bg-slate-950 overflow-y-auto relative">
-      {/* Background aesthetics */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none" />
-      
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 relative z-10">
-        <header className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl mb-4 border border-indigo-500/20">
-            <BookOpen className="w-8 h-8 text-indigo-400 stroke-[1.5]" />
-          </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-3">Public Novel Library</h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Discover and read stories published by other authors in the Novelist Workspace community.
-          </p>
-        </header>
+    <div className="studio-view">
+      <div className="page page-wide">
+        <PageHead
+          eyebrow="THE COMMONS"
+          title={
+            <>
+              Stories from <em>other rooms.</em>
+            </>
+          }
+          lead="Read novels published by other authors in the Novelist Workspace community."
+        />
 
-        {/* Search and Filter Bar */}
-        <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center gap-4 shadow-xl">
-          <div className="flex-1 relative w-full">
-            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Search by title or author..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-            />
-          </div>
-          
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-48">
-              <Filter className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <select 
-                value={filterGenre}
-                onChange={(e) => setFilterGenre(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-8 py-3 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer"
-              >
-                <option value="All">All Genres</option>
-                <option value="Fantasy">Fantasy</option>
-                <option value="Sci-Fi">Sci-Fi</option>
-                <option value="Romance">Romance</option>
-                <option value="Mystery">Mystery</option>
-                <option value="Horror">Horror</option>
-                <option value="Thriller">Thriller</option>
-                <option value="Historical">Historical</option>
-                <option value="Contemporary">Contemporary</option>
-              </select>
-            </div>
-
-            <select 
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer"
-            >
-              <option value="newest">Newest First</option>
-              <option value="liked">Most Liked</option>
-              <option value="az">A-Z</option>
-            </select>
-          </div>
+        <div className="tabs" role="tablist" aria-label="Library">
+          <Link role="tab" to="/library" aria-selected={mode === 'public'} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            Public Library
+          </Link>
+          <Link role="tab" to="/saved" aria-selected={mode === 'saved'} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            Your Library
+          </Link>
         </div>
 
-        {(() => {
-          const filteredProjects = publicProjects
-            .filter(p => filterGenre === 'All' || p.genre === filterGenre)
-            .filter(p => 
-              p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-              (p.author_name || '').toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .sort((a, b) => {
-              if (sortBy === 'newest') return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-              if (sortBy === 'liked') return (b.likes?.length || 0) - (a.likes?.length || 0);
-              if (sortBy === 'az') return a.title.localeCompare(b.title);
-              return 0;
-            });
+        <div className="filter-bar">
+          <div className="filter-top">
+            <label className="search">
+              <span className="sr-only">{mode === 'saved' ? 'Search your saved novels' : 'Search by title or author'}</span>
+              <Search />
+              <input
+                className="input"
+                type="search"
+                placeholder={mode === 'saved' ? 'Search your saved novels' : 'Search by title or author'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="sr-only">Sort</span>
+              <select className="select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                <option value="newest">Newest first</option>
+                <option value="liked">Most liked</option>
+                <option value="az">A–Z</option>
+              </select>
+            </label>
+          </div>
+          <GenreFilter value={filterGenre} onChange={setFilterGenre} />
+          <p className="meta" role="status">
+            {projects.length} {projects.length === 1 ? 'result' : 'results'}
+          </p>
+        </div>
 
-          if (filteredProjects.length === 0) {
-            return (
-              <div className="text-center py-24 bg-slate-900/30 rounded-3xl border border-slate-800/50 backdrop-blur-sm">
-                <BookOpen className="w-16 h-16 text-slate-700 mx-auto mb-6 stroke-[1]" />
-                <h3 className="text-xl font-semibold text-slate-300 mb-2">No novels found</h3>
-                <p className="text-slate-500 max-w-md mx-auto">
-                  {publicProjects.length === 0 
-                    ? "No one has published a novel yet. Be the first to share your masterpiece with the world!"
-                    : "Try adjusting your search or filters."}
-                </p>
-              </div>
-            );
-          }
-
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map((project) => (
-                <div 
-                key={project.id}
-                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:bg-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 flex flex-col h-full cursor-pointer overflow-hidden"
-                onClick={() => handleReadNovel(project)}
-              >
-                {/* Hover Glow */}
-                <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
-                
-                {/* Cover Image */}
-                {project.cover_url && (
-                  <div className="w-full h-40 mb-4 rounded-xl overflow-hidden shrink-0 border border-slate-800/50">
-                    <img 
-                      src={project.cover_url} 
-                      alt={project.title} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000&auto=format&fit=crop';
-                      }}
-                    />
-                  </div>
-                )}
-                
-                <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-indigo-300 transition-colors line-clamp-2">
-                  {project.title}
-                </h3>
-                
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-indigo-400/80 mb-4 font-medium">
-                  <div 
-                    className="flex items-center gap-1.5 hover:text-indigo-300 hover:underline cursor-pointer"
-                    onClick={(e) => handleAuthorClick(e, project.user_id)}
-                  >
-                    <UserIcon className="w-4 h-4" />
-                    <span>{project.author_name || 'Anonymous'}</span>
-                  </div>
-                  {project.genre && (
-                    <div className="flex items-center gap-1 text-slate-400 bg-slate-950/50 px-2 py-0.5 rounded-full border border-slate-800">
-                      <Hash className="w-3.5 h-3.5" />
-                      <span className="text-xs">{project.genre}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <p className="text-sm text-slate-400 flex-1 line-clamp-4 leading-relaxed mb-6">
-                  {project.description || 'No description provided for this novel.'}
-                </p>
-                
-                <div className="mt-auto pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); toggleLikeProject(project.id); }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors ${
-                        project.likes?.includes(user?.id || '') 
-                          ? 'text-rose-400 bg-rose-500/10' 
-                          : 'text-slate-500 hover:text-rose-400 hover:bg-rose-500/10'
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 ${project.likes?.includes(user?.id || '') ? 'fill-rose-400' : ''}`} />
-                      <span className="font-medium">{project.likes?.length || 0}</span>
-                    </button>
-                    
-                    <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                      Read <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {projects.length === 0 ? (
+          mode === 'saved' ? (
+            <EmptyState icon="bookmark" title="Nothing saved yet" text="Like a novel in the Public Library and it will wait for you here.">
+              <Link className="small-btn is-primary" to="/library">Browse the Public Library</Link>
+            </EmptyState>
+          ) : (
+            <EmptyState
+              icon="book"
+              title="No novels found"
+              text={
+                publicProjects.length === 0
+                  ? 'No one has published a novel yet. Be the first to share yours.'
+                  : 'Try a different search or genre.'
+              }
+            />
+          )
+        ) : (
+          <div className="novel-grid">
+            {projects.map((project, i) => (
+              <NovelCard key={project.id} project={project} index={i} />
             ))}
           </div>
-        );
-      })()}
+        )}
       </div>
     </div>
   );
 };
+
+export const LibraryView: React.FC = () => <LibraryScreen mode="public" />;

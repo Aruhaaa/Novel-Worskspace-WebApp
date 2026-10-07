@@ -1,49 +1,42 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 export const PrintView: React.FC = () => {
-  const { activeProject, chapters, setActiveView } = useApp();
-
-  useEffect(() => {
-    // Small delay to ensure rendering is complete
-    const timer = setTimeout(() => {
-      window.print();
-      // Wait for print dialog to close, then go back to editor
-      // Note: window.print() is blocking in most browsers, so this fires after it closes.
-      setTimeout(() => setActiveView('editor'), 500);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [setActiveView]);
+  const { activeProject, chapters } = useApp();
 
   if (!activeProject) return null;
 
-  // Sort chapters by position
   const sortedChapters = [...chapters].sort((a, b) => a.position - b.position);
 
   return (
-    <div className="bg-white text-black min-h-screen p-12 max-w-[800px] mx-auto print:p-0 print:m-0 print:max-w-none">
-      
-      {/* Title Page */}
-      <div className="min-h-screen flex flex-col items-center justify-center text-center pb-32 print:break-after-page">
-        <h1 className="text-5xl font-serif font-bold mb-8 uppercase tracking-widest">{activeProject.title}</h1>
-        {activeProject.author_name && (
-          <h2 className="text-2xl font-serif italic text-gray-700">by {activeProject.author_name}</h2>
-        )}
-      </div>
-
-      {/* Chapters */}
-      {sortedChapters.map((chapter, index) => (
-        <div key={chapter.id} className="print:break-after-page mb-24 last:mb-0">
-          <h2 className="text-3xl font-serif font-bold mb-10 text-center uppercase tracking-wider">
-            Chapter {index + 1}: {chapter.title || 'Untitled'}
-          </h2>
-          <div 
-            className="font-serif text-lg leading-relaxed text-justify prose prose-lg max-w-none prose-p:indent-8 prose-p:my-2"
-            dangerouslySetInnerHTML={{ __html: chapter.content }}
-          />
+    <>
+      <style>{`@media print { .studio-header, .studio-sidebar, .studio-toolbar, .mobile-scrim { display: none !important; } .studio-layout { display: block !important; } .print-sheet { border: 0; } }`}</style>
+      <div className="studio-toolbar">
+        <h1>
+          Print view <span>/ {activeProject.title}</span>
+        </h1>
+        <div className="toolbar-actions">
+          <Link className="small-btn" to="/editor">Back to manuscript</Link>
+          <button className="small-btn is-primary" onClick={() => window.print()}>Print or save as PDF</button>
         </div>
-      ))}
-      
-    </div>
+      </div>
+      <div className="studio-view" style={{ padding: '30px 18px 60px' }}>
+        <article className="print-sheet">
+          <div className="print-title">
+            <h1>{activeProject.title}</h1>
+            {activeProject.author_name && <p>by {activeProject.author_name}</p>}
+          </div>
+          {sortedChapters.map((chapter, index) => (
+            <section className="print-chapter" key={chapter.id} style={{ marginBottom: 60 }}>
+              <h2>
+                Chapter {index + 1}: {chapter.title || 'Untitled'}
+              </h2>
+              <div dangerouslySetInnerHTML={{ __html: chapter.content }} />
+            </section>
+          ))}
+        </article>
+      </div>
+    </>
   );
 };

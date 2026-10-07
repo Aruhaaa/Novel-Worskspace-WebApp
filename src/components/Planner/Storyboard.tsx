@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import { GripVertical, Trash2, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Plus, GripVertical, Trash2, Edit2 } from 'lucide-react';
 import type { WikiEntity } from '../../services/types';
+import { sceneChapterId, sceneWhen } from '../../lib/notes';
+import { Dialog } from '../ui/Dialog';
 
 const COLUMNS = [
   { id: 'idea', title: 'Ideas' },
-  { id: 'todo', title: 'To Do' },
+  { id: 'todo', title: 'To do' },
   { id: 'drafting', title: 'Drafting' },
   { id: 'finished', title: 'Finished' },
 ];
@@ -17,253 +19,160 @@ interface StoryboardProps {
 }
 
 export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
-  const { entities, createEntity, updateEntity, deleteEntity, activeProject } = useApp();
-  
-  const [showAddModal, setShowAddModal] = useState(false);
+  const { entities, chapters, createEntity, updateEntity, deleteEntity, activeProject } = useApp();
+
+  const [showAdd, setShowAdd] = useState(false);
   const [activeColumnId, setActiveColumnId] = useState('');
   const [newSceneName, setNewSceneName] = useState('');
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [sceneToDelete, setSceneToDelete] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
 
-  
-  // Filter only scenes
-  const scenes = entities.filter(e => e.type === 'scene');
-  
-  // Group scenes by status
-  const getScenesByStatus = (statusId: string) => {
-    // We also use position to sort them if it exists
-    const columnScenes = scenes.filter(s => (s.content.status || 'idea') === statusId);
-    
-    // Sort by content.order if it exists
-    return columnScenes.sort((a, b) => {
-      const orderA = parseInt(a.content.order || '0', 10);
-      const orderB = parseInt(b.content.order || '0', 10);
-      return orderA - orderB;
-    });
+  const scenes = entities.filter((e) => e.type === 'scene');
+
+  const chapterLabel = (scene: WikiEntity): string | null => {
+    const id = sceneChapterId(scene);
+    const at = id ? chapters.findIndex((ch) => ch.id === id) : -1;
+    return at === -1 ? null : `Ch. ${String(at + 1).padStart(2, '0')} · ${chapters[at].title || 'Untitled chapter'}`;
+  };
+
+  const getScenesByStatus = (statusId: string) =>
+    scenes
+      .filter((s) => (s.content.status || 'idea') === statusId)
+      .sort((a, b) => parseInt(a.content.order || '0', 10) - parseInt(b.content.order || '0', 10));
+
+  const moveScene = async (scene: WikiEntity, statusId: string, order: number) => {
+    await updateEntity(scene.id, { content: { ...scene.content, status: statusId, order: order.toString() } });
   };
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
-    
-    // Dropped outside a valid droppable
     if (!destination) return;
-    
-    // Dropped in the same position
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
-      return;
-    }
-    
-    // Identify the entity that was dragged
-    const entity = scenes.find(s => s.id === draggableId);
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    const entity = scenes.find((s) => s.id === draggableId);
     if (!entity) return;
-
-    const newStatus = destination.droppableId;
-    
-    // Optimistic reordering logic for the entire column isn't perfectly supported by a single update 
-    // unless we update all items in that column. Let's keep it simple and just update the status 
-    // and order of the dragged item for now.
-    
-    await updateEntity(entity.id, {
-      content: { 
-        ...entity.content, 
-        status: newStatus,
-        order: destination.index.toString() 
-      }
-    });
+    await moveScene(entity, destination.droppableId, destination.index);
   };
 
-  const handleAddClick = (statusId: string) => {
-    setActiveColumnId(statusId);
-    setNewSceneName('');
-    setShowAddModal(true);
+  // Keyboard-friendly alternative to dragging
+  const stepScene = async (scene: WikiEntity, direction: -1 | 1) => {
+    const current = COLUMNS.findIndex((c) => c.id === (scene.content.status || 'idea'));
+    const next = COLUMNS[current + direction];
+    if (!next) {
+      setAnnouncement('Already at the edge of the board');
+      return;
+    }
+    await moveScene(scene, next.id, 999);
+    setAnnouncement(`"${scene.name}" moved to ${next.title}`);
   };
 
   const submitAddScene = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeProject || !newSceneName.trim()) return;
-    
     await createEntity(newSceneName.trim(), 'scene', '', { status: activeColumnId, order: '999' });
-    setShowAddModal(false);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSceneToDelete(id);
-    setShowDeleteModal(true);
+    setShowAdd(false);
   };
 
   const confirmDelete = async () => {
     if (sceneToDelete) {
       await deleteEntity(sceneToDelete);
-      setShowDeleteModal(false);
       setSceneToDelete(null);
     }
   };
 
   return (
-    <div className="flex-1 h-full overflow-x-auto p-6 bg-slate-900/50">
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-6 h-full items-start min-w-max pb-8">
-          {COLUMNS.map(column => (
-            <div key={column.id} className="w-[320px] flex flex-col bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 max-h-full shadow-xl">
-              {/* Header */}
-              <div className="p-4 flex items-center justify-between shrink-0">
-                <h3 className="font-semibold text-slate-200 tracking-wide text-sm uppercase">{column.title}</h3>
-                <span className="bg-slate-700/50 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-slate-600/50">
-                  {getScenesByStatus(column.id).length}
-                </span>
-              </div>
-              
-              {/* Droppable Area */}
-              <Droppable droppableId={column.id}>
-                {(provided, snapshot) => (
-                  <div 
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex-1 px-3 pb-3 overflow-y-auto space-y-3 min-h-[200px] transition-colors ${
-                      snapshot.isDraggingOver ? 'bg-indigo-900/10' : ''
-                    }`}
-                  >
-                    {getScenesByStatus(column.id).map((scene, index) => (
-                      <Draggable key={scene.id} draggableId={scene.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`bg-slate-700/80 p-3.5 rounded-lg border shadow-sm group transition-all ${
-                              snapshot.isDragging 
-                                ? 'border-indigo-500 shadow-indigo-500/25 shadow-xl scale-105 rotate-2 z-50' 
-                                : 'border-slate-600/50 hover:border-indigo-500/50'
-                            }`}
-                            onClick={() => onEditEntity(scene)}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div 
-                                {...provided.dragHandleProps}
-                                className="shrink-0 p-1 -ml-1 text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <GripVertical className="w-4 h-4" />
-                              </div>
-                              <div className="flex-1 min-w-0 pt-0.5">
-                                <h4 className="text-sm font-medium text-slate-200 leading-tight mb-1">{scene.name}</h4>
-                                {scene.description ? (
-                                  <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{scene.description}</p>
-                                ) : (
-                                  <p className="text-xs text-slate-500 italic">No description</p>
-                                )}
-                              </div>
-                              <div className="shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); onEditEntity(scene); }}
-                                  className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-600 rounded"
-                                  title="Edit"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button 
-                                  onClick={(e) => handleDeleteClick(e, scene.id)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-600 rounded"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+    <div>
+      <p className="section-note">Drag a scene, or use the arrow buttons to move it between columns. The move buttons work with a keyboard.</p>
+      <p className="sr-only" role="status">{announcement}</p>
 
-              {/* Footer */}
-              <div className="p-3 shrink-0">
-                <button 
-                  onClick={() => handleAddClick(column.id)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-slate-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20"
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="board-4">
+          {COLUMNS.map((column) => {
+            const list = getScenesByStatus(column.id);
+            return (
+              <div key={column.id}>
+                <h3 className="board-column-label">
+                  {column.title.toUpperCase()} <span>{String(list.length).padStart(2, '0')}</span>
+                </h3>
+                <Droppable droppableId={column.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      style={{ minHeight: 60, background: snapshot.isDraggingOver ? 'var(--tint)' : undefined }}
+                    >
+                      {list.map((scene, index) => (
+                        <Draggable key={scene.id} draggableId={scene.id} index={index}>
+                          {(drag, dragSnapshot) => (
+                            <article
+                              ref={drag.innerRef}
+                              {...drag.draggableProps}
+                              className="scene-card"
+                              style={{ ...drag.draggableProps.style, boxShadow: dragSnapshot.isDragging ? '0 12px 24px -12px #3c332466' : undefined }}
+                            >
+                              <span className="scene-status">{column.title.toUpperCase()}</span>
+                              <h4>{scene.name}</h4>
+                              <p>{scene.description || 'No description'}</p>
+                              {(chapterLabel(scene) || sceneWhen(scene)) && (
+                                <div className="scene-meta">
+                                  {chapterLabel(scene) && <span className="badge is-accent">{chapterLabel(scene)}</span>}
+                                  {sceneWhen(scene) && <span className="badge">{sceneWhen(scene)}</span>}
+                                </div>
+                              )}
+                              <div className="scene-tools">
+                                <span className="grip" {...drag.dragHandleProps} aria-label="Drag to move">
+                                  <GripVertical />
+                                </span>
+                                <button onClick={() => stepScene(scene, -1)} aria-label="Move to previous column"><ChevronLeft /></button>
+                                <button onClick={() => stepScene(scene, 1)} aria-label="Move to next column"><ChevronRight /></button>
+                                <button onClick={() => onEditEntity(scene)} aria-label="Edit scene"><Edit2 /></button>
+                                <button onClick={() => setSceneToDelete(scene.id)} aria-label="Delete scene"><Trash2 /></button>
+                              </div>
+                            </article>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+                <button
+                  className="add-scene"
+                  onClick={() => {
+                    setActiveColumnId(column.id);
+                    setNewSceneName('');
+                    setShowAdd(true);
+                  }}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Scene</span>
+                  + Add scene
                 </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </DragDropContext>
 
-      {/* Add Scene Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5">
-              <h3 className="text-lg font-semibold text-slate-200 mb-4">Create New Scene</h3>
-              <form onSubmit={submitAddScene}>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Scene name..."
-                  value={newSceneName}
-                  onChange={(e) => setNewSceneName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                />
-                <div className="mt-6 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!newSceneName.trim()}
-                    className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                  >
-                    Create Scene
-                  </button>
-                </div>
-              </form>
-            </div>
+      <Dialog open={showAdd} onClose={() => setShowAdd(false)} labelledBy="sc-h">
+        <form onSubmit={submitAddScene}>
+          <p className="eyebrow">STORYBOARD</p>
+          <h2 id="sc-h">Add a scene</h2>
+          <label htmlFor="sc-name">Scene name</label>
+          <input id="sc-name" value={newSceneName} onChange={(e) => setNewSceneName(e.target.value)} placeholder="Scene name…" required autoFocus />
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowAdd(false)}>Cancel</button>
+            <button className="button button-primary button-small">Create scene</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5">
-              <h3 className="text-lg font-semibold text-rose-400 mb-2 flex items-center gap-2">
-                <Trash2 className="w-5 h-5" />
-                Delete Scene?
-              </h3>
-              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-                Are you sure you want to delete this scene? This action cannot be undone.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setSceneToDelete(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-lg shadow-rose-600/20"
-                >
-                  Yes, Delete
-                </button>
-              </div>
-            </div>
-          </div>
+      <Dialog open={sceneToDelete !== null} onClose={() => setSceneToDelete(null)} labelledBy="ds-h">
+        <p className="eyebrow">CAREFUL</p>
+        <h2 id="ds-h">Delete this scene?</h2>
+        <p>This can't be undone.</p>
+        <div className="dialog-actions">
+          <button className="button button-outline button-small" onClick={() => setSceneToDelete(null)}>Keep it</button>
+          <button className="button button-primary button-small" onClick={confirmDelete}>Yes, delete</button>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 };
