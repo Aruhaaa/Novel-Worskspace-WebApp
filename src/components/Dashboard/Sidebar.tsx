@@ -1,564 +1,144 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, Globe, FileText, LayoutGrid, ArrowLeft, BookOpen, Bookmark } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { 
-  BookOpen, 
-  Compass, 
-  BarChart2, 
-  Plus, 
-  Database, 
-  ChevronDown, 
-  FileText, 
-  BookOpenCheck,
-  LogOut,
-  Globe,
-  User,
-  Home,
-  Settings,
-  X,
-  Bookmark,
-  Shield,
-  MessageSquare,
-  Download
-} from 'lucide-react';
-
-type Tone = 'blue' | 'red' | 'yellow' | 'green' | 'purple';
-
-// Full class strings so Tailwind can see them. One tile colour per primary.
-const TONES: Record<Tone, { tile: string; active: string }> = {
-  blue: { tile: 'bg-pal-blue text-white', active: 'bg-pal-blue/10 text-slate-100' },
-  red: { tile: 'bg-pal-red text-white', active: 'bg-pal-red/10 text-slate-100' },
-  yellow: { tile: 'bg-pal-yellow text-slate-100', active: 'bg-pal-yellow/15 text-slate-100' },
-  green: { tile: 'bg-pal-green text-white', active: 'bg-pal-green/10 text-slate-100' },
-  purple: { tile: 'bg-pal-purple text-white', active: 'bg-pal-purple/10 text-slate-100' },
-};
-
-const NavIcon: React.FC<{ tone: Tone; children: React.ReactNode }> = ({ tone, children }) => (
-  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${TONES[tone].tile}`}>
-    {children}
-  </span>
-);
-
-const navClass = (isActive: boolean, tone: Tone) =>
-  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
-    isActive ? TONES[tone].active : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100'
-  }`;
+import { useDailyGoal } from '../../lib/dailyGoal';
+import { countWords } from '../../lib/text';
+import { Dialog } from '../ui/Dialog';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+// Views that belong to a project's workspace. Everything else is the main app.
+const WORKSPACE_VIEWS = ['editor', 'outline', 'notebook', 'print'];
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const {
-    projects,
-    activeProject,
-    chapters,
-    activeChapter,
-    activeView,
-    isSupabase,
-    setActiveView,
-    setActiveProject,
-    setActiveChapter,
-    updateProjectSettings,
-    createProject,
-    createChapter,
-    publishProject,
-    logout,
-    user,
-    profile
-  } = useApp();
+  const { activeProject, chapters, activeChapter, activeView, setActiveChapter, createChapter, space, isGuest } = useApp();
+  const navigate = useNavigate();
+  const daily = useDailyGoal();
 
-  const [showProjDropdown, setShowProjDropdown] = useState(false);
-  const [showNewProjModal, setShowNewProjModal] = useState(false);
-  const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
-  
-  const [newProjTitle, setNewProjTitle] = useState('');
-  const [newProjDesc, setNewProjDesc] = useState('');
-  const [newChapterTitle, setNewChapterTitle] = useState('');
-  const [showNewChapterInput, setShowNewChapterInput] = useState(false);
-  
-  const [settingsTitle, setSettingsTitle] = useState('');
-  const [settingsDesc, setSettingsDesc] = useState('');
-  const [settingsGenre, setSettingsGenre] = useState('');
-  const [settingsCoverUrl, setSettingsCoverUrl] = useState('');
+  const [showNewChapter, setShowNewChapter] = useState(false);
+  const [chapterTitle, setChapterTitle] = useState('');
 
-  // Sync state when opening modal
-  useEffect(() => {
-    if (activeProject && showProjectSettingsModal) {
-      setSettingsTitle(activeProject.title || '');
-      setSettingsDesc(activeProject.description || '');
-      setSettingsGenre(activeProject.genre || '');
-      setSettingsCoverUrl(activeProject.cover_url || '');
-    }
-  }, [showProjectSettingsModal, activeProject]);
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjTitle.trim()) return;
-    await createProject(newProjTitle, newProjDesc);
-    setNewProjTitle('');
-    setNewProjDesc('');
-    setShowNewProjModal(false);
-  };
+  const inWorkspace = !!activeProject && WORKSPACE_VIEWS.includes(activeView);
+  const published = !!activeProject?.is_published;
 
   const handleCreateChapter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChapterTitle.trim()) return;
-    await createChapter(newChapterTitle);
-    setNewChapterTitle('');
-    setShowNewChapterInput(false);
+    if (!chapterTitle.trim()) return;
+    await createChapter(chapterTitle);
+    setChapterTitle('');
+    setShowNewChapter(false);
   };
 
-  const handleTogglePublish = async () => {
-    if (!activeProject || !user) return;
-    const authorName = profile?.display_name || (user.email ? user.email.split('@')[0] : 'Anonymous');
-    await publishProject(activeProject.id, !activeProject.is_published, authorName);
-    await publishProject(activeProject.id, !activeProject.is_published, authorName);
-  };
-
-  const handleNavClick = (view: any) => {
-    setActiveView(view);
-    onClose();
-  };
+  const link = (current: boolean, to: string, icon: React.ReactNode, label: string) => (
+    <Link to={to} aria-current={current ? 'page' : undefined} onClick={onClose}>
+      {icon}
+      {label}
+    </Link>
+  );
 
   return (
     <>
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
-          onClick={onClose}
-        />
-      )}
-      
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 border-r border-slate-800 flex flex-col h-full text-slate-300 select-none
-        transform transition-transform duration-300 ease-in-out
-        md:relative md:translate-x-0
-        ${isOpen ? 'translate-x-0 shadow-2xl shadow-black/10' : '-translate-x-full'}
-      `}>
-        {/* App Header & Project Selector */}
-        <div className="p-5 border-b border-slate-900 flex flex-col gap-4 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-pal-blue flex items-center justify-center text-white font-bold text-lg">
-                N
+      <aside className={`studio-sidebar${isOpen ? ' is-open' : ''}`} id="studio-sidebar" aria-label={inWorkspace ? 'Workspace navigation and chapters' : 'Main navigation'}>
+        {inWorkspace && activeProject ? (
+          <>
+            <Link to="/manuscripts" className="back-link" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 8px 12px', padding: 0 }}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> All projects
+            </Link>
+
+            <div className="project-mini">
+              <span className="mini-book" aria-hidden="true">
+                {activeProject.title.trim().charAt(0).toUpperCase()}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2>{activeProject.title}</h2>
+                <p>{`${activeProject.genre || 'Fiction'} · ${published ? 'Published' : 'Draft'}`.toUpperCase()}</p>
               </div>
-              <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
             </div>
-            
-            {/* Mobile Close Button */}
-            <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          {/* Connection Status Badge */}
-          <div 
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help bg-slate-900 border border-slate-800 self-start"
-            title={isSupabase ? 'Connected to Supabase cloud database' : 'Using LocalStorage offline fallback'}
-          >
-            <span className={`w-2 h-2 rounded-full ${isSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-            <Database className="w-3.5 h-3.5 text-slate-400" />
-          </div>
-        </div>
 
-      {/* Main Module Nav */}
-      <nav className="p-4 flex flex-col gap-1 flex-1 overflow-y-auto">
-        <button
-          onClick={() => handleNavClick('home')}
-          className={`${navClass(activeView === 'home', 'blue')} w-full`}
-        >
-          <NavIcon tone="blue"><Home className="w-4 h-4" /></NavIcon>
-          <span>Home Dashboard</span>
-        </button>
+            <nav className="studio-nav" aria-label="Workspace">
+              {link(activeView === 'editor', '/editor', <FileText />, 'Manuscript')}
+              {link(activeView === 'outline', '/outline', <LayoutGrid />, 'Story outline')}
+              {link(activeView === 'notebook', '/notebook', <Globe />, 'World notebook')}
+            </nav>
 
-        <button
-          onClick={() => handleNavClick('library')}
-          className={`${navClass(activeView === 'library', 'green')} w-full`}
-        >
-          <NavIcon tone="green"><Globe className="w-4 h-4" /></NavIcon>
-          <span>Public Library</span>
-        </button>
-
-        <button
-          onClick={() => handleNavClick('saved_library')}
-          className={`${navClass(activeView === 'saved_library', 'red')} w-full`}
-        >
-          <NavIcon tone="red"><Bookmark className="w-4 h-4" /></NavIcon>
-          <span>Your Library</span>
-        </button>
-
-        <button
-          onClick={() => handleNavClick('messages')}
-          className={`${navClass(activeView === 'messages', 'yellow')} w-full`}
-        >
-          <NavIcon tone="yellow"><MessageSquare className="w-4 h-4" /></NavIcon>
-          <span>Messages</span>
-        </button>
-
-        {user?.email === 'aruhaadmin@novelist.com' && (
-          <button
-            onClick={() => handleNavClick('admin')}
-            className={`${navClass(activeView === 'admin', 'purple')} w-full`}
-          >
-            <NavIcon tone="purple"><Shield className="w-4 h-4" /></NavIcon>
-            <span>Admin Dashboard</span>
-          </button>
-        )}
-
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2 mt-4">
-          Workspace
-        </div>
-        
-        {/* Project Selector dropdown */}
-        <div className="relative mb-2 flex gap-2">
-          <button 
-            onClick={() => setShowProjDropdown(!showProjDropdown)}
-            className="flex-1 flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800/60 px-4 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-200 overflow-hidden shadow-sm"
-          >
-            <span className="truncate text-slate-200 font-bold">
-              {activeProject ? activeProject.title : 'No Project Selected'}
-            </span>
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
-          </button>
-
-          {activeProject && (
-            <button
-              onClick={() => setShowProjectSettingsModal(true)}
-              className="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg flex items-center justify-center transition-colors shadow-sm"
-              title="Project Settings"
-            >
-              <Settings className="w-4 h-4 text-slate-400 hover:text-indigo-400" />
-            </button>
-          )}
-
-          {showProjDropdown && (
-            <div className="absolute left-0 right-0 mt-12 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
-              {projects.map((proj) => (
-                <button
-                  key={proj.id}
-                  onClick={() => {
-                    setActiveProject(proj);
-                    setShowProjDropdown(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white transition-colors duration-150 ${activeProject?.id === proj.id ? 'text-indigo-400 bg-indigo-500/5 font-semibold' : 'text-slate-300'}`}
-                >
-                  <div className="truncate font-semibold">{proj.title}</div>
-                  <div className="truncate text-[10px] opacity-70 mt-0.5">{proj.description || 'No description'}</div>
-                </button>
-              ))}
-              <div className="border-t border-slate-800/60 my-1"></div>
-              <button
-                onClick={() => {
-                  setShowProjDropdown(false);
-                  setShowNewProjModal(true);
-                }}
-                className="w-full text-left px-4 py-2 text-xs text-indigo-400 hover:bg-indigo-600 hover:text-white font-medium flex items-center gap-1.5 transition-colors duration-150"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                New Project...
+            <div className="sidebar-label">
+              <h2 className="eyebrow">
+                CHAPTERS <span>{String(chapters.length).padStart(2, '0')}</span>
+              </h2>
+              <button className="icon-button" onClick={() => setShowNewChapter(true)} aria-label="Add a chapter" title="Add a chapter">
+                +
               </button>
             </div>
-          )}
-        </div>
-
-        <div>
-          <button
-            onClick={() => {
-              handleNavClick('editor');
-            }}
-            className={`${navClass(activeView === 'editor', 'purple')} w-full justify-between`}
-          >
-            <div className="flex items-center gap-3">
-              <NavIcon tone="purple"><BookOpen className="w-4 h-4" /></NavIcon>
-              <span>Editor</span>
-            </div>
-            {activeView === 'editor' && (
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            )}
-          </button>
-
-          {/* Chapters Accordion */}
-          {activeView === 'editor' && activeProject && (
-            <div className="mt-1 ml-4 pl-3 border-l-2 border-slate-800 space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 uppercase tracking-wider py-1.5 px-2">
-                <span>Chapters</span>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowNewChapterInput(!showNewChapterInput);
-                  }}
-                  className="hover:text-indigo-400 transition-colors"
-                  title="Add Chapter"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {showNewChapterInput && (
-                <form onSubmit={handleCreateChapter} className="px-1 py-1">
-                  <input
-                    type="text"
-                    placeholder="Chapter title..."
-                    value={newChapterTitle}
-                    onChange={(e) => setNewChapterTitle(e.target.value)}
-                    className="w-full bg-slate-900 text-xs text-slate-200 border border-slate-800 rounded px-2.5 py-1.5 focus:outline-none focus:border-indigo-600"
-                    autoFocus
-                  />
-                </form>
+            <ol className="chapter-list">
+              {chapters.length === 0 && (
+                <li style={{ padding: '10px 12px', fontSize: 10, color: 'var(--muted)', fontStyle: 'italic' }}>No chapters yet.</li>
               )}
+              {chapters.map((c, i) => {
+                const words = countWords(c.content);
+                return (
+                  <li key={c.id}>
+                    <button
+                      aria-current={activeView === 'editor' && activeChapter?.id === c.id ? 'true' : undefined}
+                      onClick={() => {
+                        setActiveChapter(c);
+                        navigate('/editor');
+                        onClose();
+                      }}
+                    >
+                      <span>{String(i + 1).padStart(2, '0')}</span>
+                      <span>
+                        {c.title || 'Untitled chapter'}
+                        <small>{words > 0 ? `${words.toLocaleString()} words` : 'Not started'}</small>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
 
-              {chapters.length === 0 ? (
-                <div className="text-[10px] text-slate-500 italic px-2 py-2">
-                  No chapters yet.
-                </div>
-              ) : (
-                chapters.map((chap) => (
-                  <button
-                    key={chap.id}
-                    onClick={() => {
-                      setActiveChapter(chap);
-                      onClose();
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs text-left transition-all duration-150 group ${
-                      activeChapter?.id === chap.id
-                        ? 'bg-slate-900/80 text-slate-100 font-medium'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-                    }`}
-                  >
-                    <FileText className={`w-3.5 h-3.5 shrink-0 ${activeChapter?.id === chap.id ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
-                    <span className="truncate flex-1">{chap.title}</span>
-                  </button>
-                ))
-              )}
+            <div className="sidebar-bottom">
+              <h2 className="eyebrow">TODAY</h2>
+              <p className="daily-count">
+                <strong>{daily.written.toLocaleString()}</strong>
+                <span>/ {daily.goal.toLocaleString()} words</span>
+              </p>
+              <progress max={daily.goal} value={Math.min(daily.written, daily.goal)} aria-label="Progress toward today's word goal" />
             </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => handleNavClick('planner')}
-          className={`${navClass(activeView === 'planner', 'blue')} w-full`}
-        >
-          <NavIcon tone="blue"><Compass className="w-4 h-4" /></NavIcon>
-          <span>Planner (Wiki)</span>
-        </button>
-
-        <button
-          onClick={() => handleNavClick('tracker')}
-          className={`${navClass(activeView === 'tracker', 'green')} w-full`}
-        >
-          <NavIcon tone="green"><BarChart2 className="w-4 h-4" /></NavIcon>
-          <span>Progress Tracker</span>
-        </button>
-
-        {activeProject && (
-          <div className="mt-4 space-y-2">
-            <button
-              type="button"
-              onClick={handleTogglePublish}
-              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                activeProject.is_published
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Globe className={`w-4 h-4 ${activeProject.is_published ? 'text-emerald-400' : 'text-slate-500'}`} />
-                <span>{activeProject.is_published ? 'Published' : 'Publish Novel'}</span>
-              </div>
-              <div className={`w-8 h-4 rounded-full flex items-center transition-colors ${activeProject.is_published ? 'bg-emerald-500' : 'bg-slate-700'}`}>
-                <div className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform ${activeProject.is_published ? 'translate-x-4' : 'translate-x-0.5'}`} />
-              </div>
-            </button>
-          </div>
+          </>
+        ) : (
+          space === 'read' ? (
+            <nav className="studio-nav" aria-label="Reading">
+              {link(activeView === 'read_home', '/read', <BookOpen />, 'Reading home')}
+              {link(['library', 'reader'].includes(activeView), '/library', <Globe />, 'Public Library')}
+              {!isGuest && link(activeView === 'saved_library', '/saved', <Bookmark />, 'Your Library')}
+            </nav>
+          ) : (
+            <nav className="studio-nav" aria-label="Studio">
+              {link(activeView === 'home', '/write', <Home />, 'Home dashboard')}
+              {link(activeView === 'manuscripts', '/manuscripts', <FileText />, 'Manuscripts')}
+            </nav>
+          )
         )}
-      </nav>
+      </aside>
 
-      {/* Download Apps */}
-      <div className="px-4 py-3 border-t border-slate-900 shrink-0 grid grid-cols-2 gap-2">
-        <a
-          href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0/Novelist.Workspace.Setup.0.0.0.exe"
-          className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white bg-pal-blue hover:opacity-90 transition-opacity duration-200"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Windows</span>
-        </a>
-        <a
-          href="https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0-android/app-debug.apk"
-          className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white bg-pal-green hover:opacity-90 transition-opacity duration-200"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Android</span>
-        </a>
-      </div>
+      <button className={`mobile-scrim${isOpen ? ' is-open' : ''}`} tabIndex={-1} aria-label="Close side panel" onClick={onClose} />
 
-      {/* User Settings & Logout */}
-      <div className="p-4 border-t border-slate-900 shrink-0 space-y-2">
-        <button
-          onClick={() => handleNavClick('profile')}
-          className={`${navClass(activeView === 'profile', 'red')} w-full`}
-        >
-          <NavIcon tone="red"><User className="w-4 h-4" /></NavIcon>
-          <span>My Profile</span>
-        </button>
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-200"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </button>
-      </div>
-
-      {/* New Project Modal */}
-      {showNewProjModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in scale-in duration-200">
-            <h3 className="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <BookOpenCheck className="w-5 h-5 text-indigo-500" />
-              Create New Project
-            </h3>
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Project Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Whispers of the Starward"
-                  value={newProjTitle}
-                  onChange={(e) => setNewProjTitle(e.target.value)}
-                  className="w-full bg-slate-955 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                <textarea
-                  placeholder="A short summary of your novel's theme, setting, or plot..."
-                  value={newProjDesc}
-                  onChange={(e) => setNewProjDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-slate-955 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewProjModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
-                >
-                  Create Project
-                </button>
-              </div>
-            </form>
+      <Dialog open={showNewChapter} onClose={() => setShowNewChapter(false)} labelledBy="nc-h">
+        <form onSubmit={handleCreateChapter}>
+          <p className="eyebrow">A FRESH PAGE</p>
+          <h2 id="nc-h">What comes next?</h2>
+          <label htmlFor="nc-title">Chapter title</label>
+          <input id="nc-title" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} placeholder="Chapter 5: The tide table" required autoFocus />
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowNewChapter(false)}>Cancel</button>
+            <button className="button button-primary button-small">Create chapter</button>
           </div>
-        </div>
-      )}
-
-      {/* Project Settings Modal */}
-      {showProjectSettingsModal && activeProject && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg p-6 shadow-2xl animate-in scale-in duration-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-indigo-500" />
-                Project Settings
-              </h3>
-              <button 
-                onClick={() => setShowProjectSettingsModal(false)}
-                className="text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Novel Title</label>
-                <input
-                  type="text"
-                  value={settingsTitle}
-                  onChange={(e) => setSettingsTitle(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description (Synopsis)</label>
-                <textarea
-                  value={settingsDesc}
-                  onChange={(e) => setSettingsDesc(e.target.value)}
-                  rows={4}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Genre</label>
-                  <select
-                    value={settingsGenre}
-                    onChange={(e) => setSettingsGenre(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 appearance-none"
-                  >
-                    <option value="">Select Genre...</option>
-                    <option value="Fantasy">Fantasy</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Romance">Romance</option>
-                    <option value="Mystery">Mystery</option>
-                    <option value="Horror">Horror</option>
-                    <option value="Thriller">Thriller</option>
-                    <option value="Historical">Historical</option>
-                    <option value="Contemporary">Contemporary</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Cover Image URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={settingsCoverUrl}
-                    onChange={(e) => setSettingsCoverUrl(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowProjectSettingsModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await updateProjectSettings(activeProject.id, {
-                      title: settingsTitle,
-                      description: settingsDesc,
-                      genre: settingsGenre,
-                      cover_url: settingsCoverUrl
-                    });
-                    setShowProjectSettingsModal(false);
-                  }}
-                  className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </aside>
+        </form>
+      </Dialog>
     </>
   );
 };

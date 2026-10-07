@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
 import type { UserProfile, ChatMessage } from '../../services/types';
-import { MessageSquare, Send, Clock, User as UserIcon, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, Info } from 'lucide-react';
+import { EmptyState } from '../ui/EmptyState';
 
 export const MessagesView: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // The ID of the person we are chatting with
@@ -116,188 +117,89 @@ export const MessagesView: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-400 h-full">
-        <MessageSquare className="w-16 h-16 text-slate-700 mb-4" />
-        <h3 className="text-xl font-bold mb-2">Sign in to message authors</h3>
+      <div className="studio-view">
+        <div className="page">
+          <EmptyState icon="users" title="Sign in to message authors" text="Messages are for authors you follow in the Public Library." />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex h-full bg-slate-950 text-slate-200 overflow-hidden">
-      
-      {/* Sidebar: Contacts List */}
-      <div className="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col hidden md:flex shrink-0">
-        <div className="p-4 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-400" />
-            Messages
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Connections from your network</p>
+    <div className="messages">
+      <section className="contacts" aria-label="Conversations">
+        <div className="contacts-head">
+          <h1>Messages</h1>
+          <p>Authors you follow</p>
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-2">
-          {loadingContacts ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
-            </div>
-          ) : contacts.length === 0 ? (
-            <div className="text-center p-8 text-sm text-slate-500 font-sans">
-              You aren't following anyone yet. Find authors in the Public Library to connect!
-            </div>
-          ) : (
-            contacts.map(contact => (
-              <button
-                key={contact.id}
-                onClick={() => handleContactClick(contact.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-1 ${activeContact?.id === contact.id ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-300' : 'hover:bg-slate-800 text-slate-300 border border-transparent'}`}
-              >
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg font-bold shrink-0">
-                  {contact.display_name?.charAt(0).toUpperCase() || <UserIcon className="w-5 h-5" />}
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm truncate text-slate-100">{contact.display_name || 'Anonymous'}</h4>
-                  <p className="text-xs text-slate-500 truncate">
-                    {profile?.following?.includes(contact.id) && profile?.followers?.includes(contact.id) 
-                      ? 'Mutual Connection' 
-                      : profile?.following?.includes(contact.id) ? 'You Follow Them' : 'Follows You'}
-                  </p>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
+        {loadingContacts ? (
+          <p className="meta" style={{ padding: '18px 22px' }}>Loading conversations…</p>
+        ) : contacts.length === 0 ? (
+          <p className="meta" style={{ padding: '18px 22px', lineHeight: 1.7 }}>
+            You aren't following anyone yet. Find authors in the Public Library to connect.
+          </p>
+        ) : (
+          contacts.map((c) => (
+            <button
+              key={c.id}
+              className="contact"
+              aria-current={activeContact?.id === c.id ? 'true' : undefined}
+              onClick={() => handleContactClick(c.id)}
+            >
+              <span className="avatar">{(c.display_name || 'A')[0].toUpperCase()}</span>
+              <span>
+                <strong>{c.display_name || 'Anonymous'}</strong>
+                <small>{c.bio || 'Author'}</small>
+              </span>
+            </button>
+          ))
+        )}
+      </section>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
-        {/* Mobile Back Button & Header */}
+      <section className="chat" aria-label="Conversation">
         {activeContact ? (
           <>
-            <div className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center px-4 shrink-0 z-10 sticky top-0">
-              <button 
-                onClick={() => navigate('/messages')} 
-                className="md:hidden mr-4 p-2 text-slate-400 hover:text-slate-200"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              
-              <div 
-                className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg font-bold mr-3 cursor-pointer hover:ring-2 ring-indigo-500 transition-all"
+            <div className="chat-head">
+              <span className="avatar">{(activeContact.display_name || 'A')[0].toUpperCase()}</span>
+              <strong
+                style={{ font: '24px var(--serif)', fontWeight: 400, cursor: 'pointer' }}
                 onClick={() => navigate(`/library/author/${activeContact.id}`)}
               >
-                {activeContact.display_name?.charAt(0).toUpperCase() || <UserIcon className="w-5 h-5" />}
-              </div>
-              <div>
-                <h3 
-                  className="font-bold text-slate-100 cursor-pointer hover:underline"
-                  onClick={() => navigate(`/library/author/${activeContact.id}`)}
-                >
-                  {activeContact.display_name || 'Anonymous'}
-                </h3>
-              </div>
+                {activeContact.display_name || 'Anonymous'}
+              </strong>
             </div>
-
-            {/* Warning Banner */}
-            <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-center gap-2 text-xs font-medium text-amber-500/80">
-              <Clock className="w-3.5 h-3.5" />
-              Messages in this chat are temporary and will be permanently deleted after 14 days.
-            </div>
-
-            {/* Messages List */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 flex flex-col font-sans relative">
-              <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/5 to-transparent pointer-events-none" />
-              
+            <p className="chat-notice">
+              <Info style={{ display: 'inline', width: 13, height: 13, verticalAlign: '-2px' }} /> Messages in this chat are temporary and are deleted after 14 days.
+            </p>
+            <div className="chat-log" role="log" aria-live="polite">
               {loadingMessages ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                </div>
+                <p className="meta">Loading messages…</p>
               ) : messages.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
-                  <MessageSquare className="w-12 h-12 mb-4 opacity-50" />
-                  <p>Say hello to {activeContact.display_name || 'Anonymous'}!</p>
-                </div>
+                <p className="meta" style={{ textAlign: 'center' }}>Say hello. This is the start of your conversation.</p>
               ) : (
-                messages.map((msg, i) => {
-                  const isMe = msg.sender_id === user.id;
-                  const showDate = i === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[i-1].created_at).toDateString();
-                  
-                  return (
-                    <React.Fragment key={msg.id}>
-                      {showDate && (
-                        <div className="flex justify-center my-4">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-                            {new Date(msg.created_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      )}
-                      <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] md:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                          <div 
-                            className={`px-4 py-2.5 rounded-2xl text-sm ${
-                              isMe 
-                                ? 'bg-indigo-600 text-white rounded-br-sm shadow-md shadow-indigo-600/20' 
-                                : 'bg-slate-800 text-slate-200 rounded-bl-sm border border-slate-700/50'
-                            }`}
-                            style={{ wordBreak: 'break-word' }}
-                          >
-                            {msg.content}
-                          </div>
-                          <span className="text-[10px] text-slate-500 mt-1 font-medium px-1">
-                            {formatTime(msg.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })
+                messages.map((m) => (
+                  <div key={m.id} className={`bubble${m.sender_id === user.id ? ' me' : ''}`}>
+                    {m.content}
+                    <small>{formatTime(m.created_at)}</small>
+                  </div>
+                ))
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-slate-900/80 backdrop-blur border-t border-slate-800 shrink-0">
-              <div className="flex items-center gap-2 relative">
-                <input 
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-slate-950 border border-slate-700 rounded-full pl-5 pr-12 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans"
-                />
-                <button 
-                  type="submit"
-                  disabled={!newMessage.trim()}
-                  className="absolute right-2 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white disabled:opacity-50 disabled:bg-slate-700 hover:bg-indigo-500 transition-colors"
-                >
-                  <Send className="w-4 h-4 ml-0.5" />
-                </button>
-              </div>
+            <form className="chat-form" onSubmit={handleSendMessage}>
+              <label className="sr-only" htmlFor="chat-input">Message</label>
+              <input className="input" id="chat-input" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message…" autoComplete="off" />
+              <button className="small-btn is-primary" disabled={!newMessage.trim()}>
+                <Send /> Send
+              </button>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 md:hidden p-8 text-center">
-            <MessageSquare className="w-16 h-16 text-slate-800 mb-6" />
-            <h2 className="text-xl font-bold text-slate-300 mb-2">Your Messages</h2>
-            <p className="text-sm font-sans mb-8">Select a conversation from the sidebar or find authors in the public library to connect.</p>
-            
-            <div className="w-full flex flex-col gap-2 max-w-sm">
-              {contacts.map(c => (
-                <button 
-                  key={c.id}
-                  onClick={() => navigate(`/messages/${c.id}`)}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold">
-                    {c.display_name?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="font-bold text-slate-300">{c.display_name}</span>
-                </button>
-              ))}
-            </div>
+          <div style={{ margin: 'auto', padding: 30 }}>
+            <EmptyState icon="users" title="Your messages" text="Select a conversation, or find authors in the Public Library to connect." />
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { User as UserIcon, Save, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PageHead } from '../ui/PageHead';
 import { GuestGateModal } from '../Auth/GuestGateModal';
 
 export const ProfileView: React.FC = () => {
@@ -53,104 +54,54 @@ export const ProfileView: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="flex-1 bg-slate-950 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-8 py-12">
-        <header className="mb-10">
-          <div className="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl mb-4 border border-indigo-500/20">
-            <UserIcon className="w-8 h-8 text-indigo-400 stroke-[1.5]" />
-          </div>
-          <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight mb-2">My Profile</h1>
-          <p className="text-slate-400">
-            Manage your public author persona and writing goals.
-          </p>
-        </header>
-
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 border ${
-            message.startsWith('Error') 
-              ? 'bg-rose-500/10 border-rose-500/20' 
-              : 'bg-emerald-500/10 border-emerald-500/20'
-          }`}>
-            <UserIcon className={`w-5 h-5 shrink-0 mt-0.5 ${
-              message.startsWith('Error') ? 'text-rose-400' : 'text-emerald-400'
-            }`} />
-            <p className={`text-sm ${
-              message.startsWith('Error') ? 'text-rose-300' : 'text-emerald-300'
-            }`}>{message}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSave} className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 space-y-6">
-          
-          <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Author Name
+    <div className="studio-view">
+      <div className="page" style={{ maxWidth: 780 }}>
+        <PageHead
+          eyebrow="ACCOUNT"
+          title={
+            <>
+              Your author <em>persona.</em>
+            </>
+          }
+          lead="Manage how you appear in the Public Library, and your writing goal."
+        />
+        <form className="stack" onSubmit={handleSave}>
+          <div className="card">
+            <h3>Public profile</h3>
+            <p style={{ margin: '6px 0 22px' }}>This is how you will appear to other users in the Public Library.</p>
+            <label className="field">
+              <span>Author name</span>
+              <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="J.R.R. Tolkien" />
             </label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. J.R.R. Tolkien"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-            />
-            <p className="text-xs text-slate-500 mt-2">
-              This is how you will appear to other users in the Public Library.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Author Bio
+            <label className="field">
+              <span>Author bio</span>
+              <textarea className="textarea" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell your readers a bit about yourself…" />
             </label>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell your readers a bit about yourself..."
-              rows={4}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors resize-none"
-            />
           </div>
-
-          <div className="border-t border-slate-800/60 pt-6">
-            <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Daily Word Count Goal
+          <div className="card">
+            <h3>Daily word goal</h3>
+            <p style={{ margin: '6px 0 22px' }}>A target for your writing sessions. The tracker will help you stay on course.</p>
+            <label className="field">
+              <span>Words per day</span>
+              <input className="input" type="number" min="0" style={{ maxWidth: 200 }} value={dailyGoal} onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)} />
             </label>
-            <input
-              type="number"
-              min={100}
-              step={100}
-              value={dailyGoal}
-              onChange={(e) => setDailyGoal(Number(e.target.value))}
-              className="w-full max-w-[200px] bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-            />
-            <p className="text-xs text-slate-500 mt-2">
-              Set a target for your writing sessions. The Tracker will help you stay on course.
-            </p>
           </div>
-
-          <div className="flex items-center gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {isSaving ? 'Saving...' : 'Save Profile'}
+          <div className="page-actions">
+            <button className="small-btn is-primary" disabled={isSaving}>
+              {isSaving ? 'Saving…' : 'Save changes'}
             </button>
-            {message && (
-              <span className="text-sm font-medium text-emerald-400 animate-in fade-in slide-in-from-left-2">
-                {message}
-              </span>
-            )}
+            <Link className="small-btn" to="/preferences">Open preferences</Link>
           </div>
+          {message && (
+            <p className="mock-note" role="status">{message}</p>
+          )}
         </form>
       </div>
 
-      <GuestGateModal 
+      <GuestGateModal
         isOpen={showGuestModal}
         onClose={() => setShowGuestModal(false)}
-        title="Account Required"
-        message="You must create a free account to customize your public author profile!"
+        message="You need a free account to create an author profile and set your daily goal."
       />
     </div>
   );

@@ -1,311 +1,320 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Maximize, Minimize, Printer, Download, Lightbulb, MessageSquare } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Cloud, Check, Loader2, Feather, BarChart, Plus, FileText, ChevronRight, X, Maximize, Minimize } from 'lucide-react';
-
+import { countWords, htmlToText, readMinutes } from '../../lib/text';
+import { usePublishProject } from '../../lib/publish';
+import { useDailyGoal } from '../../lib/dailyGoal';
+import { metaFor, STATUS_LABEL, STATUS_ORDER, type ChapterStatus } from '../../lib/chapterMeta';
+import { openCapture } from '../../lib/uiEvents';
 import { RichTextEditor } from './RichTextEditor';
+import { useChapterAutosave } from './useChapterAutosave';
+import { VersionHistory } from './VersionHistory';
+import { addSnapshot, maybeAutoSnapshot } from '../../lib/history';
+import { MoreMenu } from '../ui/MoreMenu';
+import { ExportDialog } from '../Export/ExportDialog';
+import { ChapterIndexView } from './ChapterIndexView';
+import { MarginsRail, RailBlock } from '../ui/MarginsRail';
+import { EntityPeek } from '../Notebook/EntityPeek';
+import { FeedbackDialog } from '../Feedback/FeedbackDialog';
+import { requestFind } from '../../lib/uiEvents';
+import { useOnline } from '../../lib/online';
+import { quoteTerm, setFeedbackStatus, useFeedback } from '../../lib/feedback';
+import { mentionCount, sceneChapterId, sceneWhen, withSceneLinks } from '../../lib/notes';
 
 export const EditorView: React.FC = () => {
-  const { activeProject, chapters, activeChapter, setActiveChapter, updateChapter, createChapter, logWordCount, isSupabase, zenMode, setZenMode } = useApp();
-  const [localTitle, setLocalTitle] = useState(activeChapter?.title || '');
-  const [localContent, setLocalContent] = useState(activeChapter?.content || '');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('saved');
-  const [showNewChapterModal, setShowNewChapterModal] = useState(false);
-  const [newChapterTitle, setNewChapterTitle] = useState('');
-  
-  const saveTimeoutRef = useRef<number | null>(null);
+  const { activeProject, chapters, activeChapter, entities, chapterMeta, updateChapterMeta, updateEntity, isSupabase, zenMode, setZenMode } = useApp();
+  const daily = useDailyGoal();
+  const navigate = useNavigate();
+  const autosave = useChapterAutosave((id, title, content) => {
+    if (activeProject) void maybeAutoSnapshot(activeProject.id, id, title, content);
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [peekId, setPeekId] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const feedback = useFeedback(activeProject?.id);
+  const online = useOnline();
 
-  // Sync state if active chapter changes from outside
+  // A restore point of how the chapter looked when it was opened
   useEffect(() => {
-    if (activeChapter) {
-      setLocalTitle(activeChapter.title || '');
-      setLocalContent(activeChapter.content || '');
+    if (activeProject && activeChapter && activeChapter.content) {
+      void addSnapshot(activeProject.id, activeChapter.id, activeChapter.title || '', activeChapter.content, 'session');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChapter?.id]);
+  const { title: localTitle, content: localContent, status: saveStatus } = autosave;
+  const togglePublish = usePublishProject();
 
-  // Clean timeout on unmount
+  // Escape leaves Zen mode
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
+    if (!zenMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZenMode(false);
     };
-  }, []);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [zenMode, setZenMode]);
 
-  const triggerAutosave = (updatedTitle: string, updatedContent: string) => {
-    if (!activeChapter) return;
-    setSaveStatus('saving');
-
-    if (saveTimeoutRef.current) {
-      window.clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = window.setTimeout(async () => {
-      try {
-        await updateChapter(activeChapter.id, {
-          title: updatedTitle,
-          content: updatedContent,
-        });
-        
-        const wordCount = calculateWordCount(updatedContent);
-        await logWordCount(wordCount);
-
-        setSaveStatus('saved');
-      } catch (err) {
-        console.error('Autosave failed:', err);
-        setSaveStatus('idle');
-      }
-    }, 1000);
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setLocalTitle(val);
-    triggerAutosave(val, localContent);
-  };
-
-  const handleContentChange = (val: string) => {
-    setLocalContent(val);
-    triggerAutosave(localTitle, val);
-  };
-
-  const calculateWordCount = (text: string): number => {
-    // Strip HTML tags for accurate word count
-    const cleanedText = text.replace(/<[^>]*>?/gm, ' ');
-    const cleaned = cleanedText.trim();
-    if (!cleaned) return 0;
-    return cleaned.split(/\s+/).filter(word => word.length > 0).length;
-  };
-
-  const calculateCharCount = (text: string): number => {
-    const cleanedText = text.replace(/<[^>]*>?/gm, '');
-    return cleanedText.length;
-  };
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => autosave.setTitle(e.target.value);
+  const handleContentChange = (val: string) => autosave.setContent(val);
 
   if (!activeChapter) {
-    if (!activeProject) {
-      return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
-          <Feather className="w-12 h-12 text-slate-600 mb-4 stroke-[1.5]" />
-          <h3 className="text-lg font-medium text-slate-300">No Project Selected</h3>
-          <p className="text-sm text-slate-500 mt-1 max-w-xs text-center">
-            Select a project from the Home Dashboard or Sidebar to view its chapters.
-          </p>
-        </div>
-      );
-    }
+    return <ChapterIndexView />;
+  }
 
-    return (
-      <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden relative">
-        <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
-        
-        <div className="max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 relative z-10 overflow-y-auto">
-          <header className="mb-8 sm:mb-12">
-            <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight mb-2">
-              Chapter Index
-            </h1>
-            <p className="text-slate-400">
-              Manage and access all chapters for <span className="font-semibold text-slate-200">{activeProject.title}</span>.
-            </p>
-          </header>
+  const wordCount = countWords(localContent);
+  const charCount = htmlToText(localContent).length;
+  const chapterNumber = Math.max(1, chapters.findIndex((c) => c.id === activeChapter.id) + 1);
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Create New Chapter Card */}
-            <div 
-              onClick={() => setShowNewChapterModal(true)}
-              className="group relative bg-slate-900/40 border-2 border-dashed border-slate-700/60 rounded-xl p-6 hover:bg-slate-800/40 hover:border-indigo-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors mb-3">
-                <Plus className="w-5 h-5" />
+  // Characters, places and other notes named in this chapter
+  const plain = htmlToText(localContent);
+  const notebookEntries = entities.filter((e) => e.type !== 'scene');
+  const onThePage = notebookEntries.filter((e) => e.name && mentionCount(localContent, plain, e) > 0).slice(0, 8);
+
+  // Outline scenes that belong to this chapter, and the ones that could be added to it
+  const scenes = entities.filter((e) => e.type === 'scene');
+  const sceneHere = scenes.filter((sc) => sceneChapterId(sc) === activeChapter.id);
+  const sceneElsewhere = scenes.filter((sc) => sceneChapterId(sc) !== activeChapter.id);
+  const setSceneChapter = (scene: (typeof scenes)[number], chapterId: string) =>
+    updateEntity(scene.id, { content: withSceneLinks(scene, chapterId, sceneWhen(scene)) });
+
+  const openMention = (idOrName: string) => {
+    const hit = entities.find((e) => e.id === idOrName) || entities.find((e) => e.name === idOrName);
+    if (hit) setPeekId(hit.id);
+  };
+
+  const saveLabel =
+    !online && saveStatus !== 'saved'
+      ? 'Offline: kept on this device, saves when you reconnect'
+      : saveStatus === 'saved'
+      ? `Saved ${isSupabase ? 'to the cloud' : 'on this device'}`
+      : saveStatus === 'saving'
+        ? 'Saving…'
+        : saveStatus === 'error'
+          ? 'Not saved yet'
+          : 'Changes pending';
+
+  const meta = metaFor(chapterMeta, activeChapter.id);
+
+  const contextRail = (
+    <MarginsRail>
+      <RailBlock title="This chapter">
+        <p>
+          {wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'} · {readMinutes(wordCount)}
+        </p>
+        <label className="rail-label" htmlFor="ch-status">Where it stands</label>
+        <select
+          id="ch-status"
+          className="select rail-field"
+          value={meta.status}
+          onChange={(e) => updateChapterMeta(activeChapter.id, { status: e.target.value as ChapterStatus })}
+        >
+          {STATUS_ORDER.map((st) => (
+            <option key={st} value={st}>{STATUS_LABEL[st]}</option>
+          ))}
+        </select>
+      </RailBlock>
+      <RailBlock title="Synopsis and notes">
+        <label className="rail-label" htmlFor="ch-synopsis">In a line or two</label>
+        <textarea
+          id="ch-synopsis"
+          className="textarea rail-field"
+          rows={3}
+          value={meta.synopsis}
+          onChange={(e) => updateChapterMeta(activeChapter.id, { synopsis: e.target.value })}
+          placeholder="What happens here?"
+        />
+        <label className="rail-label" htmlFor="ch-notes">Notes to yourself</label>
+        <textarea
+          id="ch-notes"
+          className="textarea rail-field"
+          rows={5}
+          value={meta.notes}
+          onChange={(e) => updateChapterMeta(activeChapter.id, { notes: e.target.value })}
+          placeholder="Fix the timeline. Foreshadow the storm."
+        />
+        <small>Saved on this device. Never part of your exports.</small>
+      </RailBlock>
+      <RailBlock title="On the page">
+        {onThePage.length === 0 ? (
+          <p>Characters and places from your notebook appear here when you name them.</p>
+        ) : (
+          onThePage.map((ent) => (
+            <button className="character-chip chip-button" key={ent.id} onClick={() => setPeekId(ent.id)} aria-label={`Look at ${ent.name}`}>
+              <span aria-hidden="true">{ent.name.charAt(0).toUpperCase()}</span>
+              <div>
+                <strong>{ent.name}</strong>
+                <small style={{ textTransform: 'capitalize' }}>{ent.type}</small>
               </div>
-              <span className="font-semibold text-slate-400 group-hover:text-slate-200 transition-colors">
-                Create New Chapter
-              </span>
-            </div>
-
-            {/* Existing Chapters */}
-            {chapters.map((chap, idx) => (
-              <div 
-                key={chap.id}
-                onClick={() => setActiveChapter(chap)}
-                className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-6 hover:bg-white hover:shadow-md hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden min-h-[160px]"
-              >
-                <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
-                
-                <div className="flex items-center gap-3 text-indigo-400 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center font-bold text-xs">
-                    {idx + 1}
-                  </div>
-                  <FileText className="w-4 h-4 opacity-70" />
-                </div>
-                
-                <h3 className="text-lg font-bold text-slate-100 mb-auto line-clamp-2 group-hover:text-indigo-300 transition-colors">
-                  {chap.title}
-                </h3>
-                
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-4 mt-4">
-                  <span>{calculateWordCount(chap.content || '')} words</span>
-                  <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                    Write <ChevronRight className="w-3.5 h-3.5" />
-                  </div>
+            </button>
+          ))
+        )}
+      </RailBlock>
+      {feedback.some((f) => f.chapterId === activeChapter.id && f.status === 'open') && (
+        <RailBlock title="Reader notes">
+          {feedback
+            .filter((f) => f.chapterId === activeChapter.id && f.status === 'open')
+            .map((f) => (
+              <div className="reader-note" key={`${f.reader}-${f.id}`}>
+                <small>{f.reader}</small>
+                {f.quote && <q>{f.quote.length > 90 ? `${f.quote.slice(0, 87)}…` : f.quote}</q>}
+                <p>{f.note}</p>
+                <div>
+                  {f.quote && (
+                    <button className="link-accent" onClick={() => requestFind(quoteTerm(f.quote))}>Show</button>
+                  )}
+                  <button className="link-accent" onClick={() => setFeedbackStatus(activeProject!.id, f, 'done')}>Done</button>
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* New Chapter Modal */}
-          {showNewChapterModal && (
-            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-              <div 
-                className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between p-6 border-b border-slate-800/60 bg-slate-900/50">
-                  <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-indigo-400" />
-                    New Chapter
-                  </h3>
-                  <button 
-                    onClick={() => {
-                      setShowNewChapterModal(false);
-                      setNewChapterTitle('');
-                    }}
-                    className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-slate-800"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <form 
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!newChapterTitle.trim()) return;
-                    await createChapter(newChapterTitle.trim());
-                    setShowNewChapterModal(false);
-                    setNewChapterTitle('');
-                  }}
-                  className="p-6"
-                >
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
-                    Chapter Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newChapterTitle}
-                    onChange={(e) => setNewChapterTitle(e.target.value)}
-                    placeholder="e.g. Chapter 1: The Beginning"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors mb-6"
-                    autoFocus
-                  />
-                  
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowNewChapterModal(false);
-                        setNewChapterTitle('');
-                      }}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!newChapterTitle.trim()}
-                      className="px-6 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/20"
-                    >
-                      Create Chapter
-                    </button>
-                  </div>
-                </form>
-              </div>
+        </RailBlock>
+      )}
+      <RailBlock title="Scenes here">
+        {sceneHere.length === 0 ? (
+          <p>No outline scenes are linked to this chapter yet.</p>
+        ) : (
+          sceneHere.map((sc) => (
+            <div className="scene-link" key={sc.id}>
+              <span>
+                {sc.name}
+                <small>{sc.content.status || 'idea'}</small>
+              </span>
+              <button className="icon-button" aria-label={`Unlink ${sc.name} from this chapter`} title="Unlink" onClick={() => setSceneChapter(sc, '')}>×</button>
             </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const wordCount = calculateWordCount(localContent);
-  const charCount = calculateCharCount(localContent);
+          ))
+        )}
+        {sceneElsewhere.length > 0 && (
+          <>
+            <label className="rail-label" htmlFor="ch-link-scene">Link a scene</label>
+            <select
+              id="ch-link-scene"
+              className="select rail-field"
+              value=""
+              onChange={(e) => {
+                const sc = scenes.find((x) => x.id === e.target.value);
+                if (sc) setSceneChapter(sc, activeChapter.id);
+              }}
+            >
+              <option value="">Choose from your outline…</option>
+              {sceneElsewhere.map((sc) => (
+                <option key={sc.id} value={sc.id}>{sc.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+      </RailBlock>
+    </MarginsRail>
+  );
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-slate-900 overflow-hidden">
-      {/* Editor Header */}
-      <header className="h-16 border-b border-slate-800/80 px-4 sm:px-8 flex items-center justify-between shrink-0 bg-slate-900/50 backdrop-blur-md">
-        <div className="flex-1 max-w-xl">
-          <input
-            type="text"
-            value={localTitle}
-            onChange={handleTitleChange}
-            placeholder="Untitled Chapter"
-            className="w-full bg-transparent text-slate-100 text-lg font-semibold focus:outline-none border-b border-transparent hover:border-slate-800 focus:border-indigo-500 transition-colors py-0.5"
-          />
-        </div>
-
-        {/* Header Actions */}
-        <div className="flex items-center gap-3">
-          {/* Zen Mode Toggle */}
-          <button 
-            onClick={() => setZenMode(!zenMode)}
-            className={`p-1.5 rounded-lg transition-colors flex items-center gap-2 text-xs font-semibold ${zenMode ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
-            title={zenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
-          >
-            {zenMode ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-            <span className="hidden sm:inline">Zen Mode</span>
+    <>
+      <div className="studio-toolbar">
+        <h1>
+          Manuscript <span>/ Chapter {String(chapterNumber).padStart(2, '0')}</span>
+        </h1>
+        <div className="toolbar-actions">
+          <Link className="button button-outline button-small" to="/chapters">
+            Chapter index
+          </Link>
+          <button className="button button-outline button-small" onClick={() => setShowHistory(true)}>
+            History
           </button>
-
-          {/* Autosave Status Badge */}
-          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/80 border border-slate-800/50 px-3.5 py-1.5 rounded-full select-none">
-            {saveStatus === 'saved' && (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="hidden sm:inline">Saved {isSupabase ? 'to Cloud' : 'locally'}</span>
-                <span className="sm:hidden">Saved</span>
-              </>
-            )}
-            {saveStatus === 'saving' && (
-              <>
-                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
-                <span>Saving...</span>
-              </>
-            )}
-            {saveStatus === 'idle' && (
-              <>
-                <Cloud className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden sm:inline">Changes pending</span>
-                <span className="sm:hidden">Pending</span>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Editor Writing Board */}
-      <main className="flex-1 overflow-hidden px-2 sm:px-8 py-4 sm:py-8 flex justify-center bg-slate-900 transition-colors">
-        <div className="w-full max-w-3xl flex flex-col h-full relative">
-          <RichTextEditor 
-            content={localContent} 
-            onChange={handleContentChange} 
+          <MoreMenu
+            items={[
+              { label: 'Jot an idea', icon: <Lightbulb />, onSelect: () => openCapture() },
+              { label: 'Reader feedback…', icon: <MessageSquare />, onSelect: () => setShowFeedback(true) },
+              { label: 'Export…', icon: <Download />, onSelect: () => setShowExport(true) },
+              { label: 'Print view', icon: <Printer />, onSelect: () => navigate('/print') },
+            ]}
           />
+          {activeProject && (
+            <button
+              className={`button button-small ${activeProject.is_published ? 'button-outline' : 'button-primary'}`}
+              onClick={() => togglePublish(activeProject)}
+              aria-pressed={!!activeProject.is_published}
+              title={activeProject.is_published ? 'Remove this novel from the Public Library' : 'Share this novel in the Public Library'}
+            >
+              {activeProject.is_published ? 'Published · Unpublish' : 'Publish novel'}
+            </button>
+          )}
+          <button
+            className="focus-button"
+            onClick={() => setZenMode(!zenMode)}
+            aria-pressed={zenMode}
+            aria-label={zenMode ? 'Exit focus mode' : 'Enter focus mode'}
+            title="Focus mode; Escape to exit"
+          >
+            {zenMode ? <Minimize /> : <Maximize />}
+            <span>{zenMode ? 'Exit focus' : 'Zen mode'}</span>
+          </button>
         </div>
-      </main>
+      </div>
 
-      {/* Editor Footer / Info Bar */}
-      <footer className="h-11 border-t border-slate-800/60 bg-slate-950/60 backdrop-blur-sm shrink-0 px-4 sm:px-8 flex items-center justify-between text-xs text-slate-500 select-none">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <Feather className="w-3.5 h-3.5" />
-            <strong>{wordCount}</strong> words
-          </span>
-          <span className="flex items-center gap-1.5">
-            <BarChart className="w-3.5 h-3.5" />
-            <strong>{charCount}</strong> characters
-          </span>
+      {autosave.notice && (
+        <div className="find-bar" role="status" style={{ justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12 }}>{autosave.notice}</span>
+          <button className="small-btn" onClick={autosave.dismissNotice}>Dismiss</button>
         </div>
-        <div className="text-[11px] font-medium tracking-wide text-slate-600">
-          Focus Mode Active
+      )}
+
+      <RichTextEditor
+        content={localContent}
+        onChange={handleContentChange}
+        onMentionClick={openMention}
+        header={
+          <>
+            <div className="paper-running-head">
+              <span>{(activeProject?.title || '').toUpperCase()}</span>
+              <span>{activeProject?.is_published ? 'PUBLISHED' : 'DRAFT'}</span>
+            </div>
+            <p className="chapter-kicker">CHAPTER {String(chapterNumber).padStart(2, '0')}</p>
+            <input
+              className="chapter-title"
+              value={localTitle}
+              onChange={handleTitleChange}
+              placeholder="Untitled chapter"
+              aria-label="Chapter title"
+              style={{ width: '100%', background: 'transparent', border: 0, outline: 'none', display: 'block' }}
+            />
+          </>
+        }
+      />
+
+      <footer className="studio-statusbar">
+        <div>
+          <span>{wordCount.toLocaleString()} words</span>
+          <span>{charCount.toLocaleString()} characters</span>
+          <span>{readMinutes(wordCount)}</span>
+        </div>
+        <div>
+          {zenMode && <span className="status-hint">Today {daily.written.toLocaleString()} / {daily.goal.toLocaleString()} · Escape to exit</span>}
+          <span className="save-status" role="status" style={saveStatus === 'error' ? { color: 'var(--danger)' } : undefined}>
+            {saveLabel}
+          </span>
+          {saveStatus === 'error' && (
+            <button className="link-accent" onClick={autosave.retry}>Retry now</button>
+          )}
         </div>
       </footer>
-    </div>
+
+      <ExportDialog project={showExport ? activeProject : null} onClose={() => setShowExport(false)} />
+
+      <VersionHistory
+        open={showHistory}
+        projectId={activeProject?.id || ''}
+        onClose={() => setShowHistory(false)}
+        chapterId={activeChapter.id}
+        currentTitle={localTitle}
+        currentContent={localContent}
+        currentWords={wordCount}
+        onRestore={(t, c) => autosave.replaceAll(t, c)}
+      />
+
+      <EntityPeek entityId={peekId} onChange={setPeekId} />
+      <FeedbackDialog project={showFeedback ? activeProject : null} onClose={() => setShowFeedback(false)} />
+
+      {contextRail}
+    </>
   );
 };

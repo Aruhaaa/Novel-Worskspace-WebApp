@@ -2,11 +2,17 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Dashboard/Sidebar';
 import { EditorView } from './components/Editor/EditorView';
-import { PlannerView } from './components/Planner/PlannerView';
+import { ChapterIndexView } from './components/Editor/ChapterIndexView';
+import { NotebookView } from './components/Planner/NotebookView';
+import { OutlineView } from './components/Planner/OutlineView';
 import { HomeView } from './components/Dashboard/HomeView';
+import { ManuscriptsView } from './components/Dashboard/ManuscriptsView';
 import { TrackerView } from './components/Tracker/TrackerView';
 import { AuthView } from './components/Auth/AuthView';
 import { LibraryView } from './components/Library/LibraryView';
+import { ReaderHomeView } from './components/Library/ReaderHomeView';
+import { ModeChooser } from './components/Auth/ModeChooser';
+import { openingPath } from './lib/mode';
 import { SavedLibraryView } from './components/Library/SavedLibraryView';
 import { LibraryReaderView } from './components/Library/LibraryReaderView';
 import { ProfileView } from './components/Profile/ProfileView';
@@ -15,37 +21,56 @@ import { AdminView } from './components/Admin/AdminView';
 import { PublicProfileView } from './components/Profile/PublicProfileView';
 import { MessagesView } from './components/Chat/MessagesView';
 import { LandingView } from './components/Marketing/LandingView';
-import { Feather, Loader2, Menu } from 'lucide-react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { PreferencesView } from './components/Preferences/PreferencesView';
+import { AppHeader } from './components/Dashboard/AppHeader';
+import { EmptyState } from './components/ui/EmptyState';
+import { CommandPalette } from './components/Search/CommandPalette';
+import { QuickCapture } from './components/Capture/QuickCapture';
+import { onOpenCapture, onOpenSearch } from './lib/uiEvents';
+import { ToastProvider } from './components/ui/Toast';
+import { TourHost } from './components/Tour/TourHost';
+import { SharedReaderView } from './components/Share/SharedReaderView';
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+
+const PROJECT_ROUTES = ['/editor', '/chapters', '/outline', '/notebook', '/tracker', '/print'];
 
 const WorkspaceContent: React.FC = () => {
-  const { loading, activeProject, activeChapter } = useApp();
+  const { loading, activeProject, activeChapter, mode } = useApp();
   const location = useLocation();
 
-  const isProjectRoute = ['/editor', '/planner', '/tracker', '/print'].includes(location.pathname);
+  const isProjectRoute = PROJECT_ROUTES.includes(location.pathname);
 
   if (loading && !activeProject && isProjectRoute) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400">
-        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-        <p className="text-sm font-medium">Loading workspace...</p>
+      <div className="studio-view">
+        <div className="page">
+          <p className="meta" role="status">Loading your workspace…</p>
+        </div>
       </div>
     );
   }
 
-  const NoProjectView = () => (
-    <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-8">
-      <Feather className="w-12 h-12 text-slate-700 mb-4 stroke-[1.5]" />
-      <h3 className="text-lg font-medium text-slate-200">No Active Project</h3>
-      <p className="text-sm text-slate-500 mt-1 max-w-sm text-center">
-        Create a new project from the sidebar to get started on your next masterpiece.
-      </p>
+  const noProject = (
+    <div className="studio-view">
+      <div className="page">
+        <EmptyState
+          icon="pen"
+          title="No project selected"
+          text="Choose a project from your manuscripts to start writing, or start a new one."
+        >
+          <Link className="small-btn is-primary" to="/manuscripts">Choose a project</Link>
+        </EmptyState>
+      </div>
     </div>
   );
 
   return (
     <Routes>
-      <Route path="/" element={<HomeView />} />
+      {/* The front door: readers open to something to read, writers to the studio */}
+      <Route path="/" element={<Navigate to={openingPath(mode)} replace />} />
+      <Route path="/read" element={<ReaderHomeView />} />
+      <Route path="/write" element={<HomeView />} />
+      <Route path="/manuscripts" element={<ManuscriptsView />} />
       <Route path="/library" element={<LibraryView />} />
       <Route path="/library/novel/:id" element={<LibraryReaderView />} />
       <Route path="/library/author/:id" element={<PublicProfileView />} />
@@ -54,27 +79,81 @@ const WorkspaceContent: React.FC = () => {
       <Route path="/messages" element={<MessagesView />} />
       <Route path="/messages/:id" element={<MessagesView />} />
       <Route path="/admin" element={<AdminView />} />
-      
+      <Route path="/preferences" element={<PreferencesView />} />
+
       {/* Project required routes */}
-      <Route path="/editor" element={activeProject ? <EditorView key={activeChapter?.id} /> : <NoProjectView />} />
-      <Route path="/planner" element={activeProject ? <PlannerView key={activeProject?.id} /> : <NoProjectView />} />
-      <Route path="/tracker" element={activeProject ? <TrackerView key={activeProject?.id} /> : <NoProjectView />} />
-      <Route path="/print" element={activeProject ? <PrintView /> : <NoProjectView />} />
-      
+      <Route path="/editor" element={activeProject ? <EditorView key={activeChapter?.id} /> : noProject} />
+      <Route path="/chapters" element={activeProject ? <ChapterIndexView /> : noProject} />
+      <Route path="/outline" element={activeProject ? <OutlineView key={activeProject?.id} /> : noProject} />
+      <Route path="/notebook" element={activeProject ? <NotebookView key={activeProject?.id} /> : noProject} />
+      <Route path="/planner" element={<Navigate to="/notebook" replace />} />
+      <Route path="/tracker" element={activeProject ? <TrackerView key={activeProject?.id} /> : noProject} />
+      <Route path="/print" element={activeProject ? <PrintView /> : noProject} />
+
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
 
+/** Which kind of page the stylesheet should lay out: marketing, sign-in, or the studio shell. */
+const useBodyMode = (mode: 'landing' | 'auth' | 'app' | 'shared', focused: boolean) => {
+  React.useEffect(() => {
+    const body = document.body;
+    body.classList.remove('landing', 'studio-page', 'app', 'is-focused');
+    if (mode === 'landing') body.classList.add('landing');
+    if (mode === 'app') body.classList.add('studio-page', 'app');
+    if (mode === 'app' && focused) body.classList.add('is-focused');
+    return () => body.classList.remove('landing', 'studio-page', 'app', 'is-focused');
+  }, [mode, focused]);
+};
+
 const AuthWrapper: React.FC = () => {
-  const { user, loading, zenMode } = useApp();
+  const { user, loading, zenMode, activeView, activeProject, isGuest, mode } = useApp();
+  const location = useLocation();
   const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [capture, setCapture] = React.useState<{ open: boolean; text: string }>({ open: false, text: '' });
+  const signedIn = !!user;
+
+  // Ctrl/Cmd+K opens search anywhere; the header button and editor menu use the same hand-offs
+  React.useEffect(() => {
+    if (!signedIn) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const offSearch = onOpenSearch(() => setSearchOpen(true));
+    const offCapture = onOpenCapture((text) => setCapture({ open: true, text }));
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      offSearch();
+      offCapture();
+    };
+  }, [signedIn]);
+
+  // A private reading link works for anyone, signed in or not, and shows no app chrome
+  const isShared = location.pathname.startsWith('/read/');
+  // Someone signed in on a device that has not been asked yet gets the one question first
+  const needsMode = !!user && !isGuest && !mode;
+  const bodyMode: 'landing' | 'auth' | 'app' | 'shared' = isShared ? 'shared' : needsMode ? 'auth' : user ? 'app' : location.pathname === '/' ? 'landing' : 'auth';
+  useBodyMode(bodyMode, zenMode);
+
+  if (isShared) {
+    return (
+      <Routes>
+        <Route path="/read/:token" element={<SharedReaderView />} />
+      </Routes>
+    );
+  }
 
   if (loading && !user) {
     return (
-      <div className="flex w-screen h-screen items-center justify-center bg-slate-950 text-slate-400">
-        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+      <div className="auth-wrap" role="status">
+        <p className="meta" style={{ margin: 'auto' }}>Opening the studio…</p>
       </div>
     );
   }
@@ -90,38 +169,35 @@ const AuthWrapper: React.FC = () => {
     );
   }
 
-  return (
-    <div className="flex flex-col md:flex-row w-screen h-[100dvh] overflow-hidden bg-slate-950 font-sans">
-      
-      {/* Mobile Top Bar */}
-      {!zenMode && (
-        <div className="md:hidden flex items-center justify-between p-4 bg-slate-950 border-b border-slate-800 shrink-0 z-40 relative">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">N</div>
-            <span className="font-semibold text-slate-100 tracking-wide text-md">Novelist Workspace</span>
-          </div>
-          <button onClick={() => setSidebarOpen(true)} className="p-2 -mr-2 text-slate-300 hover:text-slate-100 transition-colors">
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      )}
+  if (needsMode) return <ModeChooser />;
 
-      {!zenMode && <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />}
-      
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
-        <WorkspaceContent />
+  const hasContext = !!activeProject && ['editor', 'outline', 'notebook'].includes(activeView);
+
+  return (
+    <>
+      <AppHeader onOpenMenu={() => setSidebarOpen(true)} menuOpen={isSidebarOpen} />
+      <div className={`studio-layout${hasContext ? '' : ' no-context'}`}>
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="studio-main" id="studio-main" tabIndex={-1}>
+          <WorkspaceContent />
+        </main>
+        <div id="context-slot" style={{ display: 'contents' }} />
       </div>
-    </div>
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <QuickCapture open={capture.open} initial={capture.text} onClose={() => setCapture({ open: false, text: '' })} />
+      <TourHost />
+    </>
   );
 };
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AuthWrapper />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <AuthWrapper />
+      </AppProvider>
+    </ToastProvider>
   );
 };
 
 export default App;
-

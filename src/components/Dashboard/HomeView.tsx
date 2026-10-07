@@ -1,60 +1,81 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Globe, Plus, Users, Download } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { BookOpen, BookOpenCheck, Flame, Plus, ChevronRight, Globe, Users, Download, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
-import { GuestGateModal } from '../Auth/GuestGateModal';
+import { useDailyGoal } from '../../lib/dailyGoal';
+import { usePublishProject } from '../../lib/publish';
 import type { Project } from '../../services/types';
-import { databaseService } from '../../services/database';
-import { exportNovelToHTML } from '../../utils/exportUtils';
+import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
+import { ExportDialog } from '../Export/ExportDialog';
+import { ContinueCard } from './ContinueCard';
+import { RemoveSampleDialog, SampleButton } from './SampleProject';
+import { isSampleProject } from '../../lib/sample';
+import { GuestGateModal } from '../Auth/GuestGateModal';
+import { Dialog } from '../ui/Dialog';
+import { EmptyState } from '../ui/EmptyState';
+import { PageHead } from '../ui/PageHead';
+
+const COVER_TONES = ['', 'alt', 'alt2'];
+
+const Cover: React.FC<{ project: Project; index: number; small?: boolean }> = ({ project, index, small }) =>
+  project.cover_url ? (
+    <img
+      src={project.cover_url}
+      alt=""
+      className="cover-mini"
+      style={{ objectFit: 'cover', padding: 0, ...(small ? { width: 38, height: 54 } : {}) }}
+    />
+  ) : (
+    <div className={`cover-mini ${COVER_TONES[index % COVER_TONES.length]}`} aria-hidden="true">
+      {project.title}
+    </div>
+  );
 
 export const HomeView: React.FC = () => {
-  const { user, profile, projects, wordCountLogs, setActiveProject, setActiveView, createProject, recentlyRead, publicProjects, setActivePublicProject, isGuest } = useApp();
+  const {
+    user,
+    profile,
+    projects,
+    setActiveProject,
+    setActiveView,
+    createProject,
+    recentlyRead,
+    publicProjects,
+    setActivePublicProject,
+    isGuest,
+  } = useApp();
   const navigate = useNavigate();
-  
-  const [showNewProjModal, setShowNewProjModal] = useState(false);
-  const [showGuestModal, setShowGuestModal] = useState(false);
-  const [newProjTitle, setNewProjTitle] = useState('');
-  const [newProjDesc, setNewProjDesc] = useState('');
-  const [analyticsProject, setAnalyticsProject] = useState<Project | null>(null);
+  const daily = useDailyGoal();
+  const togglePublish = usePublishProject();
 
-  // Daily Goal Calculations
-  const dailyGoal = profile?.daily_word_goal || 1000;
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayLog = wordCountLogs.find(l => l.date === todayStr);
-  const todaysWordCount = todayLog ? todayLog.word_count : 0;
-  const progressPercent = Math.min(100, Math.round((todaysWordCount / dailyGoal) * 100));
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [analyticsProject, setAnalyticsProject] = useState<Project | null>(null);
+  const [exportProject, setExportProject] = useState<Project | null>(null);
+  const [removeSample, setRemoveSample] = useState<Project | null>(null);
 
   const recentlyReadProjects = recentlyRead
-    .map(id => publicProjects.find(p => p.id === id))
+    .map((id) => publicProjects.find((p) => p.id === id))
     .filter((p): p is Project => p !== undefined);
 
-  // Determine greeting name
   const greetingName = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'Author');
 
-  const handleOpenProject = (project: any) => {
+  const startNewProject = () => (isGuest ? setShowGuestModal(true) : setShowNewProject(true));
+
+  const handleOpenProject = (project: Project) => {
     setActiveProject(project);
     setActiveView('editor');
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProjTitle.trim()) return;
-    
-    await createProject(newProjTitle, newProjDesc);
-    setNewProjTitle('');
-    setNewProjDesc('');
-    setShowNewProjModal(false);
-  };
-
-  const handleExportProject = async (e: React.MouseEvent, project: Project) => {
-    e.stopPropagation();
-    try {
-      const chaps = await databaseService.getChapters(project.id);
-      exportNovelToHTML(project, chaps);
-    } catch (err) {
-      console.error("Export failed:", err);
-    }
+    if (!newTitle.trim()) return;
+    await createProject(newTitle, newDesc);
+    setNewTitle('');
+    setNewDesc('');
+    setShowNewProject(false);
   };
 
   const handleContinueReading = (project: Project) => {
@@ -62,273 +83,156 @@ export const HomeView: React.FC = () => {
     navigate(`/library/novel/${project.id}`);
   };
 
+  const goalMet = daily.percent >= 100;
+
   return (
-    <div className="flex-1 overflow-y-auto bg-white relative">
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
-      
-      {/* Welcome Header */}
-      <header className="p-4 sm:p-6 lg:p-8 bg-slate-900/50 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2 font-serif">
-            Welcome back, {greetingName}
-          </h1>
-          <p className="text-sm text-slate-400">
-            {projects.length} active projects • {todaysWordCount.toLocaleString()} words written today
-          </p>
-        </div>
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
-          <button
-            onClick={() => setActiveView('library')}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg text-sm font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2 border border-emerald-500/20"
-          >
-            <Globe className="w-4 h-4" />
-            Public Library
-          </button>
-          <button
-            onClick={() => {
-              if (isGuest) {
-                setShowGuestModal(true);
-              } else {
-                setShowNewProjModal(true);
-              }
-            }}
-            className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Project
-          </button>
-        </div>
-      </header>
-
-      {/* Dashboard Grid */}
-      <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Main Column: Recent Projects */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-indigo-400" />
-              Your Projects
-            </h2>
-          </div>
-            
-            {projects.length === 0 ? (
-              <div className="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-12 text-center flex flex-col items-center">
-                <BookOpenCheck className="w-12 h-12 text-slate-700 mb-4 stroke-[1]" />
-                <h3 className="text-lg font-semibold text-slate-300 mb-2">No Projects Yet</h3>
-                <p className="text-slate-500 mb-6 max-w-sm">
-                  You haven't created any novels. Start your writing journey by creating your first project!
-                </p>
-                <button
-                  onClick={() => {
-                    if (isGuest) {
-                      setShowGuestModal(true);
-                    } else {
-                      setShowNewProjModal(true);
-                    }
-                  }}
-                  className="px-5 py-2 rounded-lg text-sm font-semibold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors"
-                >
-                  Create New Project
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    onClick={() => handleOpenProject(project)}
-                    className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:bg-white hover:shadow-md hover:border-indigo-500/50 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden"
-                  >
-                    <div className="absolute -inset-px bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
-                    
-                    <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-indigo-300 transition-colors line-clamp-1">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed mb-4 flex-1">
-                      {project.description || 'No description.'}
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-3">
-                      <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
-                      <div className="flex items-center gap-3">
-                        {project.is_published && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setAnalyticsProject(project); }}
-                            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold px-2 py-1 rounded-md hover:bg-emerald-500/10 transition-colors"
-                          >
-                            <Users className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Audience</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => handleExportProject(e, project)}
-                          className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold px-2 py-1 rounded-md hover:bg-amber-500/10 transition-colors"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Export</span>
-                        </button>
-                        <div className="flex items-center gap-1 text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                          Open <ChevronRight className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Widgets */}
-          <div className="space-y-6">
-            
-            {/* Daily Goal Widget */}
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-6">
-                <Flame className="w-4 h-4 text-orange-400" />
-                Today's Goal
-              </h3>
-              
-              <div className="flex items-center gap-6">
-                <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="40" cy="40" r="36"
-                      stroke="currentColor" strokeWidth="6" fill="transparent"
-                      className="text-slate-800"
-                    />
-                    <circle
-                      cx="40" cy="40" r="36"
-                      stroke="currentColor" strokeWidth="6" fill="transparent"
-                      strokeDasharray={2 * Math.PI * 36}
-                      strokeDashoffset={2 * Math.PI * 36 - (progressPercent / 100) * (2 * Math.PI * 36)}
-                      className="text-rose-500 transition-all duration-1000 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-100">
-                    {progressPercent}%
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="text-3xl font-extrabold text-slate-100 mb-1">
-                    {todaysWordCount.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    / {dailyGoal.toLocaleString()} words
-                  </div>
-                  {progressPercent >= 100 && (
-                    <div className="text-xs font-semibold text-emerald-400 mt-2">
-                      Goal crushed! 🎉
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setActiveView('tracker')}
-                className="w-full mt-6 py-2 rounded-lg bg-slate-950 text-slate-400 text-xs font-semibold hover:bg-slate-800 hover:text-slate-200 transition-colors border border-slate-800"
-              >
-                View Tracker Details
+    <div className="studio-view">
+      <div className="page page-wide">
+        <PageHead
+          eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase()}
+          title={
+            <>
+              Welcome back, <em>{greetingName}.</em>
+            </>
+          }
+          lead={`${projects.length} ${projects.length === 1 ? 'project' : 'projects'} · ${daily.written.toLocaleString()} words written today. Pick up where you left off.`}
+          actions={
+            <>
+              <Link className="small-btn" to="/library">
+                <Globe /> Public Library
+              </Link>
+              <button className="small-btn is-primary" onClick={startNewProject}>
+                <Plus /> New project
               </button>
+            </>
+          }
+        />
+
+        <ContinueCard />
+
+        <div className="split">
+          <section aria-labelledby="projects-h">
+            <h2 className="section-title" id="projects-h">Your projects</h2>
+            <p className="section-note">Open a project to write, or see who is reading it.</p>
+
+            {projects.length === 0 ? (
+              <EmptyState icon="book" title="No projects yet" text="You haven't started a novel. Give it a title and a few lines of description, and the rest can wait.">
+                <button className="small-btn is-primary" onClick={startNewProject}>Create your first project</button>
+                <SampleButton onNeedAccount={() => setShowGuestModal(true)} />
+              </EmptyState>
+            ) : (
+              projects.map((project, i) => (
+                <article className="project-card" key={project.id}>
+                  <Cover project={project} index={i} />
+                  <div>
+                    <h3>{project.title}</h3>
+                    <p>{project.description || 'No description yet.'}</p>
+                    <p className="meta" style={{ marginTop: 10 }}>
+                      <span className={`badge${project.is_published ? ' is-accent' : ''}`}>
+                        <span className="small-dot" /> {project.is_published ? 'Published' : 'Draft'}
+                      </span>{' '}
+                      {isSampleProject(project.id) && <span className="badge">Sample</span>}{' '}
+                      &nbsp; Updated {new Date(project.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="project-actions">
+                    {project.is_published && (
+                      <button className="small-btn" onClick={() => setAnalyticsProject(project)}>
+                        <Users /> Audience
+                      </button>
+                    )}
+                    <button className="small-btn" onClick={() => togglePublish(project)} aria-pressed={!!project.is_published}>
+                      {project.is_published ? 'Unpublish' : 'Publish'}
+                    </button>
+                    {isSampleProject(project.id) && (
+                      <button className="small-btn" onClick={() => setRemoveSample(project)}>Remove sample</button>
+                    )}
+                    <button className="small-btn" onClick={() => setExportProject(project)}>
+                      <Download /> Export
+                    </button>
+                    <button className="small-btn is-primary" onClick={() => handleOpenProject(project)}>
+                      Open
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+
+          <aside className="stack" aria-label="Today">
+            <div className="card" style={{ textAlign: 'center' }}>
+              <span className="eyebrow">TODAY'S GOAL</span>
+              <div
+                className="goal-ring"
+                style={{ ['--pct' as string]: daily.percent } as React.CSSProperties}
+                role="img"
+                aria-label={`${daily.written} of ${daily.goal} words, ${daily.percent} percent`}
+              >
+                <div>
+                  <strong>{daily.percent}%</strong>
+                  <span>
+                    {daily.written.toLocaleString()} / {daily.goal.toLocaleString()} words
+                  </span>
+                </div>
+              </div>
+              <Link className="link-accent" to="/tracker">View tracker details</Link>
+              {goalMet && <p className="meta" style={{ marginTop: 14 }}><em>Goal met. Rest well.</em></p>}
             </div>
 
-            {/* Continue Reading Widget */}
             {recentlyReadProjects.length > 0 && (
-              <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-6">
-                  <Clock className="w-4 h-4 text-indigo-400" />
-                  Continue Reading
-                </h3>
-                <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
-                  {recentlyReadProjects.map(proj => (
-                    <div 
-                      key={proj.id}
-                      onClick={() => handleContinueReading(proj)}
-                      className="group cursor-pointer flex gap-4 p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700"
-                    >
-                      {proj.cover_url ? (
-                        <img src={proj.cover_url} alt={proj.title} className="w-12 h-16 object-cover rounded-md shrink-0" />
-                      ) : (
-                        <div className="w-12 h-16 bg-slate-800 rounded-md shrink-0 flex items-center justify-center">
-                          <BookOpen className="w-5 h-5 text-slate-600" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-200 truncate group-hover:text-indigo-400 transition-colors">{proj.title}</h4>
-                        <p className="text-xs text-slate-500 truncate mt-1">By {proj.author_name || 'Unknown'}</p>
-                      </div>
+              <div className="card">
+                <span className="eyebrow">CONTINUE READING</span>
+                {recentlyReadProjects.map((proj, i) => (
+                  <button
+                    key={proj.id}
+                    className="read-row"
+                    style={{ width: '100%', textAlign: 'left' }}
+                    onClick={() => handleContinueReading(proj)}
+                  >
+                    <Cover project={proj} index={i} small />
+                    <div>
+                      <strong>{proj.title}</strong>
+                      <small>By {proj.author_name || 'Unknown'}</small>
                     </div>
-                  ))}
-                </div>
+                  </button>
+                ))}
+                <Link className="link-accent" to="/saved">Go to Your Library</Link>
               </div>
             )}
-            
-          </div>
+
+            {projects.length > 0 && (
+              <p className="meta" style={{ lineHeight: 1.7 }}>
+                A practice, not a performance. A few good words count, too.
+              </p>
+            )}
+          </aside>
         </div>
+      </div>
 
-      {/* New Project Modal */}
-      {showNewProjModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in scale-in duration-200">
-            <h3 className="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <BookOpenCheck className="w-5 h-5 text-indigo-500" />
-              Create New Project
-            </h3>
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Project Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Whispers of the Starward"
-                  value={newProjTitle}
-                  onChange={(e) => setNewProjTitle(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                <textarea
-                  placeholder="A short summary of your novel's theme, setting, or plot..."
-                  value={newProjDesc}
-                  onChange={(e) => setNewProjDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewProjModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
-                >
-                  Create Project
-                </button>
-              </div>
-            </form>
+      <Dialog open={showNewProject} onClose={() => setShowNewProject(false)} labelledBy="home-np-h">
+        <form onSubmit={handleCreateProject}>
+          <p className="eyebrow">A NEW BOOK</p>
+          <h2 id="home-np-h">Start a project</h2>
+          <label htmlFor="home-np-title">Project title</label>
+          <input id="home-np-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Whispers of the Starward" required autoFocus />
+          <label htmlFor="home-np-desc">Description</label>
+          <input id="home-np-desc" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="A short summary of the theme, setting or plot" />
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowNewProject(false)}>Cancel</button>
+            <button className="button button-primary button-small">Create project</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Dialog>
 
-      {/* Analytics Modal */}
-      {analyticsProject && (
-        <AudienceAnalyticsModal 
-          project={analyticsProject} 
-          onClose={() => setAnalyticsProject(null)} 
-        />
-      )}
+      <ExportDialog project={exportProject} onClose={() => setExportProject(null)} />
+      <RemoveSampleDialog project={removeSample} onClose={() => setRemoveSample(null)} />
 
-      <GuestGateModal 
+      {analyticsProject && <AudienceAnalyticsModal project={analyticsProject} onClose={() => setAnalyticsProject(null)} />}
+
+      <GuestGateModal
         isOpen={showGuestModal}
         onClose={() => setShowGuestModal(false)}
-        title="Account Required"
-        message="You must create a free account to start writing and saving your own novels. Don't worry, it only takes 10 seconds!"
+        message="You need a free account to start writing and saving your own novels. It takes about ten seconds. Guests can still browse and read everything in the Public Library."
       />
     </div>
   );

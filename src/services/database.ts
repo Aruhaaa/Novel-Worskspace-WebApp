@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { readThrough, isNetworkFailure } from '../lib/offlineCache';
 import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment, ChatMessage } from './types';
 
 // Mock Data Initializer for Local Storage fallback
@@ -151,15 +152,20 @@ const setLocalData = <T>(key: string, data: T): void => {
 export const databaseService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-      }
-      return data || null;
+      const client = supabase;
+      return readThrough<UserProfile | null>(`profile_${userId}`, async () => {
+        const { data, error } = await client
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        if (error && error.code !== 'PGRST116') {
+          // Not being able to reach the server is not "no profile", or a default one would be created over the real one
+          if (isNetworkFailure(error)) throw error;
+          console.error('Error fetching profile:', error);
+        }
+        return data || null;
+      });
     } else {
       const profiles = getLocalData<UserProfile[]>('novel_profiles', []);
       return profiles.find(p => p.id === userId) || null;
@@ -194,9 +200,12 @@ export const databaseService = {
   // --- PROJECTS ---
   async getProjects(userId: string): Promise<Project[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('projects').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const client = supabase;
+      return readThrough(`projects_${userId}`, async () => {
+        const { data, error } = await client.from('projects').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      });
     } else {
       const allProjects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
       return allProjects.filter(p => p.user_id === userId);
@@ -328,6 +337,28 @@ export const databaseService = {
     }
   },
 
+  /** Remove a project and everything inside it. */
+  async deleteProject(projectId: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      // Children first, in case the database does not cascade
+      for (const table of ['word_count_logs', 'comments', 'reviews', 'entities', 'chapters']) {
+        const { error } = await supabase.from(table).delete().eq('project_id', projectId);
+        if (error) throw error;
+      }
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (error) throw error;
+    } else {
+      const drop = <T extends { project_id: string }>(key: string, fallback: T[]) =>
+        setLocalData(key, getLocalData<T[]>(key, fallback).filter(item => item.project_id !== projectId));
+      drop<Chapter>('novel_chapters', INITIAL_CHAPTERS);
+      drop<WikiEntity>('novel_entities', INITIAL_ENTITIES);
+      drop<WordCountLog>('novel_word_logs', getInitialWordCountLogs());
+      drop<Review>('novel_reviews', []);
+      drop<Comment>('novel_comments', []);
+      setLocalData('novel_projects', getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).filter(p => p.id !== projectId));
+    }
+  },
+
   async toggleLikeProject(projectId: string, userId: string): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
       // Fetch current likes
@@ -370,13 +401,16 @@ export const databaseService = {
   // --- CHAPTERS ---
   async getChapters(projectId: string): Promise<Chapter[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('chapters')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('position', { ascending: true });
-      if (error) throw error;
-      return data || [];
+      const client = supabase;
+      return readThrough(`chapters_${projectId}`, async () => {
+        const { data, error } = await client
+          .from('chapters')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('position', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      });
     } else {
       const chapters = getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS);
       return chapters.filter(c => c.project_id === projectId).sort((a, b) => a.position - b.position);
@@ -443,13 +477,16 @@ export const databaseService = {
   // --- ENTITIES (WIKI PLANNER) ---
   async getEntities(projectId: string): Promise<WikiEntity[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('entities')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('name', { ascending: true });
-      if (error) throw error;
-      return data || [];
+      const client = supabase;
+      return readThrough(`entities_${projectId}`, async () => {
+        const { data, error } = await client
+          .from('entities')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('name', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      });
     } else {
       const entities = getLocalData<WikiEntity[]>('novel_entities', INITIAL_ENTITIES);
       return entities.filter(e => e.project_id === projectId).sort((a, b) => a.name.localeCompare(b.name));
@@ -540,16 +577,29 @@ export const databaseService = {
     }
   },
 
+  async deleteChapter(chapterId: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('chapters').delete().eq('id', chapterId);
+      if (error) throw error;
+    } else {
+      const chapters = getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS);
+      setLocalData('novel_chapters', chapters.filter(c => c.id !== chapterId));
+    }
+  },
+
   // --- WORD COUNT LOGS (TRACKER) ---
   async getWordCountLogs(projectId: string): Promise<WordCountLog[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('word_count_logs')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('date', { ascending: true });
-      if (error) throw error;
-      return data || [];
+      const client = supabase;
+      return readThrough(`logs_${projectId}`, async () => {
+        const { data, error } = await client
+          .from('word_count_logs')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('date', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      });
     } else {
       return getLocalData<WordCountLog[]>('novel_word_logs', getInitialWordCountLogs()).filter(l => l.project_id === projectId);
     }

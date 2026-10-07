@@ -1,420 +1,368 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Users, MapPin, Gem, BookOpen, LayoutTemplate, Plus, Pencil, Trash2, ImagePlus } from 'lucide-react';
+import { NOTE_HANDOFF_KEY } from '../../lib/uiEvents';
 import { useApp } from '../../context/AppContext';
 import type { WikiEntity } from '../../services/types';
-import { 
-  Users, 
-  MapPin, 
-  Sparkles, 
-  BookOpen, 
-  Plus, 
-  Trash2, 
-  Tag, 
-  Info, 
-  X,
-  LayoutTemplate
-} from 'lucide-react';
+import { getLinks, getTags, indexChapters, parseTags, preservedKeys, typedAttributes, TYPE_LABEL, type NoteLink } from '../../lib/notes';
+import { shrinkImage } from '../../lib/image';
+import { useOpenChapter } from '../../lib/useOpenChapter';
+import { Dialog } from '../ui/Dialog';
+import { EmptyState } from '../ui/EmptyState';
+import { MarginsRail, RailBlock, RailRow } from '../ui/MarginsRail';
+import { EntityDetails } from '../Notebook/EntityDetails';
 
-import { Storyboard } from './Storyboard';
+type Tab = 'all' | 'character' | 'location' | 'item' | 'lore';
 
-export const PlannerView: React.FC = () => {
-  const { entities, createEntity, deleteEntity, updateEntity } = useApp();
-  const [activeTab, setActiveTab] = useState<'all' | 'storyboard' | 'character' | 'location' | 'item' | 'lore'>('all');
-  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'all', label: 'Everything' },
+  { id: 'character', label: 'Characters' },
+  { id: 'location', label: 'Places' },
+  { id: 'item', label: 'Items' },
+  { id: 'lore', label: 'Lore' },
+];
 
-  // Derive selectedEntity from entities list and ID state
-  const selectedEntity = entities.find(e => e.id === selectedEntityId) || null;
+const typeIcon = (type: WikiEntity['type']) => {
+  switch (type) {
+    case 'character': return <Users />;
+    case 'location': return <MapPin />;
+    case 'item': return <Gem />;
+    case 'lore': return <BookOpen />;
+    default: return <LayoutTemplate />;
+  }
+};
 
-  // Creation form states
-  const [showAddForm, setShowAddForm] = useState(false);
+export const NotebookView: React.FC = () => {
+  const { entities, chapters, createEntity, deleteEntity, updateEntity } = useApp();
+  const openChapter = useOpenChapter();
+  const [activeTab, setActiveTab] = useState<Tab>('all');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(() => {
+    try {
+      const id = sessionStorage.getItem(NOTE_HANDOFF_KEY);
+      if (id) sessionStorage.removeItem(NOTE_HANDOFF_KEY);
+      return id;
+    } catch {
+      return null;
+    }
+  });
+  const [showForm, setShowForm] = useState(false);
   const [editingEntity, setEditingEntity] = useState<WikiEntity | null>(null);
-  const [newName, setNewName] = useState('');
-  const [newType, setNewType] = useState<WikiEntity['type']>('character');
-  const [newDesc, setNewDesc] = useState('');
-  
-  // Custom properties for character/location
-  const [newKey, setNewKey] = useState('');
-  const [newVal, setNewVal] = useState('');
-  const [tempContent, setTempContent] = useState<Record<string, string>>({});
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const handleAddProperty = () => {
-    if (!newKey.trim() || !newVal.trim()) return;
-    setTempContent(prev => ({
-      ...prev,
-      [newKey.trim()]: newVal.trim()
-    }));
-    setNewKey('');
-    setNewVal('');
+  const [name, setName] = useState('');
+  const [type, setType] = useState<WikiEntity['type']>('character');
+  const [desc, setDesc] = useState('');
+  const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([]);
+  const [tagsText, setTagsText] = useState('');
+  const [links, setLinks] = useState<NoteLink[]>([]);
+  const [image, setImage] = useState('');
+  const [imageError, setImageError] = useState('');
+
+  // Scenes live in the Story outline, not in the notebook list
+  const notebook = entities.filter((e) => e.type !== 'scene');
+  const allTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of notebook) for (const t of getTags(e)) counts.set(t, (counts.get(t) || 0) + 1);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entities]);
+  const visible = notebook
+    .filter((e) => activeTab === 'all' || e.type === activeTab)
+    .filter((e) => !activeTag || getTags(e).some((t) => t.toLowerCase() === activeTag.toLowerCase()));
+  const selected = notebook.find((e) => e.id === selectedEntityId) || visible[0] || null;
+  const chapterIndex = useMemo(() => indexChapters(chapters), [chapters]);
+
+  const openForm = (entity: WikiEntity | null) => {
+    setEditingEntity(entity);
+    setName(entity?.name || '');
+    setType(entity?.type || (activeTab !== 'all' ? activeTab : 'character'));
+    setDesc(entity?.description || '');
+    setAttrs(entity ? typedAttributes(entity).map(([key, value]) => ({ key, value })) : []);
+    setTagsText(entity ? getTags(entity).join(', ') : '');
+    setLinks(entity ? getLinks(entity) : []);
+    setImage(entity?.image_url || '');
+    setImageError('');
+    setShowForm(true);
   };
 
-  const handleRemoveProperty = (key: string) => {
-    setTempContent(prev => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+  const pickImage = async (file: File | undefined) => {
+    if (!file) return;
+    setImageError('');
+    try {
+      setImage(await shrinkImage(file));
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Could not use that image.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
-
-    let savedEntity: WikiEntity | void;
+    if (!name.trim()) return;
+    const content: Record<string, string> = { ...preservedKeys(editingEntity) };
     if (editingEntity) {
-      savedEntity = await updateEntity(editingEntity.id, {
-        name: newName.trim(),
-        type: newType,
-        description: newDesc.trim(),
-        content: tempContent
-      });
-      if (savedEntity) {
-        setSelectedEntityId(savedEntity.id);
-      }
+      // Board position and map pins are not edited here, so they stay as they were
+      for (const k of ['lat', 'lng', 'status', 'order']) if (editingEntity.content?.[k]) content[k] = editingEntity.content[k];
+    }
+    attrs.forEach(({ key, value }) => {
+      const k = key.trim().replace(/^_+/, '');
+      if (k && value.trim()) content[k] = value.trim();
+    });
+    const tags = parseTags(tagsText);
+    if (tags.length) content._tags = tags.join(', ');
+    const kept = links.filter((l) => l.to).map((l) => ({ to: l.to, label: l.label.trim() }));
+    if (kept.length) content._links = JSON.stringify(kept);
+
+    if (editingEntity) {
+      const saved = await updateEntity(editingEntity.id, { name: name.trim(), type, description: desc.trim(), content, image_url: image });
+      if (saved && saved.type !== 'scene') setSelectedEntityId(saved.id);
     } else {
-      await createEntity(
-        newName.trim(),
-        newType,
-        newDesc.trim(),
-        tempContent
-      );
+      await createEntity(name.trim(), type, desc.trim(), content, image || undefined);
     }
-
-    // Reset Form
-    setNewName('');
-    setNewType('character');
-    setNewDesc('');
-    setTempContent({});
+    setShowForm(false);
     setEditingEntity(null);
-    setShowAddForm(false);
   };
 
-  const filteredEntities = activeTab === 'all' 
-    ? entities 
-    : entities.filter(e => e.type === activeTab);
-
-  const getIcon = (type: WikiEntity['type']) => {
-    switch (type) {
-      case 'character': return <Users className="w-4 h-4" />;
-      case 'location': return <MapPin className="w-4 h-4" />;
-      case 'item': return <Sparkles className="w-4 h-4" />;
-      case 'lore': return <BookOpen className="w-4 h-4" />;
-      case 'scene': return <LayoutTemplate className="w-4 h-4" />;
-    }
-  };
-
-  const getTypeColor = (type: WikiEntity['type']) => {
-    switch (type) {
-      case 'character': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
-      case 'location': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'item': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'lore': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      case 'scene': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-    }
+  const select = (entity: WikiEntity) => {
+    setSelectedEntityId(entity.id);
+    // A connection can lead to a note the current filters hide
+    if (activeTab !== 'all' && activeTab !== entity.type) setActiveTab('all');
+    setActiveTag(null);
   };
 
   return (
-    <div className="flex-1 flex h-screen bg-slate-900 overflow-hidden text-slate-300">
-      
-      {/* Main planner feed */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        
-        {/* Planner Header */}
-        <header className="min-h-[4rem] py-4 sm:py-0 sm:h-16 border-b border-slate-800/80 px-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 bg-slate-900/50 backdrop-blur-md">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-            <h2 className="text-lg font-semibold text-slate-100 shrink-0">World Planner & Wiki</h2>
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-lg p-1 text-xs w-full sm:w-auto">
-              {(['all', 'storyboard', 'character', 'location', 'item', 'lore'] as const).map((tab) => (
+    <>
+    <div className="studio-toolbar">
+      <h1>
+        World notebook <span>/ {notebook.length} {notebook.length === 1 ? 'note' : 'notes'}</span>
+      </h1>
+      <div className="toolbar-actions">
+        <button className="button button-primary button-small" onClick={() => openForm(null)}>
+          Add entity
+        </button>
+      </div>
+    </div>
+    <div className="studio-view">
+      <div className="page page-wide" style={{ paddingTop: 28 }}>
+        <div className="world-filter" role="group" aria-label="Filter the world notebook">
+          {TABS.map((t) => (
+            <button key={t.id} aria-pressed={activeTab === t.id} onClick={() => setActiveTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {allTags.length > 0 && (
+          <div className="world-filter tag-filter" role="group" aria-label="Filter by tag">
+            {allTags.map(([tag, count]) => (
+              <button key={tag} aria-pressed={activeTag === tag} onClick={() => setActiveTag(activeTag === tag ? null : tag)}>
+                #{tag} <small>{count}</small>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {visible.length === 0 ? (
+          <EmptyState icon="book" title="No notes here" text={activeTag ? `Nothing is tagged #${activeTag} in this category.` : 'Create your first note and it will show up here.'}>
+            {activeTag ? (
+              <button className="small-btn" onClick={() => setActiveTag(null)}>Clear the tag filter</button>
+            ) : (
+              <button className="small-btn is-primary" onClick={() => openForm(null)}>Create your first note</button>
+            )}
+          </EmptyState>
+        ) : (
+          <div className="entity-layout">
+            <div>
+              {visible.map((ent) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 sm:flex-none px-3 py-1.5 sm:py-1 text-center rounded-md font-medium capitalize transition-colors ${activeTab === tab ? 'bg-indigo-600 text-white shadow-sm' : 'hover:text-slate-200 text-slate-400'}`}
+                  key={ent.id}
+                  className="entity-row"
+                  aria-current={selected?.id === ent.id ? 'true' : undefined}
+                  onClick={() => setSelectedEntityId(ent.id)}
                 >
-                  {tab}
+                  {ent.image_url ? (
+                    <img className="type-icon type-photo" src={ent.image_url} alt="" />
+                  ) : (
+                    <span className="type-icon">{typeIcon(ent.type)}</span>
+                  )}
+                  <span>
+                    <strong>{ent.name}</strong>
+                    <small>
+                      {TYPE_LABEL[ent.type]}
+                      {ent.description ? ` · ${ent.description.slice(0, 60)}${ent.description.length > 60 ? '…' : ''}` : ''}
+                    </small>
+                  </span>
                 </button>
               ))}
             </div>
-          </div>
 
-          <button
-            onClick={() => {
-              setEditingEntity(null);
-              setNewName('');
-              setNewType('character');
-              setNewDesc('');
-              setTempContent({});
-              setShowAddForm(true);
-            }}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-3.5 py-2.5 sm:py-2 rounded-lg shadow-lg shadow-indigo-600/15 transition-all duration-200"
-          >
-            <Plus className="w-4 h-4" />
-            Add Entity
-          </button>
-        </header>
-
-        {/* Dynamic Main Content */}
-        {activeTab === 'storyboard' ? (
-          <Storyboard 
-            onEditEntity={(entity) => {
-              setSelectedEntityId(entity.id);
-            }} 
-          />
-        ) : (
-          <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-8">
-            {filteredEntities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-              <Info className="w-10 h-10 text-slate-700 mb-3" />
-              <p className="text-sm">No wiki entities found in this category.</p>
-              <button 
-                onClick={() => setShowAddForm(true)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold mt-2 underline"
-              >
-                Create your first note
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredEntities.map((ent) => (
-                <div
-                  key={ent.id}
-                  onClick={() => setSelectedEntityId(ent.id)}
-                  className={`group bg-slate-950/40 hover:bg-slate-950/85 border border-slate-800/80 rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between hover:border-slate-700/80 hover:shadow-xl hover:shadow-black/15 ${selectedEntity?.id === ent.id ? 'ring-2 ring-indigo-500 border-transparent bg-slate-950' : ''}`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${getTypeColor(ent.type)}`}>
-                        {getIcon(ent.type)}
-                        {ent.type}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-slate-100 group-hover:text-slate-100 text-base truncate mb-1">{ent.name}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed mb-4">{ent.description || 'No description provided.'}</p>
-                  </div>
-
-                  {/* Quick metadata badges */}
-                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-900 pt-3 text-[11px] text-slate-500">
-                    <span className="truncate flex-1">
-                      Updated {new Date(ent.updated_at).toLocaleDateString()}
-                    </span>
-                    {Object.keys(ent.content).length > 0 && (
-                      <span className="bg-slate-900 px-2 py-0.5 rounded text-[10px] border border-slate-800">
-                        {Object.keys(ent.content).length} attributes
-                      </span>
-                    )}
-                  </div>
+            {selected && (
+              <aside className="card detail-panel" aria-live="polite" aria-label="Entity details">
+                <EntityDetails
+                  entity={selected}
+                  entities={notebook}
+                  chapters={chapterIndex}
+                  onSelectEntity={select}
+                  onOpenChapter={(chapterId, term) => {
+                    const chapter = chapters.find((c) => c.id === chapterId);
+                    if (chapter) openChapter(chapter, term);
+                  }}
+                />
+                <div className="page-actions" style={{ marginTop: 18 }}>
+                  <button className="small-btn" onClick={() => openForm(selected)}>
+                    <Pencil /> Edit entity
+                  </button>
+                  <button className="small-btn is-danger" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 /> Delete
+                  </button>
                 </div>
-              ))}
-            </div>
+              </aside>
             )}
-          </main>
+          </div>
         )}
       </div>
 
-      {/* Selected Entity Details Panel */}
-      {selectedEntity && (
-        <div className="absolute inset-0 md:relative md:w-80 z-40 border-l border-slate-800/80 bg-slate-950/95 md:bg-slate-950/60 backdrop-blur-md flex flex-col h-full shrink-0 animate-in slide-in-from-right duration-200">
-          <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-100 truncate text-sm">Entity Details</h3>
-            <button 
-              onClick={() => setSelectedEntityId(null)}
-              className="text-slate-400 hover:text-slate-200 hover:bg-slate-900 p-1 rounded-md transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            <div>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${getTypeColor(selectedEntity.type)}`}>
-                {getIcon(selectedEntity.type)}
-                {selectedEntity.type}
-              </span>
-              <h2 className="text-xl font-bold text-slate-100 mt-2">{selectedEntity.name}</h2>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed bg-slate-900/40 p-3 rounded-lg border border-slate-900">{selectedEntity.description || 'No description provided.'}</p>
-            </div>
-
-            {/* Custom attributes section */}
-            <div>
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Attributes</h4>
-              {Object.keys(selectedEntity.content).length === 0 ? (
-                <div className="text-xs text-slate-500 italic">No structured attributes logged.</div>
-              ) : (
-                <div className="space-y-2">
-                  {Object.entries(selectedEntity.content).map(([key, val]) => {
-                    // Only render if it's not map location metadata
-                    if (key === 'lat' || key === 'lng') return null;
-                    return (
-                      <div key={key} className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-0.5 text-xs">
-                        <span className="text-slate-500 font-semibold text-[10px] uppercase tracking-wide">{key}</span>
-                        <span className="text-slate-200">{String(val)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="p-5 border-t border-slate-900 bg-slate-950 flex flex-col gap-3">
-            <button
-              onClick={() => {
-                setEditingEntity(selectedEntity);
-                setNewName(selectedEntity.name);
-                setNewType(selectedEntity.type);
-                setNewDesc(selectedEntity.description || '');
-                // Exclude lat/lng if they are in the content
-                const filteredContent = { ...selectedEntity.content };
-                delete filteredContent.lat;
-                delete filteredContent.lng;
-                setTempContent(filteredContent);
-                setShowAddForm(true);
-              }}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-slate-700/60 hover:border-indigo-500/40 bg-slate-800/40 hover:bg-indigo-500/10 text-slate-300 text-xs font-semibold transition-all duration-150"
-            >
-              Edit Entity
-            </button>
-            <button
-              onClick={async () => {
-                if (confirm(`Are you sure you want to delete ${selectedEntity.name}?`)) {
-                  await deleteEntity(selectedEntity.id);
-                  setSelectedEntityId(null);
-                }
-              }}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-rose-500/20 hover:border-rose-500/40 bg-rose-500/5 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold transition-all duration-150"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete Entity
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Add Entity Slide-over / Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg p-6 shadow-2xl animate-in scale-in duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                <Tag className="w-5 h-5 text-indigo-500" />
-                {editingEntity ? 'Edit Entity' : 'Add World Entity'}
-              </h3>
-              <button 
-                onClick={() => setShowAddForm(false)}
-                className="text-slate-400 hover:text-slate-200 hover:bg-slate-800 p-1 rounded-md transition-colors"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Entity Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Lyra Vance, Spire of Whispers"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Entity Type</label>
-                  <select
-                    value={newType}
-                    onChange={(e) => setNewType(e.target.value as WikiEntity['type'])}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  >
-                    <option value="character">Character</option>
-                    <option value="location">Location</option>
-                    <option value="item">Item</option>
-                    <option value="lore">Lore</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Short Summary</label>
-                <textarea
-                  placeholder="A quick summary of this entity..."
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  rows={2}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 resize-none"
-                />
-              </div>
-
-              {/* Attributes Builder */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Structured Attributes (Optional)</label>
-                
-                {/* Properties list */}
-                {Object.keys(tempContent).length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    {Object.entries(tempContent).map(([key, val]) => {
-                      if (key === 'lat' || key === 'lng') return null; // Don't show map locations in the edit form if any still remain
-                      return (
-                        <div key={key} className="flex items-center gap-1 bg-slate-905 border border-slate-800 text-[10px] text-slate-300 pl-2.5 pr-1.5 py-1 rounded-md font-medium">
-                          <span className="text-slate-500 font-semibold">{key}:</span>
-                          <span className="text-slate-200">{String(val)}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveProperty(key)}
-                            className="text-slate-400 hover:text-rose-400 transition-colors p-0.5 rounded ml-1"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
+      <MarginsRail
+        thought={
+          <>
+            A small detail, kept,
+            <br />
+            makes a world believable.
+          </>
+        }
+      >
+        <RailBlock title="This notebook">
+          <p>
+            {notebook.length} {notebook.length === 1 ? 'note' : 'notes'} so far.
+          </p>
+        </RailBlock>
+        <RailBlock title="By kind">
+          <RailRow label="Characters" value={notebook.filter((e) => e.type === 'character').length} />
+          <RailRow label="Places" value={notebook.filter((e) => e.type === 'location').length} />
+          <RailRow label="Items" value={notebook.filter((e) => e.type === 'item').length} />
+          <RailRow label="Lore" value={notebook.filter((e) => e.type === 'lore').length} />
+        </RailBlock>
+        {notebook.length > 0 && (
+          <RailBlock title="Recently added">
+            {[...notebook]
+              .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+              .slice(0, 3)
+              .map((ent) => (
+                <div className="character-chip" key={ent.id}>
+                  <span aria-hidden="true">{ent.name.charAt(0).toUpperCase()}</span>
+                  <div>
+                    <strong>{ent.name}</strong>
+                    <small>{TYPE_LABEL[ent.type]}</small>
                   </div>
-                )}
-
-                {/* Properties inputs */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Attribute (e.g. Age, Region)"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    className="flex-1 bg-slate-955 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Value (e.g. 24, Stormpeaks)"
-                    value={newVal}
-                    onChange={(e) => setNewVal(e.target.value)}
-                    className="flex-1 bg-slate-955 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddProperty}
-                    className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 rounded-lg text-xs font-semibold border border-slate-700 transition-colors"
-                  >
-                    Add
-                  </button>
                 </div>
-              </div>
+              ))}
+          </RailBlock>
+        )}
+      </MarginsRail>
 
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-800/60">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  Cancel
+      <Dialog open={showForm} onClose={() => setShowForm(false)} labelledBy="en-h" className="dialog-wide">
+        <form onSubmit={handleSubmit}>
+          <p className="eyebrow">NOTEBOOK</p>
+          <h2 id="en-h">{editingEntity ? 'Edit entity' : 'Add an entity'}</h2>
+          <label htmlFor="en-name">Name</label>
+          <input id="en-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Lyra Vance, Spire of Whispers" required autoFocus />
+          <label htmlFor="en-type">Type</label>
+          <select id="en-type" className="select" style={{ marginTop: 8 }} value={type} onChange={(e) => setType(e.target.value as WikiEntity['type'])}>
+            <option value="character">Character</option>
+            <option value="location">Location</option>
+            <option value="item">Item</option>
+            <option value="lore">Lore</option>
+            {editingEntity?.type === 'scene' && <option value="scene">Scene</option>}
+          </select>
+          <label htmlFor="en-sum">Short summary</label>
+          <input id="en-sum" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="A quick summary of this entity" />
+
+          <label htmlFor="en-image" style={{ marginTop: 24 }}>Picture (optional)</label>
+          <div className="image-pick">
+            {image ? <img src={image} alt="Chosen picture" /> : <span aria-hidden="true"><ImagePlus /></span>}
+            <div>
+              <input id="en-image" type="file" accept="image/*" onChange={(e) => pickImage(e.target.files?.[0])} />
+              {image && (
+                <button type="button" className="small-btn" onClick={() => setImage('')} style={{ marginTop: 8 }}>
+                  Remove picture
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/20 transition-colors"
-                >
-                  {editingEntity ? 'Update Entity' : 'Save Entity'}
-                </button>
-              </div>
-            </form>
+              )}
+              {imageError && <p className="meta" role="alert" style={{ color: 'var(--danger)', marginTop: 6 }}>{imageError}</p>}
+            </div>
           </div>
-        </div>
-      )}
 
+          <label htmlFor="en-tags" style={{ marginTop: 24 }}>Tags (optional)</label>
+          <input id="en-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="ally, sailor, act one" />
+
+          <label style={{ marginTop: 24 }}>Connections (optional)</label>
+          <div style={{ marginTop: 8 }}>
+            {links.map((row, i) => (
+              <div className="kv-row" key={i}>
+                <select
+                  className="select"
+                  aria-label="Connected to"
+                  value={row.to}
+                  onChange={(e) => setLinks(links.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))}
+                >
+                  <option value="">Choose a note…</option>
+                  {notebook
+                    .filter((e) => e.id !== editingEntity?.id)
+                    .map((e) => (
+                      <option key={e.id} value={e.id}>{e.name}</option>
+                    ))}
+                </select>
+                <input
+                  className="input"
+                  aria-label="How they are connected"
+                  value={row.label}
+                  placeholder="How (e.g. sister of, lives in)"
+                  onChange={(e) => setLinks(links.map((r, j) => (j === i ? { ...r, label: e.target.value } : r)))}
+                />
+                <button type="button" className="small-btn" aria-label="Remove connection" onClick={() => setLinks(links.filter((_, j) => j !== i))}>×</button>
+              </div>
+            ))}
+            <button type="button" className="small-btn" onClick={() => setLinks([...links, { to: '', label: '' }])} disabled={notebook.filter((e) => e.id !== editingEntity?.id).length === 0}>
+              <Plus /> Add connection
+            </button>
+          </div>
+
+          <label style={{ marginTop: 24 }}>Structured attributes (optional)</label>
+          <div style={{ marginTop: 8 }}>
+            {attrs.map((row, i) => (
+              <div className="kv-row" key={i}>
+                <input className="input" value={row.key} placeholder="Attribute (e.g. Age, Region)" onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, key: e.target.value } : r)))} />
+                <input className="input" value={row.value} placeholder="Value (e.g. 24, Stormpeaks)" onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))} />
+                <button type="button" className="small-btn" aria-label="Remove attribute" onClick={() => setAttrs(attrs.filter((_, j) => j !== i))}>×</button>
+              </div>
+            ))}
+            <button type="button" className="small-btn" onClick={() => setAttrs([...attrs, { key: '', value: '' }])}>
+              <Plus /> Add attribute
+            </button>
+          </div>
+          <div className="dialog-actions">
+            <button type="button" className="button button-outline button-small" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="button button-primary button-small">Save entity</button>
+          </div>
+        </form>
+      </Dialog>
+
+      <Dialog open={confirmDelete && !!selected} onClose={() => setConfirmDelete(false)} labelledBy="de-h">
+        <p className="eyebrow">CAREFUL</p>
+        <h2 id="de-h">Delete {selected?.name}?</h2>
+        <p>This can't be undone. Connections to it from other notes are dropped.</p>
+        <div className="dialog-actions">
+          <button className="button button-outline button-small" onClick={() => setConfirmDelete(false)}>Keep it</button>
+          <button
+            className="button button-primary button-small"
+            onClick={async () => {
+              if (selected) await deleteEntity(selected.id);
+              setSelectedEntityId(null);
+              setConfirmDelete(false);
+            }}
+          >
+            Yes, delete
+          </button>
+        </div>
+      </Dialog>
     </div>
+    </>
   );
 };

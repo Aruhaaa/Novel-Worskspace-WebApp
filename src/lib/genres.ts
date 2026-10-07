@@ -61,6 +61,9 @@ export const GENRE_PALETTES: Record<string, GenrePalette> = {
   },
 };
 
+// Monochrome for now: set to true to bring the colour palettes above back.
+export const USE_GENRE_COLOUR = false;
+
 export const GENRES = Object.keys(GENRE_PALETTES);
 
 const FALLBACK: GenrePalette = {
@@ -70,5 +73,17 @@ const FALLBACK: GenrePalette = {
   swatches: [],
 };
 
-export const getGenrePalette = (genre?: string | null): GenrePalette =>
-  (genre && GENRE_PALETTES[genre]) || FALLBACK;
+const toGrey = (hex: string): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const y = Math.round(0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255));
+  return `#${y.toString(16).padStart(2, '0').repeat(3)}`;
+};
+
+const MONO: GenrePalette = { base: 'var(--color-slate-100)', soft: 'var(--color-slate-900)', ink: 'var(--color-slate-100)', swatches: [] };
+
+export const getGenrePalette = (genre?: string | null): GenrePalette => {
+  const palette = (genre && GENRE_PALETTES[genre]) || FALLBACK;
+  if (USE_GENRE_COLOUR || palette === FALLBACK) return palette;
+  // Keep each genre's swatches, converted to grey, so genres stay tellable apart
+  return { ...MONO, swatches: palette.swatches.map(toGrey) };
+};

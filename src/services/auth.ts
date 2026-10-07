@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { User } from './types';
+import { isNetworkFailure } from '../lib/offlineCache';
 
 // Mock local auth storage
 const LOCAL_SESSION_KEY = 'novelist_local_session';
@@ -7,9 +8,14 @@ const LOCAL_SESSION_KEY = 'novelist_local_session';
 class AuthService {
   async getUser(): Promise<User | null> {
     if (isSupabaseConfigured && supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (user && user.email) {
         return { id: user.id, email: user.email };
+      }
+      // With no connection the server cannot confirm anyone, but the session kept on this device still shows who is signed in
+      if (error && isNetworkFailure(error)) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) return { id: session.user.id, email: session.user.email };
       }
       return null;
     }

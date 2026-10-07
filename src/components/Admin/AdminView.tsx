@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { getGenrePalette } from '../../lib/genres';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { Shield, BarChart2, Plus, Database, Check } from 'lucide-react';
+import { GENRES } from '../../lib/genres';
+import { EmptyState } from '../ui/EmptyState';
+import { PageHead } from '../ui/PageHead';
 
 export const AdminView: React.FC = () => {
   const { user, publicProjects, createExternalProject } = useApp();
@@ -13,17 +15,6 @@ export const AdminView: React.FC = () => {
   const [coverUrl, setCoverUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
-
-  // Protect route just in case
-  if (user?.email !== 'aruhaadmin@novelist.com') {
-    return (
-      <div className="flex-1 bg-slate-950 flex flex-col items-center justify-center p-8">
-        <Shield className="w-16 h-16 text-rose-500 mb-4" />
-        <h2 className="text-2xl font-bold text-slate-200">Access Denied</h2>
-        <p className="text-slate-500 mt-2">You do not have permission to view this page.</p>
-      </div>
-    );
-  }
 
   // Calculate Stats
   const stats = useMemo(() => {
@@ -64,177 +55,95 @@ export const AdminView: React.FC = () => {
     }
   };
 
+  // Protect route just in case
+  if (user?.email !== 'aruhaadmin@novelist.com') {
+    return (
+      <div className="studio-view">
+        <div className="page">
+          <EmptyState icon="users" title="You don't have permission to view this page" text="Only the admin account can see the admin dashboard.">
+            <Link className="small-btn" to="/">Back to Home</Link>
+          </EmptyState>
+        </div>
+      </div>
+    );
+  }
+
+  const maxGenre = Math.max(1, ...stats.genres.map(([, n]) => n));
+
   return (
-    <div className="flex-1 bg-slate-950 overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-8 py-12">
-        <header className="mb-10 flex items-center gap-4">
-          <div className="inline-flex items-center justify-center p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-            <Shield className="w-8 h-8 text-amber-500 stroke-[1.5]" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight">Admin Dashboard</h1>
-            <p className="text-slate-400 mt-1">Platform analytics and management tools</p>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column: Analytics */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60">
-                <BarChart2 className="w-5 h-5 text-indigo-400" />
-                <h2 className="text-lg font-bold text-slate-200">Library Stats</h2>
+    <div className="studio-view">
+      <div className="page page-wide">
+        <PageHead
+          eyebrow="ADMIN ONLY"
+          title={
+            <>
+              The library, <em>at a glance.</em>
+            </>
+          }
+          lead="Platform analytics and management tools."
+        />
+        <div className="split">
+          <div className="stack">
+            <div className="grid-2">
+              <div className="stat">
+                <span className="eyebrow">TOTAL NOVELS</span>
+                <strong>{stats.total}</strong>
+                <span>published</span>
               </div>
-              
-              <div className="mb-6">
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Novels</p>
-                <p className="text-4xl font-extrabold text-slate-100">{stats.total}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Genre Distribution</p>
-                <div className="space-y-3">
+              <section className="card" aria-labelledby="gd-h">
+                <h3 id="gd-h" style={{ fontSize: 22 }}>Genre distribution</h3>
+                <div style={{ marginTop: 14 }}>
                   {stats.genres.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">No genres found.</p>
+                    <p className="meta">No genres found.</p>
                   ) : (
                     stats.genres.map(([g, count]) => (
-                      <div key={g} className="flex items-center justify-between text-sm">
-                        <span className="text-slate-300 flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getGenrePalette(g).base }} />
-                          {g}
-                        </span>
-                        <span className="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded font-bold">
-                          {count}
-                        </span>
+                      <div className="bar-row" key={g}>
+                        <span>{g}</span>
+                        <i style={{ width: `${(count / maxGenre) * 100}%` }} />
+                        <b>{count}</b>
                       </div>
                     ))
                   )}
                 </div>
-              </div>
+              </section>
             </div>
-
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-800/60">
-                <Database className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-bold text-slate-200">Recent Additions</h2>
-              </div>
-              <div className="space-y-4">
-                {stats.recent.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic">No novels published yet.</p>
-                ) : (
-                  stats.recent.map(p => (
-                    <div key={p.id} className="text-sm">
-                      <p className="font-semibold text-slate-300 truncate">{p.title}</p>
-                      <p className="text-slate-500 text-xs">by {p.author_name}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Ingestion Tool */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60">
-                <Plus className="w-6 h-6 text-amber-500" />
-                <div>
-                  <h2 className="text-xl font-bold text-slate-200">Inject External Novel</h2>
-                  <p className="text-sm text-slate-500 mt-1">Directly publish a novel to the library without going through the editor.</p>
-                </div>
-              </div>
-
-              {message && (
-                <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 border ${
-                  message.startsWith('Error') 
-                    ? 'bg-rose-500/10 border-rose-500/20' 
-                    : 'bg-emerald-500/10 border-emerald-500/20'
-                }`}>
-                  <Check className={`w-5 h-5 shrink-0 mt-0.5 ${
-                    message.startsWith('Error') ? 'text-rose-400' : 'text-emerald-400'
-                  }`} />
-                  <p className={`text-sm ${
-                    message.startsWith('Error') ? 'text-rose-300' : 'text-emerald-300'
-                  }`}>{message}</p>
-                </div>
+            <section className="card" aria-labelledby="ra-h">
+              <h3 id="ra-h">Recent additions</h3>
+              {stats.recent.length === 0 ? (
+                <p className="meta" style={{ marginTop: 12 }}>No novels published yet.</p>
+              ) : (
+                <table className="log-table" style={{ marginTop: 12 }}>
+                  <thead>
+                    <tr><th>TITLE</th><th>AUTHOR</th></tr>
+                  </thead>
+                  <tbody>
+                    {stats.recent.map((p) => (
+                      <tr key={p.id}><td>{p.title}</td><td>{p.author_name || 'Unknown'}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-
-              <form onSubmit={handleAddExternal} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">Novel Title <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text" 
-                      required
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">Author Name <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text" 
-                      required
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Genre</label>
-                  <select 
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="Fantasy">Fantasy</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Romance">Romance</option>
-                    <option value="Mystery">Mystery</option>
-                    <option value="Horror">Horror</option>
-                    <option value="Thriller">Thriller</option>
-                    <option value="Historical">Historical</option>
-                    <option value="Contemporary">Contemporary</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Cover Image URL</label>
-                  <input 
-                    type="url" 
-                    value={coverUrl}
-                    onChange={(e) => setCoverUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Description / Synopsis</label>
-                  <textarea 
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-none"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting || !title || !authorName}
-                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-200 w-full md:w-auto"
-                  >
-                    {isSubmitting ? 'Injecting Novel...' : 'Inject into Public Library'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </section>
           </div>
+
+          <section className="card" aria-labelledby="inj-h">
+            <h3 id="inj-h">Inject external novel</h3>
+            <p style={{ margin: '6px 0 20px' }}>Publish a novel to the library directly, without going through the editor.</p>
+            <form onSubmit={handleAddExternal}>
+              <label className="field"><span>Novel title</span><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required /></label>
+              <label className="field"><span>Author name</span><input className="input" value={authorName} onChange={(e) => setAuthorName(e.target.value)} required /></label>
+              <label className="field">
+                <span>Genre</span>
+                <select className="select" value={genre} onChange={(e) => setGenre(e.target.value)}>
+                  {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </label>
+              <label className="field"><span>Cover image URL</span><input className="input" type="url" placeholder="https://…" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} /></label>
+              <label className="field"><span>Description / synopsis</span><textarea className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} /></label>
+              <button className="small-btn is-primary" disabled={isSubmitting}>{isSubmitting ? 'Publishing…' : 'Publish to library'}</button>
+              {message && <p className="mock-note" role="status" style={{ marginTop: 14 }}>{message}</p>}
+            </form>
+          </section>
         </div>
       </div>
     </div>
