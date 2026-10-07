@@ -1,0 +1,49 @@
+name: novelist_workspace
+description: "Novelist Workspace for phones: read, write and finish a novel."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_quill: ^11.6.0
+  google_fonts: ^9.0.0
+  html: ^0.15.7
+  http: ^1.6.0
+  intl: ^0.20.3
+  provider: ^6.1.5+1
+  shared_preferences: ^2.5.6
+  supabase_flutter: ^2.18.0
+  url_launcher: ^6.3.3
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: DM Sans
+      fonts:
+        - asset: assets/fonts/dm-sans-regular.ttf
+          weight: 400
+        - asset: assets/fonts/dm-sans-medium.ttf
+          weight: 500
+        - asset: assets/fonts/dm-sans-semibold.ttf
+          weight: 600
+        - asset: assets/fonts/dm-sans-bold.ttf
+          weight: 700
+    - family: Instrument Serif
+      fonts:
+        - asset: assets/fonts/instrument-serif-regular.ttf
+        - asset: assets/fonts/instrument-serif-italic.ttf
+          style: italic

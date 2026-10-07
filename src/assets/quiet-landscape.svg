@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 680" fill="none">
+  <defs>
+    <clipPath id="frame"><path d="M30 680V280a270 270 0 0 1 540 0v400Z"/></clipPath>
+    <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)"><path d="M0 0h9" stroke="#ebe0ba" stroke-width="1" opacity=".3"/></pattern>
+    <pattern id="fine" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><path d="M0 0v5" stroke="#2e3c32" stroke-width=".6" opacity=".18"/></pattern>
+  </defs>
+  <g clip-path="url(#frame)">
+    <path fill="#e7cf93" d="M0 0h600v680H0z"/>
+    <circle cx="367" cy="197" r="68" fill="#b76c43"/>
+    <circle cx="367" cy="197" r="79" stroke="#ae8050" opacity=".5"/>
+    <path d="M-50 365 98 213l85 95 56-48 177 138 234-92v380H-50Z" fill="#9f9d76"/>
+    <path d="m-50 365 148-152 85 95 56-48 177 138 234-92v380H-50Z" fill="url(#fine)"/>
+    <path d="m98 213-18 103 31-25 21 40 14-62m93-9-7 78 27-24 41 60" stroke="#e6d6aa" stroke-width="2"/>
+    <path d="M-30 428q150-125 317 20t355-54v316H-30Z" fill="#637762"/>
+    <path d="M-30 444q150-125 317 20t355-54M-30 458q150-125 317 20t355-54M-30 472q150-125 317 20t355-54M-30 486q150-125 317 20t355-54M-30 500q150-125 317 20t355-54" stroke="#c0c3a0" opacity=".4"/>
+    <path d="M-40 606q94-204 310-90t369-13v192H-40Z" fill="#344c3d"/>
+    <path d="M-40 606q94-204 310-90t369-13v192H-40Z" fill="url(#hatch)"/>
+    <path d="M313 437c-63 72 163 79 24 157-30 17-55 42-60 86h83c-10-41 13-52 39-74 102-87-145-106-86-169Z" fill="#d4c899"/>
+    <path d="M311 455c-17 40 166 72 66 132-55 33-67 60-67 93" stroke="#7e947b" stroke-width="1.2"/>
+    <g stroke="#e7d8ad" opacity=".6">
+      <path d="M30 553q100-109 229-49M30 566q100-109 224-47M30 579q100-109 218-45M30 592q100-109 212-43M30 605q100-109 202-41M30 618q100-109 198-40M30 631q100-109 190-35M30 644q100-109 185-33M30 657q100-109 179-32"/>
+    </g>
+    <g stroke="#25392e" stroke-width="3">
+      <path d="M481 502V335m0 13-21 25m21-10 25 31m-25-9-32 34m32-12 34 38m-34-16-43 39m43-18 41 35M119 444V360m0 8-13 19m13-4 15 19m-15-8-23 25m23-9 24 20"/>
+    </g>
+    <g stroke="#566044" stroke-width="1.5"><path d="m144 143 10-4 10 4m12 17 7-3 7 3m-66-7 7-3 7 3"/></g>
+    <path d="M0 0h600v680H0z" fill="url(#fine)" opacity=".25"/>
+  </g>
+  <path d="M30 680V280a270 270 0 0 1 540 0v400" stroke="#e4cd9e" stroke-width="2"/>
+</svg>
