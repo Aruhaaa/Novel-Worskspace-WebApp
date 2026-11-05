@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { WikiEntity } from '../../services/types';
 import { appearances, getLinks, getTags, incomingLinks, typedAttributes, TYPE_LABEL, type ChapterText } from '../../lib/notes';
+import { useT } from '../../i18n';
 
 interface EntityDetailsProps {
   entity: WikiEntity;
@@ -12,6 +13,7 @@ interface EntityDetailsProps {
 
 /** Everything about one notebook entry: its picture, summary, tags, connections and where it appears. */
 export const EntityDetails: React.FC<EntityDetailsProps> = ({ entity, entities, chapters, onSelectEntity, onOpenChapter }) => {
+  const t = useT();
   const byId = useMemo(() => new Map(entities.map((e) => [e.id, e])), [entities]);
   const attrs = typedAttributes(entity);
   const tags = getTags(entity);
@@ -25,13 +27,13 @@ export const EntityDetails: React.FC<EntityDetailsProps> = ({ entity, entities, 
 
   return (
     <>
-      {entity.image_url && <img className="entity-image" src={entity.image_url} alt={`Picture of ${entity.name}`} />}
+      {entity.image_url && <img className="entity-image" src={entity.image_url} alt={t('Picture of {name}', { name: entity.name })} />}
       <span className="eyebrow">{TYPE_LABEL[entity.type].toUpperCase()}</span>
       <h3>{entity.name}</h3>
-      <p style={{ marginTop: 8 }}>{entity.description || 'No description provided.'}</p>
+      <p style={{ marginTop: 8 }}>{entity.description || t('No description provided.')}</p>
 
       {tags.length > 0 && (
-        <div className="chips" style={{ marginTop: 14 }} aria-label="Tags">
+        <div className="chips" style={{ marginTop: 14 }} aria-label={t('Tags')}>
           {tags.map((t) => (
             <span className="badge" key={t}>#{t}</span>
           ))}
@@ -50,8 +52,8 @@ export const EntityDetails: React.FC<EntityDetailsProps> = ({ entity, entities, 
       )}
 
       {connections.length > 0 && (
-        <section className="detail-section" aria-label="Connections">
-          <h4 className="eyebrow">CONNECTIONS</h4>
+        <section className="detail-section" aria-label={t('Connections')}>
+          <h4 className="eyebrow">{t('CONNECTIONS')}</h4>
           {connections.map((c, i) => (
             <button key={`${c.target.id}-${i}`} className="detail-link" onClick={() => onSelectEntity(c.target)}>
               <span>{c.target.name}</span>
@@ -64,17 +66,17 @@ export const EntityDetails: React.FC<EntityDetailsProps> = ({ entity, entities, 
         </section>
       )}
 
-      <section className="detail-section" aria-label="Appears in">
-        <h4 className="eyebrow">APPEARS IN</h4>
+      <section className="detail-section" aria-label={t('Appears in')}>
+        <h4 className="eyebrow">{t('APPEARS IN')}</h4>
         {where.length === 0 ? (
-          <p className="meta">Not named in any chapter yet.</p>
+          <p className="meta">{t('Not named in any chapter yet.')}</p>
         ) : (
           where.map((a) => (
             <button key={a.chapter.id} className="detail-link" onClick={() => onOpenChapter(a.chapter.id, entity.name)}>
               <span>
-                {String(a.index + 1).padStart(2, '0')} · {a.chapter.title || 'Untitled chapter'}
+                {String(a.index + 1).padStart(2, '0')} · {a.chapter.title || t('Untitled chapter')}
               </span>
-              <small>{a.count === 1 ? 'once' : `${a.count} times`}</small>
+              <small>{a.count === 1 ? t('once') : t('{n} times', { n: a.count })}</small>
             </button>
           ))
         )}

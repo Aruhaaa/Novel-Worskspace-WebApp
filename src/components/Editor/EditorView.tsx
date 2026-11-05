@@ -32,8 +32,10 @@ import { requestFind } from '../../lib/uiEvents';
 import { useOnline } from '../../lib/online';
 import { quoteTerm, setFeedbackStatus, useFeedback } from '../../lib/feedback';
 import { mentionCount, sceneChapterId, sceneWhen, withSceneLinks } from '../../lib/notes';
+import { tp, useT } from '../../i18n';
 
 export const EditorView: React.FC = () => {
+  const t = useT();
   const { activeProject, chapters, activeChapter, entities, chapterMeta, updateChapterMeta, updateEntity, isSupabase, zenMode, setZenMode, projectRole, projectIsShared, user, profile, applyRemoteChapter } = useApp();
   const canText = can.editText(projectRole);
   const canManage = can.manage(projectRole);
@@ -142,14 +144,16 @@ export const EditorView: React.FC = () => {
 
   const saveLabel =
     !online && saveStatus !== 'saved'
-      ? 'Offline: kept on this device, saves when you reconnect'
+      ? t('Offline: kept on this device, saves when you reconnect')
       : saveStatus === 'saved'
-      ? `Saved ${isSupabase ? 'to the cloud' : 'on this device'}`
+      ? isSupabase
+        ? t('Saved to the cloud')
+        : t('Saved on this device')
       : saveStatus === 'saving'
-        ? 'Saving…'
+        ? t('Saving…')
         : saveStatus === 'error'
-          ? 'Not saved yet'
-          : 'Changes pending';
+          ? t('Not saved yet')
+          : t('Changes pending');
 
   const meta = metaFor(chapterMeta, activeChapter.id);
 
@@ -157,17 +161,17 @@ export const EditorView: React.FC = () => {
     <>
       <div className="paper-running-head">
         <span>{(activeProject?.title || '').toUpperCase()}</span>
-        <span>{activeProject?.is_published ? 'PUBLISHED' : 'DRAFT'}</span>
+        <span>{activeProject?.is_published ? t('PUBLISHED') : t('DRAFT')}</span>
       </div>
       {live.status === 'ready' && <PresenceBar session={live.session} />}
-      <p className="chapter-kicker">CHAPTER {String(chapterNumber).padStart(2, '0')}</p>
+      <p className="chapter-kicker">{t('CHAPTER {n}', { n: String(chapterNumber).padStart(2, '0') })}</p>
       <input
         className="chapter-title"
         value={localTitle}
         onChange={handleTitleChange}
         readOnly={!canText}
-        placeholder="Untitled chapter"
-        aria-label="Chapter title"
+        placeholder={t('Untitled chapter')}
+        aria-label={t('Chapter title')}
         style={{ width: '100%', background: 'transparent', border: 0, outline: 'none', display: 'block' }}
       />
     </>
@@ -175,11 +179,11 @@ export const EditorView: React.FC = () => {
 
   const contextRail = (
     <MarginsRail>
-      <RailBlock title="This chapter">
+      <RailBlock title={t('This chapter')}>
         <p>
-          {wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'} · {readMinutes(wordCount)}
+          {tp(wordCount, '{n} word', '{n} words')} · {readMinutes(wordCount)}
         </p>
-        <label className="rail-label" htmlFor="ch-status">Where it stands</label>
+        <label className="rail-label" htmlFor="ch-status">{t('Where it stands')}</label>
         <select
           id="ch-status"
           className="select rail-field"
@@ -187,37 +191,37 @@ export const EditorView: React.FC = () => {
           onChange={(e) => updateChapterMeta(activeChapter.id, { status: e.target.value as ChapterStatus })}
         >
           {STATUS_ORDER.map((st) => (
-            <option key={st} value={st}>{STATUS_LABEL[st]}</option>
+            <option key={st} value={st}>{t(STATUS_LABEL[st])}</option>
           ))}
         </select>
       </RailBlock>
-      <RailBlock title="Synopsis and notes">
-        <label className="rail-label" htmlFor="ch-synopsis">In a line or two</label>
+      <RailBlock title={t('Synopsis and notes')}>
+        <label className="rail-label" htmlFor="ch-synopsis">{t('In a line or two')}</label>
         <textarea
           id="ch-synopsis"
           className="textarea rail-field"
           rows={3}
           value={meta.synopsis}
           onChange={(e) => updateChapterMeta(activeChapter.id, { synopsis: e.target.value })}
-          placeholder="What happens here?"
+          placeholder={t('What happens here?')}
         />
-        <label className="rail-label" htmlFor="ch-notes">Notes to yourself</label>
+        <label className="rail-label" htmlFor="ch-notes">{t('Notes to yourself')}</label>
         <textarea
           id="ch-notes"
           className="textarea rail-field"
           rows={5}
           value={meta.notes}
           onChange={(e) => updateChapterMeta(activeChapter.id, { notes: e.target.value })}
-          placeholder="Fix the timeline. Foreshadow the storm."
+          placeholder={t('Fix the timeline. Foreshadow the storm.')}
         />
-        <small>Saved on this device. Never part of your exports.</small>
+        <small>{t('Saved on this device. Never part of your exports.')}</small>
       </RailBlock>
-      <RailBlock title="On the page">
+      <RailBlock title={t('On the page')}>
         {onThePage.length === 0 ? (
-          <p>Characters and places from your notebook appear here when you name them.</p>
+          <p>{t('Characters and places from your notebook appear here when you name them.')}</p>
         ) : (
           onThePage.map((ent) => (
-            <button className="character-chip chip-button" key={ent.id} onClick={() => setPeekId(ent.id)} aria-label={`Look at ${ent.name}`}>
+            <button className="character-chip chip-button" key={ent.id} onClick={() => setPeekId(ent.id)} aria-label={t('Look at {name}', { name: ent.name })}>
               <span aria-hidden="true">{ent.name.charAt(0).toUpperCase()}</span>
               <div>
                 <strong>{ent.name}</strong>
@@ -228,7 +232,7 @@ export const EditorView: React.FC = () => {
         )}
       </RailBlock>
       {feedback.some((f) => f.chapterId === activeChapter.id && f.status === 'open') && (
-        <RailBlock title="Reader notes">
+        <RailBlock title={t('Reader notes')}>
           {feedback
             .filter((f) => f.chapterId === activeChapter.id && f.status === 'open')
             .map((f) => (
@@ -238,17 +242,17 @@ export const EditorView: React.FC = () => {
                 <p>{f.note}</p>
                 <div>
                   {f.quote && (
-                    <button className="link-accent" onClick={() => requestFind(quoteTerm(f.quote))}>Show</button>
+                    <button className="link-accent" onClick={() => requestFind(quoteTerm(f.quote))}>{t('Show')}</button>
                   )}
-                  <button className="link-accent" onClick={() => setFeedbackStatus(activeProject!.id, f, 'done')}>Done</button>
+                  <button className="link-accent" onClick={() => setFeedbackStatus(activeProject!.id, f, 'done')}>{t('Done')}</button>
                 </div>
               </div>
             ))}
         </RailBlock>
       )}
-      <RailBlock title="Scenes here">
+      <RailBlock title={t('Scenes here')}>
         {sceneHere.length === 0 ? (
-          <p>No outline scenes are linked to this chapter yet.</p>
+          <p>{t('No outline scenes are linked to this chapter yet.')}</p>
         ) : (
           sceneHere.map((sc) => (
             <div className="scene-link" key={sc.id}>
@@ -256,13 +260,13 @@ export const EditorView: React.FC = () => {
                 {sc.name}
                 <small>{sc.content.status || 'idea'}</small>
               </span>
-              <button className="icon-button" aria-label={`Unlink ${sc.name} from this chapter`} title="Unlink" onClick={() => setSceneChapter(sc, '')}>×</button>
+              <button className="icon-button" aria-label={t('Unlink {name} from this chapter', { name: sc.name })} title={t('Unlink')} onClick={() => setSceneChapter(sc, '')}>×</button>
             </div>
           ))
         )}
         {sceneElsewhere.length > 0 && (
           <>
-            <label className="rail-label" htmlFor="ch-link-scene">Link a scene</label>
+            <label className="rail-label" htmlFor="ch-link-scene">{t('Link a scene')}</label>
             <select
               id="ch-link-scene"
               className="select rail-field"
@@ -272,7 +276,7 @@ export const EditorView: React.FC = () => {
                 if (sc) setSceneChapter(sc, activeChapter.id);
               }}
             >
-              <option value="">Choose from your outline…</option>
+              <option value="">{t('Choose from your outline…')}</option>
               {sceneElsewhere.map((sc) => (
                 <option key={sc.id} value={sc.id}>{sc.name}</option>
               ))}
@@ -287,24 +291,24 @@ export const EditorView: React.FC = () => {
     <>
       <div className="studio-toolbar">
         <h1>
-          Manuscript <span>/ Chapter {String(chapterNumber).padStart(2, '0')}</span>
+          {t('Manuscript')} <span>/ {t('Chapter {n}', { n: String(chapterNumber).padStart(2, '0') })}</span>
         </h1>
         <div className="toolbar-actions">
           <Link className="button button-outline button-small" to="/chapters">
-            Chapter index
+            {t('Chapter index')}
           </Link>
           {canText && (
             <button className="button button-outline button-small" onClick={() => setShowHistory(true)}>
-              History
+              {t('History')}
             </button>
           )}
           {activeProject && <SprintTimer projectId={activeProject.id} chapterId={activeChapter.id} chapterWords={wordCount} />}
           <MoreMenu
             items={[
-              { label: 'Jot an idea', icon: <Lightbulb />, onSelect: () => openCapture() },
-              { label: 'Reader feedback…', icon: <MessageSquare />, onSelect: () => setShowFeedback(true) },
-              { label: 'Export…', icon: <Download />, onSelect: () => setShowExport(true) },
-              { label: 'Print view', icon: <Printer />, onSelect: () => navigate('/print') },
+              { label: t('Jot an idea'), icon: <Lightbulb />, onSelect: () => openCapture() },
+              { label: t('Reader feedback…'), icon: <MessageSquare />, onSelect: () => setShowFeedback(true) },
+              { label: t('Export…'), icon: <Download />, onSelect: () => setShowExport(true) },
+              { label: t('Print view'), icon: <Printer />, onSelect: () => navigate('/print') },
             ]}
           />
           {activeProject && canManage && (
@@ -312,20 +316,20 @@ export const EditorView: React.FC = () => {
               className={`button button-small ${activeProject.is_published ? 'button-outline' : 'button-primary'}`}
               onClick={() => togglePublish(activeProject)}
               aria-pressed={!!activeProject.is_published}
-              title={activeProject.is_published ? 'Remove this novel from the Public Library' : 'Share this novel in the Public Library'}
+              title={activeProject.is_published ? t('Remove this novel from the Public Library') : t('Share this novel in the Public Library')}
             >
-              {activeProject.is_published ? 'Published · Unpublish' : 'Publish novel'}
+              {activeProject.is_published ? t('Published · Unpublish') : t('Publish novel')}
             </button>
           )}
           <button
             className="focus-button"
             onClick={() => setZenMode(!zenMode)}
             aria-pressed={zenMode}
-            aria-label={zenMode ? 'Exit focus mode' : 'Enter focus mode'}
-            title="Focus mode; Escape to exit"
+            aria-label={zenMode ? t('Exit focus mode') : t('Enter focus mode')}
+            title={t('Focus mode; Escape to exit')}
           >
             {zenMode ? <Minimize /> : <Maximize />}
-            <span>{zenMode ? 'Exit focus' : 'Zen mode'}</span>
+            <span>{zenMode ? t('Exit focus') : t('Zen mode')}</span>
           </button>
         </div>
       </div>
@@ -333,7 +337,7 @@ export const EditorView: React.FC = () => {
       {autosave.notice && (
         <div className="find-bar" role="status" style={{ justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12 }}>{autosave.notice}</span>
-          <button className="small-btn" onClick={autosave.dismissNotice}>Dismiss</button>
+          <button className="small-btn" onClick={autosave.dismissNotice}>{t('Dismiss')}</button>
         </div>
       )}
 
@@ -342,7 +346,7 @@ export const EditorView: React.FC = () => {
         <div className="studio-view writing-view">
           <article className="writing-paper">
             {paperHeader}
-            <p className="meta" role="status">Joining the others who have this chapter open…</p>
+            <p className="meta" role="status">{t('Joining the others who have this chapter open…')}</p>
           </article>
         </div>
       ) : (
@@ -360,18 +364,18 @@ export const EditorView: React.FC = () => {
 
       <footer className="studio-statusbar">
         <div>
-          <span>{wordCount.toLocaleString()} words</span>
-          <span>{charCount.toLocaleString()} characters</span>
+          <span>{tp(wordCount, '{n} word', '{n} words')}</span>
+          <span>{tp(charCount, '{n} character', '{n} characters')}</span>
           <span>{readMinutes(wordCount)}</span>
         </div>
         <div>
           {activeProject && <SprintHint projectId={activeProject.id} />}
-          {zenMode && <span className="status-hint">Today {daily.written.toLocaleString()} / {daily.goal.toLocaleString()} · Escape to exit</span>}
+          {zenMode && <span className="status-hint">{t('Today {written} / {goal} · Escape to exit', { written: daily.written.toLocaleString(), goal: daily.goal.toLocaleString() })}</span>}
           <span className="save-status" role="status" style={saveStatus === 'error' ? { color: 'var(--danger)' } : undefined}>
             {saveLabel}
           </span>
           {saveStatus === 'error' && (
-            <button className="link-accent" onClick={autosave.retry}>Retry now</button>
+            <button className="link-accent" onClick={autosave.retry}>{t('Retry now')}</button>
           )}
         </div>
       </footer>

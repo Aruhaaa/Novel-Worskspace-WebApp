@@ -1,5 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '../../i18n';
 
 const subscribeNever = () => () => undefined;
 const findSlot = () => document.getElementById('context-slot');
@@ -30,31 +31,31 @@ export const RailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ l
  * The right-hand "In the margins" panel shared by the workspace pages. It sits next to <main>
  * in the app shell, so it is mounted through a portal into #context-slot.
  */
-export const MarginsRail: React.FC<MarginsRailProps> = ({
-  thought = (
-    <>
-      Not every sentence has
-      <br />
-      to know where it’s going.
-    </>
-  ),
-  children,
-}) => {
+export const MarginsRail: React.FC<MarginsRailProps> = ({ thought, children }) => {
+  const t = useT();
   // The slot lives in the app shell and exists once the page has mounted; React re-checks after mounting
   const slot = useSyncExternalStore(subscribeNever, findSlot, () => null);
 
   if (!slot) return null;
 
   return createPortal(
-    <aside className="studio-context" aria-label="In the margins">
+    <aside className="studio-context" aria-label={t('In the margins')}>
       <div className="context-title">
-        <h2 className="eyebrow">IN THE MARGINS</h2>
-        <span aria-hidden="true">n.</span>
+        <h2 className="eyebrow">{t('IN THE MARGINS')}</h2>
+        <span aria-hidden="true">{t('n.')}</span>
       </div>
       {children}
       <div className="context-thought">
         <span aria-hidden="true">✳</span>
-        <p>{thought}</p>
+        <p>
+          {thought ?? (
+            <>
+              {t('Not every sentence has')}
+              <br />
+              {t('to know where it’s going.')}
+            </>
+          )}
+        </p>
       </div>
     </aside>,
     slot

@@ -49,7 +49,7 @@ blocking someone works on that device only.
 
 1. In **SQL Editor** > **New query**, paste the whole of `supabase/setup_scripts/20261008_account_safety.sql` and press **Run**.
 2. For password reset emails, open **Authentication** > **URL Configuration** and add your site's address (for example
-   `https://novel-worskspace-web-app.vercel.app/`) to **Redirect URLs**. Without this Supabase will not send people back to the app.
+   `https://novelistworkspace.kakamond.com/`) to **Redirect URLs**. Without this Supabase will not send people back to the app.
 3. Reload the app.
 
 Check it worked:
@@ -160,7 +160,7 @@ The website can show "Continue with Google" and "Continue with Apple" on the sig
 Do the Supabase side first. A button for a provider Supabase has not switched on leads to a plain error page from Supabase.
 
 1. **Redirect URL.** In Supabase **Authentication** > **URL Configuration** > **Redirect URLs**, add your site's address, for example
-   `https://novel-worskspace-web-app.vercel.app/`. (The same step as password reset. A sign-in from `localhost` needs `http://localhost:5173/` there too.)
+   `https://novelistworkspace.kakamond.com/`. (The same step as password reset. A sign-in from `localhost` needs `http://localhost:5173/` there too.)
 2. **Google.** In the [Google Cloud console](https://console.cloud.google.com): set up the OAuth consent screen, then **APIs & Services** >
    **Credentials** > **Create credentials** > **OAuth client ID** > **Web application**. Under Authorized redirect URIs add the callback address
    Supabase shows on its Google provider page (it looks like `https://<project ref>.supabase.co/auth/v1/callback`). Copy the client ID and secret.
@@ -181,3 +181,13 @@ What to know:
   They keep email and password. The phone app is covered in `mobile/README.md`.
 - Tested against a stand-in provider that answers at once (`e2e/cloud/providers.cloud.spec.ts`): the buttons, the trip out and back, the one
   question, a refusal, and the buttons staying away in the desktop app. **Not tested with real Google or Apple.**
+
+## Sharing a project and writing together
+
+Part of the same third-step script. There is nothing more to switch on: once it has been run, **Manuscripts > Share** works.
+
+- **Invitations.** The owner makes an invitation link for a role: *co-author* (writes and arranges everything except sharing, publishing and deleting), *editor* (writes in the chapters) or *viewer* (reads). A link works for 1, 7 or 30 days and admits 1 to 50 people. It can be switched off at any time. Someone who is not signed in sees what the link is for, then signs in and comes straight back to it.
+- **Who may do what** is checked by the screens. The invitations, memberships and the live channels are checked by the database itself (row level security and the `project_role()` function), so a stranger cannot read the member list, make an invitation, raise their own role, or join a project's live channel. The older "Allow public" policies on projects and chapters are still open to anyone with the website's public key (see `limit.md`), so a determined person could still change chapters directly. That is the deferred database-rules problem, not something this step fixes.
+- **Writing together.** When a project has other people on it and two or more have the same chapter open, they write in it together: each sees the other's cursor and changes as they type. It travels over a private Realtime channel named `project:<project id>:doc:<chapter id>` that only people on the project may join (two policies on `realtime.messages`, created by the script). Each person's editor still saves the chapter to the database as before. It can be turned off per device in Preferences > Writing together. If the editor says "Not connected to the others", Realtime is off for the project, or the two policies are missing: run the script again.
+- A viewer sees a chapter change when the writers' autosave lands (a second or two later), not keystroke by keystroke.
+- Tested against the stand-in server with two people (`npm run test:e2e:cloud`, `e2e/cloud/collab.cloud.spec.ts`) and in local mode with two tabs (`e2e/collab.spec.ts`). Not tried with more people, on a slow connection, or against a real Supabase project.

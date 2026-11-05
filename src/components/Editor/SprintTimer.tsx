@@ -10,13 +10,14 @@ import {
   useSprintStatus,
 } from '../../lib/sprint';
 import type { SprintPlan, SprintResult } from '../../lib/sprint';
+import { tp, useT } from '../../i18n';
 import './sprint.css';
 
 const PRESETS = [10, 15, 20, 25, 30, 45, 60];
 const MAX_MINUTES = 180;
 const MAX_GOAL = 1_000_000;
 
-const wordsText = (n: number) => `${n.toLocaleString()} ${n === 1 ? 'word' : 'words'}`;
+const wordsText = (n: number) => tp(n, '{n} word', '{n} words');
 
 interface StartPanelProps {
   sound: boolean;
@@ -28,6 +29,7 @@ interface StartPanelProps {
 
 /** Length, an optional word goal and the chime. Mounts only while open, so it starts fresh each time. */
 const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, onStart, onCancel }) => {
+  const t = useT();
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
   const [last] = useState(rememberedMinutes);
@@ -46,9 +48,9 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
   const goalWords = typedGoal ? Number(goal) : null;
   const goalOk = goalWords === null || (Number.isInteger(goalWords) && goalWords >= 1 && goalWords <= MAX_GOAL);
   const error = typedLength && !minutesOk
-    ? `Choose a length from 1 to ${MAX_MINUTES} minutes.`
+    ? t('Choose a length from 1 to {max} minutes.', { max: MAX_MINUTES })
     : !goalOk
-      ? 'Use a whole number of words for the goal, or leave it blank.'
+      ? t('Use a whole number of words for the goal, or leave it blank.')
       : null;
 
   const submit = (e: React.FormEvent) => {
@@ -58,11 +60,11 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
   };
 
   return (
-    <div className="sprint-pop" role="dialog" aria-label="Start a writing sprint" ref={ref}>
+    <div className="sprint-pop" role="dialog" aria-label={t('Start a writing sprint')} ref={ref}>
       <form onSubmit={submit} noValidate>
-        <span className="eyebrow sprint-eyebrow">WRITING SPRINT</span>
+        <span className="eyebrow sprint-eyebrow">{t('WRITING SPRINT')}</span>
         <fieldset className="sprint-fieldset">
-          <legend>How long?</legend>
+          <legend>{t('How long?')}</legend>
           <div className="sprint-presets">
             {PRESETS.map((m) => (
               <button
@@ -81,7 +83,7 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
           </div>
         </fieldset>
         <div className="field">
-          <label htmlFor={`${id}-minutes`}>Or your own length, in minutes (1 to {MAX_MINUTES})</label>
+          <label htmlFor={`${id}-minutes`}>{t('Or your own length, in minutes (1 to {max})', { max: MAX_MINUTES })}</label>
           <input
             id={`${id}-minutes`}
             className="input"
@@ -98,7 +100,7 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
           />
         </div>
         <div className="field">
-          <label htmlFor={`${id}-goal`}>Word goal (optional)</label>
+          <label htmlFor={`${id}-goal`}>{t('Word goal (optional)')}</label>
           <input
             id={`${id}-goal`}
             className="input"
@@ -108,16 +110,16 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
             step={1}
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            placeholder="No goal"
+            placeholder={t('No goal')}
             aria-invalid={!goalOk}
             aria-describedby={error ? `${id}-error` : undefined}
           />
         </div>
         <label className="check-row">
           <input type="checkbox" checked={sound} onChange={(e) => onSound(e.target.checked)} />
-          Chime when time is up
+          {t('Chime when time is up')}
         </label>
-        {busyElsewhere && <p className="sprint-note">A sprint is running in another novel. Starting one here ends it.</p>}
+        {busyElsewhere && <p className="sprint-note">{t('A sprint is running in another novel. Starting one here ends it.')}</p>}
         {error && (
           <p className="sprint-note sprint-error" id={`${id}-error`} role="alert">
             {error}
@@ -125,10 +127,10 @@ const StartPanel: React.FC<StartPanelProps> = ({ sound, busyElsewhere, onSound, 
         )}
         <div className="sprint-actions">
           <button type="button" className="button button-outline button-small" onClick={onCancel}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button className="button button-primary button-small" disabled={!minutesOk || !goalOk}>
-            Start
+            {t('Start')}
           </button>
         </div>
       </form>
@@ -146,6 +148,7 @@ interface SprintCardProps {
 
 /** What the sprint came to. A status region, not a dialog: it never takes focus or blocks the page. */
 const SprintCard: React.FC<SprintCardProps> = ({ result, history, id, onNew, onDismiss }) => {
+  const t = useT();
   const earlier = history.filter((r) => r.id !== result.id);
   const isBest = earlier.length > 0 && result.words > 0 && earlier.every((r) => isBetterSprint(result, r));
   const goal = result.goalWords;
@@ -153,21 +156,21 @@ const SprintCard: React.FC<SprintCardProps> = ({ result, history, id, onNew, onD
 
   return (
     <div className="sprint-pop sprint-card" id={id} role="status">
-      <p className="sprint-card-title">{result.completed ? 'Sprint complete' : 'Sprint ended'}</p>
-      {result.awayWhenFinished && <p className="sprint-note">The time ran out while you were away.</p>}
+      <p className="sprint-card-title">{result.completed ? t('Sprint complete') : t('Sprint ended')}</p>
+      {result.awayWhenFinished && <p className="sprint-note">{t('The time ran out while you were away.')}</p>}
       <ul className="sprint-facts">
         <li>
           <strong>{formatSpan(result.activeMs)}</strong>
-          writing time
+          {t('writing time')}
         </li>
         <li>
           <strong>{result.words.toLocaleString()}</strong>
-          {result.words === 1 ? 'word' : 'words'}
+          {result.words === 1 ? t('word') : t('words')}
         </li>
         {result.wpm > 0 && (
           <li>
             <strong>{result.wpm.toLocaleString()}</strong>
-            words a minute
+            {t('words a minute')}
           </li>
         )}
       </ul>
@@ -176,23 +179,23 @@ const SprintCard: React.FC<SprintCardProps> = ({ result, history, id, onNew, onD
           {goalMet && <Check aria-hidden="true" />}
           <span>
             {goalMet
-              ? `Goal of ${wordsText(goal)} reached.`
-              : `Goal of ${wordsText(goal)} not reached: ${result.words.toLocaleString()} written.`}
+              ? t('Goal of {words} reached.', { words: wordsText(goal) })
+              : t('Goal of {words} not reached: {written} written.', { words: wordsText(goal), written: result.words.toLocaleString() })}
           </span>
         </p>
       )}
       {isBest && (
         <p className="sprint-line">
           <Check aria-hidden="true" />
-          <span>Your best sprint yet on this novel.</span>
+          <span>{t('Your best sprint yet on this novel.')}</span>
         </p>
       )}
       <div className="sprint-actions">
         <button type="button" className="button button-outline button-small" onClick={onDismiss}>
-          Dismiss
+          {t('Dismiss')}
         </button>
         <button type="button" className="button button-primary button-small" onClick={onNew}>
-          New sprint
+          {t('New sprint')}
         </button>
       </div>
     </div>
@@ -205,6 +208,7 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
   chapterId,
   chapterWords,
 }) => {
+  const t = useT();
   const sprint = useSprint(projectId, chapterId, chapterWords);
   const history = useSprintHistory(projectId);
   const { active, result } = sprint;
@@ -279,18 +283,18 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
       </span>
 
       {active ? (
-        <div className={`sprint-pill${paused ? ' is-paused' : ''}`} role="group" aria-label="Writing sprint">
+        <div className={`sprint-pill${paused ? ' is-paused' : ''}`} role="group" aria-label={t('Writing sprint')}>
           <Timer aria-hidden="true" />
           <span className="sprint-clock" role="timer">
             {formatClock(sprint.remainingMs)}
           </span>
-          <span className="sr-only">remaining</span>
-          {paused && <span className="sprint-state">Paused</span>}
+          <span className="sr-only">{t('remaining')}</span>
+          {paused && <span className="sprint-state">{t('Paused')}</span>}
           <span className="sprint-words">
             {sprint.goalMet && (
               <>
                 <Check aria-hidden="true" />
-                <span className="sr-only">Goal reached. </span>
+                <span className="sr-only">{t('Goal reached.')} </span>
               </>
             )}
             {sprint.words.toLocaleString()}
@@ -301,13 +305,13 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
               ref={pauseRef}
               type="button"
               className="icon-button"
-              aria-label={paused ? 'Resume sprint' : 'Pause sprint'}
-              title={paused ? 'Resume sprint' : 'Pause sprint'}
+              aria-label={paused ? t('Resume sprint') : t('Pause sprint')}
+              title={paused ? t('Resume sprint') : t('Pause sprint')}
               onClick={paused ? sprint.resume : sprint.pause}
             >
               {paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
             </button>
-            <button type="button" className="icon-button" aria-label="End sprint early" title="End sprint early" onClick={stop}>
+            <button type="button" className="icon-button" aria-label={t('End sprint early')} title={t('End sprint early')} onClick={stop}>
               <Square aria-hidden="true" />
             </button>
           </span>
@@ -320,12 +324,12 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
             className="button button-outline button-small sprint-trigger"
             aria-expanded={cardOpen}
             aria-controls={cardOpen ? cardId : undefined}
-            aria-label="Sprint summary"
-            title="Sprint summary"
+            aria-label={t('Sprint summary')}
+            title={t('Sprint summary')}
             onClick={() => setFolded(cardOpen ? result.id : null)}
           >
             <Check aria-hidden="true" />
-            <span className="sprint-label">Sprint summary</span>
+            <span className="sprint-label">{t('Sprint summary')}</span>
           </button>
           {cardOpen && (
             <SprintCard
@@ -351,12 +355,12 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
             className="button button-outline button-small sprint-trigger"
             aria-haspopup="dialog"
             aria-expanded={open}
-            aria-label="Start a writing sprint"
-            title="Start a writing sprint"
+            aria-label={t('Start a writing sprint')}
+            title={t('Start a writing sprint')}
             onClick={() => setOpen((v) => !v)}
           >
             <Timer aria-hidden="true" />
-            <span className="sprint-label">Sprint</span>
+            <span className="sprint-label">{t('Sprint')}</span>
           </button>
           {open && (
             <StartPanel
@@ -378,11 +382,12 @@ export const SprintTimer: React.FC<{ projectId: string; chapterId: string; chapt
 
 /** "Sprint 12:34 · 210 words" for the editor's footer, so the sprint stays in view in focus mode. */
 export const SprintHint: React.FC<{ projectId: string }> = ({ projectId }) => {
+  const t = useT();
   const { active, remainingMs, words } = useSprintStatus(projectId);
   if (!active) return null;
   return (
     <span className="sprint-hint">
-      Sprint {active.pausedAt !== null && 'paused '}
+      {t('Sprint')} {active.pausedAt !== null && `${t('paused')} `}
       {formatClock(remainingMs)} · {wordsText(words)}
     </span>
   );

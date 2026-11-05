@@ -8,10 +8,12 @@ import { Storyboard } from './Storyboard';
 import { Timeline } from './Timeline';
 import { RoleBanner } from '../Collab/RoleBanner';
 import { can } from '../../lib/collab';
+import { tp, useT } from '../../i18n';
 
 type Mode = 'board' | 'timeline';
 
 export const OutlineView: React.FC = () => {
+  const t = useT();
   const { updateEntity, entities, chapters, projectRole } = useApp();
   const structure = can.editStructure(projectRole);
   const scenes = entities.filter((e) => e.type === 'scene');
@@ -45,15 +47,15 @@ export const OutlineView: React.FC = () => {
     <>
     <div className="studio-toolbar">
       <h1>
-        Story outline <span>/ {sceneCount} {sceneCount === 1 ? 'scene' : 'scenes'}</span>
+        {t('Story outline')} <span>/ {tp(sceneCount, '{n} scene', '{n} scenes')}</span>
       </h1>
     </div>
     <div className="studio-view">
       <div className="page page-wide" style={{ paddingTop: 28 }}>
         <RoleBanner />
-        <div className="world-filter" role="group" aria-label="How to view the outline">
-          <button aria-pressed={mode === 'board'} onClick={() => setMode('board')}>Board</button>
-          <button aria-pressed={mode === 'timeline'} onClick={() => setMode('timeline')}>Timeline</button>
+        <div className="world-filter" role="group" aria-label={t('How to view the outline')}>
+          <button aria-pressed={mode === 'board'} onClick={() => setMode('board')}>{t('Board')}</button>
+          <button aria-pressed={mode === 'timeline'} onClick={() => setMode('timeline')}>{t('Timeline')}</button>
         </div>
         {mode === 'board' ? <Storyboard onEditEntity={openEdit} /> : <Timeline onEditScene={openEdit} />}
       </div>
@@ -61,26 +63,26 @@ export const OutlineView: React.FC = () => {
       <MarginsRail
         thought={
           <>
-            Let the middle
+            {t('Let the middle')}
             <br />
-            be a little messy.
+            {t('be a little messy.')}
           </>
         }
       >
-        <RailBlock title="This outline">
+        <RailBlock title={t('This outline')}>
           <p>
-            {sceneCount} {sceneCount === 1 ? 'scene' : 'scenes'} across four stages.
+            {t('{scenes} across four stages.', { scenes: tp(sceneCount, '{n} scene', '{n} scenes') })}
           </p>
         </RailBlock>
-        <RailBlock title="On the board">
-          <RailRow label="Ideas" value={inColumn('idea')} />
-          <RailRow label="To do" value={inColumn('todo')} />
-          <RailRow label="Drafting" value={inColumn('drafting')} />
-          <RailRow label="Finished" value={inColumn('finished')} />
+        <RailBlock title={t('On the board')}>
+          <RailRow label={t('Ideas')} value={inColumn('idea')} />
+          <RailRow label={t('To do')} value={inColumn('todo')} />
+          <RailRow label={t('Drafting')} value={inColumn('drafting')} />
+          <RailRow label={t('Finished')} value={inColumn('finished')} />
         </RailBlock>
-        <RailBlock title="In the manuscript">
-          <RailRow label="Placed in a chapter" value={placed} />
-          <RailRow label="Not placed yet" value={sceneCount - placed} />
+        <RailBlock title={t('In the manuscript')}>
+          <RailRow label={t('Placed in a chapter')} value={placed} />
+          <RailRow label={t('Not placed yet')} value={sceneCount - placed} />
         </RailBlock>
       </MarginsRail>
 
@@ -97,26 +99,26 @@ export const OutlineView: React.FC = () => {
             setEditing(null);
           }}
         >
-          <p className="eyebrow">STORY OUTLINE</p>
-          <h2 id="es-h">Edit scene</h2>
-          <label htmlFor="es-name">Scene name</label>
+          <p className="eyebrow">{t('STORY OUTLINE')}</p>
+          <h2 id="es-h">{t('Edit scene')}</h2>
+          <label htmlFor="es-name">{t('Scene name')}</label>
           <input id="es-name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-          <label htmlFor="es-desc">Description</label>
-          <input id="es-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What happens in this scene?" />
-          <label htmlFor="es-chapter">Chapter</label>
+          <label htmlFor="es-desc">{t('Description')}</label>
+          <input id="es-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('What happens in this scene?')} />
+          <label htmlFor="es-chapter">{t('Chapter')}</label>
           <select id="es-chapter" className="select" style={{ marginTop: 8 }} value={chapterId} onChange={(e) => setChapterId(e.target.value)}>
-            <option value="">Not in a chapter yet</option>
+            <option value="">{t('Not in a chapter yet')}</option>
             {chapters.map((c, i) => (
               <option key={c.id} value={c.id}>
-                {String(i + 1).padStart(2, '0')} · {c.title || 'Untitled chapter'}
+                {String(i + 1).padStart(2, '0')} · {c.title || t('Untitled chapter')}
               </option>
             ))}
           </select>
-          <label htmlFor="es-when">When it happens (optional)</label>
-          <input id="es-when" value={when} onChange={(e) => setWhen(e.target.value)} placeholder="Day 3, dusk · Spring 1942" />
+          <label htmlFor="es-when">{t('When it happens (optional)')}</label>
+          <input id="es-when" value={when} onChange={(e) => setWhen(e.target.value)} placeholder={t('Day 3, dusk · Spring 1942')} />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setEditing(null)}>Cancel</button>
-            <button className="button button-primary button-small">Save scene</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setEditing(null)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Save scene')}</button>
           </div>
         </form>
       </Dialog>

@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { useT } from '../../i18n';
 
 /** What the suggestion list is given: notebook entries to offer, and the call that inserts the chosen one */
 export interface MentionListProps {
@@ -11,6 +12,7 @@ export interface MentionListHandle {
 }
 
 const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref) => {
+  const t = useT();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -58,7 +60,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref)
   }));
 
   return (
-    <div className="mention-pop" role="listbox" aria-label="Mention suggestions" style={{ position: 'static' }}>
+    <div className="mention-pop" role="listbox" aria-label={t('Mention suggestions')} style={{ position: 'static' }}>
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
@@ -72,7 +74,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref)
           </button>
         ))
       ) : (
-        <p style={{ padding: '8px 10px', fontSize: 12, color: 'var(--muted)', margin: 0 }}>No result</p>
+        <p style={{ padding: '8px 10px', fontSize: 12, color: 'var(--muted)', margin: 0 }}>{t('No result')}</p>
       )}
     </div>
   );

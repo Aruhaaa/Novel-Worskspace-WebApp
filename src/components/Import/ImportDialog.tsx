@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { Dialog } from '../ui/Dialog';
 import { useToast } from '../ui/toastContext';
 import { describeSplits, readManuscriptSource, splitManuscript, type ManuscriptSource, type SplitMode } from '../../utils/importFormats';
+import { mark, tp, useT } from '../../i18n';
 import './import.css';
 
 interface ImportDialogProps {
@@ -20,14 +21,12 @@ const MAX_CHAPTERS = 500;
 const ACCEPT = '.docx,.txt,.md,.markdown,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 const SPLITS: { id: SplitMode; label: string }[] = [
-  { id: 'auto', label: 'Automatic' },
-  { id: 'headings', label: 'Headings' },
-  { id: 'chapter-lines', label: '“Chapter” lines' },
-  { id: 'scene-breaks', label: 'Scene breaks' },
-  { id: 'none', label: 'One chapter' },
+  { id: 'auto', label: mark('Automatic') },
+  { id: 'headings', label: mark('Headings') },
+  { id: 'chapter-lines', label: mark('“Chapter” lines') },
+  { id: 'scene-breaks', label: mark('Scene breaks') },
+  { id: 'none', label: mark('One chapter') },
 ];
-
-const count = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 interface RowProps {
   index: number;
@@ -39,25 +38,27 @@ interface RowProps {
 }
 
 const Row = React.memo(function Row({ index, title, words, on, onToggle, onTitle }: RowProps) {
+  const t = useT();
   return (
     <li className={`imp-row${on ? '' : ' is-off'}`}>
       <label className="imp-pick">
-        <input type="checkbox" checked={on} onChange={() => onToggle(index)} aria-label={`Import chapter ${index + 1}`} />
+        <input type="checkbox" checked={on} onChange={() => onToggle(index)} aria-label={t('Import chapter {n}', { n: index + 1 })} />
       </label>
       <input
         className="imp-name"
         value={title}
-        placeholder="Untitled chapter"
-        aria-label={`Title of chapter ${index + 1}`}
+        placeholder={t('Untitled chapter')}
+        aria-label={t('Title of chapter {n}', { n: index + 1 })}
         autoComplete="off"
         onChange={(e) => onTitle(index, e.target.value)}
       />
-      <span className="imp-words">{count(words, 'word', 'words')}</span>
+      <span className="imp-words">{tp(words, '{n} word', '{n} words')}</span>
     </li>
   );
 });
 
 const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = ({ target, onClose }) => {
+  const t = useT();
   const { activeProject, chapters, importManuscript, undoImport } = useApp();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -131,7 +132,7 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
       setStep('review');
     } catch (err) {
       if (!alive.current) return;
-      setError(err instanceof Error && err.message ? err.message : 'That file could not be read. Try another one.');
+      setError(err instanceof Error && err.message ? err.message : t('That file could not be read. Try another one.'));
       setStep('choose');
     }
   };
@@ -139,7 +140,7 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
   const take = (files: FileList | null | undefined) => {
     if (!files || files.length === 0) return;
     if (files.length > 1) {
-      setError('Choose one file at a time.');
+      setError(t('Choose one file at a time.'));
       return;
     }
     void start(files[0]);
@@ -185,30 +186,34 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
     onClose();
     const n = result.chapterIds?.length ?? 0;
     toast({
-      message: `Imported ${count(n, 'chapter', 'chapters')} (${(result.words ?? 0).toLocaleString()} words).`,
-      actionLabel: 'Undo',
+      message: t('Imported {chapters} ({words}).', { chapters: tp(n, '{n} chapter', '{n} chapters'), words: tp(result.words ?? 0, '{n} word', '{n} words') }),
+      actionLabel: t('Undo'),
       onAction: async () => {
         const undone = await undoImport(result);
-        toast({ message: undone.error ?? 'The import has been undone.' });
+        toast({ message: undone.error ?? t('The import has been undone.') });
       },
     });
     if (target === 'new') navigate('/chapters');
   };
 
   const total = list.length;
-  const totals = `${chosen.length === total ? count(total, 'chapter', 'chapters') : `${chosen.length.toLocaleString()} of ${count(total, 'chapter', 'chapters')}`} · ${count(chosenWords, 'word', 'words')}`;
-  const autoLabel = found ? SPLITS.find((s) => s.id === found.auto)?.label.toLowerCase() : '';
+  const chaptersText =
+    chosen.length === total
+      ? tp(total, '{n} chapter', '{n} chapters')
+      : t('{n} of {total}', { n: chosen.length.toLocaleString(), total: tp(total, '{n} chapter', '{n} chapters') });
+  const totals = `${chaptersText} · ${tp(chosenWords, '{n} word', '{n} words')}`;
+  const autoLabel = found ? t(SPLITS.find((s) => s.id === found.auto)?.label ?? '').toLowerCase() : '';
 
   return (
     // Dropping a file beside the drop zone would make the browser open it and leave the app, so the whole dialog catches it
     <div ref={rootRef} className="imp-body" onDragOver={(e) => e.preventDefault()} onDrop={(e) => e.preventDefault()}>
-      <p className="eyebrow">{target === 'new' ? 'IMPORT A MANUSCRIPT' : 'IMPORT CHAPTERS'}</p>
-      <h2 id="imp-h">{target === 'new' ? 'Import a manuscript' : 'Import chapters'}</h2>
+      <p className="eyebrow">{target === 'new' ? t('IMPORT A MANUSCRIPT') : t('IMPORT CHAPTERS')}</p>
+      <h2 id="imp-h">{target === 'new' ? t('Import a manuscript') : t('Import chapters')}</h2>
 
       {(step === 'choose' || step === 'reading') && (
         <>
           <p>
-            Choose a Word (.docx), plain text (.txt) or Markdown (.md) file. It is split into chapters, and you check them before anything is saved
+            {t('Choose a Word (.docx), plain text (.txt) or Markdown (.md) file. It is split into chapters, and you check them before anything is saved')}
             {target === 'append' && activeProject ? `. They are added after the last chapter of “${activeProject.title}”` : ''}.
           </p>
           {step === 'choose' ? (
@@ -239,9 +244,9 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
                 }}
               >
                 <Upload aria-hidden="true" />
-                <strong>Choose a file</strong>
-                <span>or drop it here</span>
-                <small>Word (.docx), plain text (.txt) or Markdown (.md)</small>
+                <strong>{t('Choose a file')}</strong>
+                <span>{t('or drop it here')}</span>
+                <small>{t('Word (.docx), plain text (.txt) or Markdown (.md)')}</small>
               </button>
               <input
                 ref={inputRef}
@@ -256,7 +261,7 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
                   e.target.value = '';
                 }}
               />
-              <p id="imp-private" className="imp-private">Your file is read on this device. Only the chapters you keep are saved.</p>
+              <p id="imp-private" className="imp-private">{t('Your file is read on this device. Only the chapters you keep are saved.')}</p>
               {error && (
                 <p className="imp-error" role="alert">
                   {error}
@@ -265,12 +270,12 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
             </>
           ) : (
             <p className="imp-reading" role="status">
-              Reading <strong>{fileName}</strong>…
+              {t('Reading')} <strong>{fileName}</strong>…
             </p>
           )}
           <div className="dialog-actions imp-actions">
             <button type="button" className="button button-outline button-small" onClick={onClose}>
-              Cancel
+              {t('Cancel')}
             </button>
           </div>
         </>
@@ -285,38 +290,38 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
             {target === 'new' ? (
               <div className="imp-fields">
                 <div className="imp-field">
-                  <label htmlFor="imp-title">Project title</label>
+                  <label htmlFor="imp-title">{t('Project title')}</label>
                   <input id="imp-title" ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} autoComplete="off" required />
                 </div>
                 <div className="imp-field">
-                  <label htmlFor="imp-author">Author (optional)</label>
+                  <label htmlFor="imp-author">{t('Author (optional)')}</label>
                   <input id="imp-author" value={author} onChange={(e) => setAuthor(e.target.value)} autoComplete="off" />
                 </div>
                 <div className="imp-field imp-wide">
-                  <label htmlFor="imp-desc">Description (optional)</label>
-                  <input id="imp-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="A short summary of the theme, setting or plot" autoComplete="off" />
+                  <label htmlFor="imp-desc">{t('Description (optional)')}</label>
+                  <input id="imp-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('A short summary of the theme, setting or plot')} autoComplete="off" />
                 </div>
               </div>
             ) : (
               <p className="imp-where">
                 {chapters.length > 0
-                  ? `These chapters will be added after chapter ${chapters.length} of “${activeProject?.title ?? ''}”.`
-                  : `These chapters will be the first in “${activeProject?.title ?? ''}”.`}
+                  ? t('These chapters will be added after chapter {n} of “{title}”.', { n: chapters.length, title: activeProject?.title ?? '' })
+                  : t('These chapters will be the first in “{title}”.', { title: activeProject?.title ?? '' })}
               </p>
             )}
 
             <div className="imp-field">
-              <label htmlFor="imp-split">Split by</label>
+              <label htmlFor="imp-split">{t('Split by')}</label>
               <select id="imp-split" ref={splitRef} className="select" value={mode} aria-describedby="imp-split-hint" onChange={(e) => changeMode(e.target.value as SplitMode)}>
                 {SPLITS.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.label}
+                    {t(s.label)}
                   </option>
                 ))}
               </select>
               <p id="imp-split-hint" className="imp-hint">
-                Found {count(found.headings, 'heading', 'headings')}, {count(found.chapterLines, '“Chapter” line', '“Chapter” lines')} and {count(found.sceneBreaks, 'scene break', 'scene breaks')}.
-                {mode === 'auto' ? ` Automatic picks ${autoLabel}.` : ''}
+                {t('Found {headings}, {chapterLines} and {sceneBreaks}.', { headings: tp(found.headings, '{n} heading', '{n} headings'), chapterLines: tp(found.chapterLines, '{n} “Chapter” line', '{n} “Chapter” lines'), sceneBreaks: tp(found.sceneBreaks, '{n} scene break', '{n} scene breaks') })}
+                {mode === 'auto' ? ` ${t('Automatic picks {split}.', { split: autoLabel })}` : ''}
               </p>
             </div>
 
@@ -326,35 +331,36 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
               </span>
               <span className="imp-bulk">
                 <button type="button" className="small-btn" onClick={() => setOff(new Set())}>
-                  Select all
+                  {t('Select all')}
                 </button>
                 <button type="button" className="small-btn" onClick={() => setOff(new Set(list.map((_, i) => i)))}>
-                  Select none
+                  {t('Select none')}
                 </button>
               </span>
             </div>
 
             {total > 0 ? (
-              <ul className="imp-list" aria-label="Chapters found">
+              <ul className="imp-list" aria-label={t('Chapters found')}>
                 {list.slice(0, MAX_CHAPTERS).map((c, i) => (
                   <Row key={i} index={i} title={titles[i] ?? c.title} words={c.words} on={!off.has(i)} onToggle={toggle} onTitle={rename} />
                 ))}
               </ul>
             ) : (
               <p className="imp-notice mock-note" role="status">
-                No chapters came out of this split. Choose a different one above.
+                {t('No chapters came out of this split. Choose a different one above.')}
               </p>
             )}
             {total > MAX_CHAPTERS && (
               <p className="imp-notice mock-note" role="status">
-                This split found {total.toLocaleString()} chapters, and only the first {MAX_CHAPTERS} are listed. At most {MAX_CHAPTERS} can be imported at once, so choose a different
-                split above{tooMany ? ', or untick chapters' : ''}.
+                {tooMany
+                  ? t('This split found {total} chapters, and only the first {max} are listed. At most {max} can be imported at once, so choose a different split above, or untick chapters.', { total: total.toLocaleString(), max: MAX_CHAPTERS })
+                  : t('This split found {total} chapters, and only the first {max} are listed. At most {max} can be imported at once, so choose a different split above.', { total: total.toLocaleString(), max: MAX_CHAPTERS })}
               </p>
             )}
 
             {split.warnings.length > 0 && (
               <div className="imp-warnings" role="status">
-                <strong>Left out or simplified</strong>
+                <strong>{t('Left out or simplified')}</strong>
                 <ul>
                   {split.warnings.map((w) => (
                     <li key={w}>{w}</li>
@@ -371,19 +377,19 @@ const ImportBody: React.FC<{ target: 'new' | 'append'; onClose: () => void }> = 
           )}
           {importing && (
             <p className="sr-only" role="status">
-              Importing…
+              {t('Importing…')}
             </p>
           )}
 
           <div className="dialog-actions imp-actions">
             <button type="button" className="button button-outline button-small" disabled={importing} onClick={() => setStep('choose')}>
-              Choose another file
+              {t('Choose another file')}
             </button>
             <button type="button" className="button button-outline button-small" disabled={importing} onClick={onClose}>
-              Cancel
+              {t('Cancel')}
             </button>
             <button type="button" className="button button-primary button-small" disabled={!canImport} onClick={run}>
-              {importing ? 'Importing…' : chosen.length > 0 ? `Import ${count(chosen.length, 'chapter', 'chapters')}` : 'Import'}
+              {importing ? t('Importing…') : chosen.length > 0 ? t('Import {chapters}', { chapters: tp(chosen.length, '{n} chapter', '{n} chapters') }) : t('Import')}
             </button>
           </div>
         </>

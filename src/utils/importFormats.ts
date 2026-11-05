@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { countWords } from '../lib/text';
+import { t as tr, tp } from '../i18n';
 
 /**
  * Reads a manuscript from a Word (.docx), plain text or Markdown file and splits it into chapters.
@@ -607,10 +608,10 @@ const newTally = (): Tally => ({ images: 0, tables: 0, notes: false, toc: false 
 
 const tallyWarnings = (t: Tally): string[] => {
   const w: string[] = [];
-  if (t.images) w.push(t.images === 1 ? '1 image was skipped' : `${t.images} images were skipped`);
-  if (t.notes) w.push('Footnotes and endnotes were left out');
-  if (t.tables) w.push(t.tables === 1 ? '1 table was turned into plain paragraphs' : `${t.tables} tables were turned into plain paragraphs`);
-  if (t.toc) w.push('The table of contents was left out');
+  if (t.images) w.push(tp(t.images, '{n} image was skipped', '{n} images were skipped'));
+  if (t.notes) w.push(tr('Footnotes and endnotes were left out'));
+  if (t.tables) w.push(tp(t.tables, '{n} table was turned into plain paragraphs', '{n} tables were turned into plain paragraphs'));
+  if (t.toc) w.push(tr('The table of contents was left out'));
   return w;
 };
 

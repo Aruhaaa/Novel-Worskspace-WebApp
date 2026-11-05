@@ -7,6 +7,7 @@ import '../../widgets/common.dart';
 import '../auth_screen.dart';
 import '../link/reading_link_screen.dart';
 import 'account_dialogs.dart';
+import 'notifications_screen.dart';
 
 /// You: your name and goal, how the app looks, and sign out.
 class AccountScreen extends StatelessWidget {
@@ -291,9 +292,37 @@ class AccountScreen extends StatelessWidget {
                   : 'Nothing leaves this phone. Connect a database to share with the web app.',
             ),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.bug_report_outlined),
+            title: const Text('Help fix problems'),
+            subtitle: const Text(
+              'When something breaks, a short note is sent: what the error said and which version this is. Never anything you wrote, never your name or email.',
+            ),
+            value: state.errorReportsOn,
+            onChanged: (on) => state.setErrorReports(on),
+          ),
           if (state.signedIn) ...[
             const SizedBox(height: 22),
             const Eyebrow('Account'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Badge(
+                isLabelVisible: state.unreadNotifications > 0,
+                label: Text('${state.unreadNotifications}'),
+                child: const Icon(Icons.notifications_none),
+              ),
+              title: const Text('Notifications'),
+              subtitle: Text(
+                state.unreadNotifications > 0
+                    ? '${state.unreadNotifications} new'
+                    : 'Follows, comments, reviews and messages',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              ),
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.lock_outline),

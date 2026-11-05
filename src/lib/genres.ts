@@ -1,3 +1,5 @@
+import { mark, t } from '../i18n';
+
 export interface GenrePalette {
   /** Main brand colour of the genre, used for the dot and selected state */
   base: string;
@@ -65,6 +67,12 @@ export const GENRE_PALETTES: Record<string, GenrePalette> = {
 export const USE_GENRE_COLOUR = false;
 
 export const GENRES = Object.keys(GENRE_PALETTES);
+
+/** The names are kept in English in the database; what people see is translated. */
+export const genreLabel = (genre: string): string => t(genre);
+
+// Marked here so the list of sentences to translate includes every genre
+export const GENRE_NAMES = [mark('Mystery'), mark('Thriller'), mark('Horror'), mark('Romance'), mark('Fantasy'), mark('Sci-Fi'), mark('Historical'), mark('Contemporary')];
 
 const FALLBACK: GenrePalette = {
   base: '#6b7280',

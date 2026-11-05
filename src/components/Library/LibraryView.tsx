@@ -7,7 +7,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
 import { isBundledNovel } from '../../lib/bundledLibrary';
 import { GenreFilter, GenreTag } from './GenreChips';
-import { useT } from '../../i18n';
+import { fmtDate, tp, useT } from '../../i18n';
 
 type SortBy = 'newest' | 'liked' | 'az';
 
@@ -34,23 +34,23 @@ export const NovelCard: React.FC<{ project: Project; index: number }> = ({ proje
       <div className="novel-body">
         <h3>{project.title}</h3>
         <Link className="by" to={`/library/author/${project.user_id}`}>
-          {project.author_name || 'Anonymous'}
+          {project.author_name || t('Anonymous')}
         </Link>
         {(project.genre || isBundledNovel(project.id)) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {project.genre && <GenreTag genre={project.genre} />}
             {isBundledNovel(project.id) && (
               <span className="badge" title={t('Part of the sample library that comes with the site')}>
-                Sample
+                {t('Sample')}
               </span>
             )}
           </div>
         )}
-        <p>{project.description || 'No description provided for this novel.'}</p>
+        <p>{project.description || t('No description provided for this novel.')}</p>
         <div className="novel-foot">
-          <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
+          <span>{t('Updated {date}', { date: fmtDate(project.updated_at) })}</span>
           <span>
-            <button className="like-btn" aria-pressed={liked} aria-label={liked ? 'Unlike' : 'Like'} onClick={() => toggleLikeProject(project.id)}>
+            <button className="like-btn" aria-pressed={liked} aria-label={liked ? t('Unlike') : t('Like')} onClick={() => toggleLikeProject(project.id)}>
               <Heart />
               <span>{project.likes?.length || 0}</span>
             </button>{' '}
@@ -98,7 +98,7 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
           eyebrow={t('THE COMMONS')}
           title={
             <>
-              Stories from <em>{t('other rooms.')}</em>
+              {t('Stories from')} <em>{t('other rooms.')}</em>
             </>
           }
           lead={t('Read novels published by other authors in the Novelist Workspace community.')}
@@ -106,22 +106,22 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
 
         <div className="tabs" role="tablist" aria-label={t('Library')}>
           <Link role="tab" to="/library" aria-selected={mode === 'public'} style={{ display: 'inline-flex', alignItems: 'center' }}>
-            Public Library
+            {t('Public Library')}
           </Link>
           <Link role="tab" to="/saved" aria-selected={mode === 'saved'} style={{ display: 'inline-flex', alignItems: 'center' }}>
-            Your Library
+            {t('Your Library')}
           </Link>
         </div>
 
         <div className="filter-bar">
           <div className="filter-top">
             <label className="search">
-              <span className="sr-only">{mode === 'saved' ? 'Search your saved novels' : 'Search by title or author'}</span>
+              <span className="sr-only">{mode === 'saved' ? t('Search your saved novels') : t('Search by title or author')}</span>
               <Search />
               <input
                 className="input"
                 type="search"
-                placeholder={mode === 'saved' ? 'Search your saved novels' : 'Search by title or author'}
+                placeholder={mode === 'saved' ? t('Search your saved novels') : t('Search by title or author')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -137,7 +137,7 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
           </div>
           <GenreFilter value={filterGenre} onChange={setFilterGenre} />
           <p className="meta" role="status">
-            {projects.length} {projects.length === 1 ? 'result' : 'results'}
+            {tp(projects.length, '{n} result', '{n} results')}
           </p>
         </div>
 
@@ -152,8 +152,8 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
               title={t('No novels found')}
               text={
                 publicProjects.length === 0
-                  ? 'No one has published a novel yet. Be the first to share yours.'
-                  : 'Try a different search or genre.'
+                  ? t('No one has published a novel yet. Be the first to share yours.')
+                  : t('Try a different search or genre.')
               }
             />
           )

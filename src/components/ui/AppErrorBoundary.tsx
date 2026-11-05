@@ -1,5 +1,6 @@
 import React from 'react';
 import { reportError } from '../../lib/errorReporter';
+import { t } from '../../i18n';
 
 interface Props {
   children: React.ReactNode;
@@ -46,14 +47,14 @@ export class AppErrorBoundary extends React.Component<Props, State> {
       <div className="studio-view">
         <div className="page" role="alert">
           <div className="empty">
-            <h3>{loadFailure ? 'This part of the app could not be loaded' : 'Something went wrong on this screen'}</h3>
+            <h3>{loadFailure ? t('This part of the app could not be loaded') : t('Something went wrong on this screen')}</h3>
             <p>
               {loadFailure
-                ? 'Check your connection and try again. Anything you wrote is already kept on this device.'
-                : 'Anything you wrote is already kept. Reloading usually fixes it.'}
+                ? t('Check your connection and try again. Anything you wrote is already kept on this device.')
+                : t('Anything you wrote is already kept. Reloading usually fixes it.')}
             </p>
             <button className="small-btn is-primary" onClick={() => window.location.reload()}>
-              Reload
+              {t('Reload')}
             </button>
           </div>
         </div>

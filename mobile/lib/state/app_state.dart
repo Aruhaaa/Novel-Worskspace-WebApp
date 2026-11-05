@@ -4,10 +4,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config.dart';
 import '../data/backend.dart';
 import '../data/models.dart';
 import '../theme.dart';
 import 'daily_words.dart';
+import 'error_reporter.dart';
 
 /// What the person came here to do. It only decides where the app opens; both spaces are always one tap away.
 enum UseMode { read, write, both }
@@ -49,6 +51,9 @@ class AppState extends ChangeNotifier {
   final SharedPreferences prefs;
   final DailyWords dailyWords;
 
+  /// Notes what goes wrong, without anything private (see error_reporter.dart). Switched off in Me.
+  late final ErrorReporter reporter = ErrorReporter(prefs, backend.reportError, version: Config.appVersion);
+
   bool booting = true;
 
   /// Reading without an account
@@ -63,6 +68,10 @@ class AppState extends ChangeNotifier {
   Set<String> _saved = {};
   Map<String, ReadingProgress> _progress = {};
 
+  // What happened while the person was away. Null: nowhere to read it from (no cloud, or the site's setup is not done).
+  List<AppNotification>? _notifications;
+  NotificationSettings _notifySettings = const NotificationSettings();
+
   // People this person has blocked: their novels are not shown. The names are only for the list in Me.
   Set<String> _blocked = {};
   Map<String, String> _blockedNames = {};
@@ -76,6 +85,79 @@ class AppState extends ChangeNotifier {
   bool get signedIn => user != null;
 
   bool isBlocked(String userId) => _blocked.contains(userId);
+
+  // ---- notifications ----
+  List<AppNotification>? get notifications => _notifications;
+  NotificationSettings get notificationSettings => _notifySettings;
+
+  /// New ones, not counting a kind the person has switched off
+  int get unreadNotifications =>
+      (_notifications ?? const <AppNotification>[]).where((n) => n.unread && !_notifySettings.muted.contains(n.kind)).length;
+
+  bool get errorReportsOn => reporter.enabled;
+  Future<void> setErrorReports(bool on) async {
+    await reporter.setEnabled(on);
+    notifyListeners();
+  }
+
+  /// Look again at what has happened. Keeps what is showing if the answer cannot be had.
+  Future<void> loadNotifications() async {
+    final u = user;
+    if (u == null) return;
+    try {
+      final list = await backend.notifications(u.id);
+      final settings = await backend.notificationSettings(u.id);
+      if (user?.id != u.id) return;
+      _notifications = list;
+      _notifySettings = settings;
+      notifyListeners();
+    } catch (_) {
+      // no signal: what was showing stays
+    }
+  }
+
+  Future<void> markNotificationsRead({List<String>? ids}) async {
+    final u = user;
+    final list = _notifications;
+    if (u == null || list == null) return;
+    final now = DateTime.now();
+    _notifications = [
+      for (final n in list)
+        (n.unread && (ids == null || ids.contains(n.id)))
+            ? AppNotification(
+                id: n.id,
+                kind: n.kind,
+                actorName: n.actorName,
+                snippet: n.snippet,
+                count: n.count,
+                createdAt: n.createdAt,
+                readAt: now,
+                projectTitle: n.projectTitle,
+                rating: n.rating,
+                role: n.role,
+              )
+            : n,
+    ];
+    notifyListeners();
+    try {
+      await backend.markNotificationsRead(u.id, ids: ids);
+    } catch (_) {
+      // it will show as new again next time it is loaded
+    }
+  }
+
+  /// Switch a kind off (or on). Off means the server does not record it at all.
+  Future<void> setNotificationMuted(String kind, bool muted) async {
+    final u = user;
+    if (u == null) return;
+    _notifySettings = _notifySettings.withMuted(kind, muted);
+    notifyListeners();
+    try {
+      await backend.saveNotificationSettings(u.id, _notifySettings);
+    } catch (_) {
+      // kept here for now; saved the next time it is changed
+    }
+  }
 
   /// Who is blocked, as (id, name) pairs
   List<MapEntry<String, String>> get blockedPeople => [
@@ -136,6 +218,7 @@ class AppState extends ChangeNotifier {
         id: u.id,
       ); // offline: the goal falls back to the default until it can be loaded
     }
+    unawaited(loadNotifications());
   }
 
   Future<void> signIn(String email, String password) async {
@@ -163,6 +246,8 @@ class AppState extends ChangeNotifier {
     _mode = null;
     _blocked = {};
     _blockedNames = {};
+    _notifications = null;
+    _notifySettings = const NotificationSettings();
     guest = false;
     notifyListeners();
   }

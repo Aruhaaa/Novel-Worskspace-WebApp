@@ -17,8 +17,10 @@ import { ImportDialog } from '../Import/ImportDialogLazy';
 import { RoleBanner } from '../Collab/RoleBanner';
 import { can } from '../../lib/collab';
 import { useFeedback } from '../../lib/feedback';
+import { fmtDate, tp, useT } from '../../i18n';
 
 export const ChapterIndexView: React.FC = () => {
+  const t = useT();
   const {
     activeProject,
     chapters,
@@ -87,8 +89,8 @@ export const ChapterIndexView: React.FC = () => {
     const binId = await deleteChapter(chapterId);
     await loadBin();
     toast({
-      message: `Deleted “${chapterTitle || 'Untitled chapter'}”.`,
-      actionLabel: 'Undo',
+      message: t('Deleted “{title}”.', { title: chapterTitle || t('Untitled chapter') }),
+      actionLabel: t('Undo'),
       onAction: async () => {
         await restoreDeletedChapter(chapterTitle, content, meta, position);
         if (binId !== undefined) await removeFromBin(binId);
@@ -122,23 +124,23 @@ export const ChapterIndexView: React.FC = () => {
     <>
     <div className="studio-toolbar">
       <h1>
-        Chapter index <span>/ {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'}</span>
+        {t('Chapter index')} <span>/ {tp(chapters.length, '{n} chapter', '{n} chapters')}</span>
       </h1>
       <div className="toolbar-actions imp-toolbar">
         <button className="button button-outline button-small" onClick={() => setShowFeedback(true)}>
-          Reader feedback{openNotes.length > 0 ? ` (${openNotes.length})` : ''}
+          {t('Reader feedback')}{openNotes.length > 0 ? ` (${openNotes.length})` : ''}
         </button>
         {structure && (
           <button className="button button-outline button-small" onClick={() => setShowImport(true)}>
-            Import chapters
+            {t('Import chapters')}
           </button>
         )}
         <button className="button button-outline button-small" onClick={() => setShowExport(true)}>
-          Export
+          {t('Export')}
         </button>
         {structure && (
           <button className="button button-primary button-small" onClick={() => setShowNew(true)}>
-            Create new chapter
+            {t('Create new chapter')}
           </button>
         )}
       </div>
@@ -153,7 +155,7 @@ export const ChapterIndexView: React.FC = () => {
         )}
         {structure && chapters.length > 1 && (
           <p className="section-note" style={{ marginBottom: 14 }}>
-            Drag a chapter by its handle to reorder. With the keyboard, focus the handle, press Space, move with the arrow keys, then Space again.
+            {t('Drag a chapter by its handle to reorder. With the keyboard, focus the handle, press Space, move with the arrow keys, then Space again.')}
           </p>
         )}
         <DragDropContext onDragEnd={onDragEnd}>
@@ -177,18 +179,18 @@ export const ChapterIndexView: React.FC = () => {
                             style={{ textAlign: 'left', padding: '22px 22px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}
                           >
                             <div>
-                              <span className="num">CHAPTER {String(i + 1).padStart(2, '0')}</span>
-                              <h3 style={{ paddingRight: 60 }}>{chap.title || 'Untitled chapter'}</h3>
+                              <span className="num">{t('CHAPTER {n}', { n: String(i + 1).padStart(2, '0') })}</span>
+                              <h3 style={{ paddingRight: 60 }}>{chap.title || t('Untitled chapter')}</h3>
                             </div>
                             {meta.synopsis && <p className="tile-synopsis">{meta.synopsis}</p>}
                             <span className="meta">
-                              {words > 0 ? `${words.toLocaleString()} words` : 'Not started'}
-                              {noteTotals.get(chap.id) ? ` · ${noteTotals.get(chap.id)} reader ${noteTotals.get(chap.id) === 1 ? 'note' : 'notes'}` : ''}
-                              {sceneTotals.get(chap.id) ? ` · ${sceneTotals.get(chap.id)} ${sceneTotals.get(chap.id) === 1 ? 'scene' : 'scenes'}` : ''}
+                              {words > 0 ? tp(words, '{n} word', '{n} words') : t('Not started')}
+                              {noteTotals.get(chap.id) ? ` · ${tp(noteTotals.get(chap.id) ?? 0, '{n} reader note', '{n} reader notes')}` : ''}
+                              {sceneTotals.get(chap.id) ? ` · ${tp(sceneTotals.get(chap.id) ?? 0, '{n} scene', '{n} scenes')}` : ''}
                             </span>
                           </button>
                           <div className="tile-foot">
-                            <label className="sr-only" htmlFor={`st-${chap.id}`}>Status of {chap.title || 'untitled chapter'}</label>
+                            <label className="sr-only" htmlFor={`st-${chap.id}`}>{t('Status of {title}', { title: chap.title || t('untitled chapter') })}</label>
                             <select
                               id={`st-${chap.id}`}
                               className={`tile-status is-${meta.status}`}
@@ -196,7 +198,7 @@ export const ChapterIndexView: React.FC = () => {
                               onChange={(e) => updateChapterMeta(chap.id, { status: e.target.value as ChapterStatus })}
                             >
                               {STATUS_ORDER.map((s) => (
-                                <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                                <option key={s} value={s}>{t(STATUS_LABEL[s])}</option>
                               ))}
                             </select>
                           </div>
@@ -205,16 +207,16 @@ export const ChapterIndexView: React.FC = () => {
                             <span
                               {...drag.dragHandleProps}
                               className="icon-button"
-                              aria-label={`Reorder ${chap.title || 'untitled chapter'}`}
-                              title="Drag to reorder"
+                              aria-label={t('Reorder {title}', { title: chap.title || t('untitled chapter') })}
+                              title={t('Drag to reorder')}
                               style={{ color: 'var(--muted)', cursor: 'grab' }}
                             >
                               <GripVertical />
                             </span>
                             <button
                               className="icon-button"
-                              aria-label={`Delete ${chap.title || 'untitled chapter'}`}
-                              title="Delete chapter"
+                              aria-label={t('Delete {title}', { title: chap.title || t('untitled chapter') })}
+                              title={t('Delete chapter')}
                               onClick={() => removeChapter(chap.id)}
                               style={{ color: 'var(--muted)' }}
                             >
@@ -231,7 +233,7 @@ export const ChapterIndexView: React.FC = () => {
                 {structure && (
                 <button className="chapter-tile" onClick={() => setShowNew(true)} style={{ alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
                   <Plus style={{ width: 24, height: 24 }} />
-                  New chapter
+                  {t('New chapter')}
                 </button>
                 )}
               </div>
@@ -241,16 +243,16 @@ export const ChapterIndexView: React.FC = () => {
 
         {structure && bin.length > 0 && (
           <section aria-labelledby="bin-h" style={{ marginTop: 44 }}>
-            <h2 className="section-title" id="bin-h">Recently deleted</h2>
-            <p className="section-note">Kept on this device so a mistake is never final. Restore a chapter to put it back where it was.</p>
+            <h2 className="section-title" id="bin-h">{t('Recently deleted')}</h2>
+            <p className="section-note">{t('Kept on this device so a mistake is never final. Restore a chapter to put it back where it was.')}</p>
             {bin.map((item) => {
               const words = countWords(item.content);
               return (
                 <div className="read-row" key={item.id} style={{ alignItems: 'center' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <strong>{item.title || 'Untitled chapter'}</strong>
+                    <strong>{item.title || t('Untitled chapter')}</strong>
                     <small>
-                      Deleted {new Date(item.deletedAt).toLocaleDateString()} · {words.toLocaleString()} words
+                      {t('Deleted {date}', { date: fmtDate(item.deletedAt) })} · {tp(words, '{n} word', '{n} words')}
                       {words > 0 && ` · “${htmlToText(item.content).slice(0, 50)}…”`}
                     </small>
                   </div>
@@ -262,7 +264,7 @@ export const ChapterIndexView: React.FC = () => {
                       await loadBin();
                     }}
                   >
-                    Restore
+                    {t('Restore')}
                   </button>
                   <button
                     className="small-btn is-danger"
@@ -271,7 +273,7 @@ export const ChapterIndexView: React.FC = () => {
                       await loadBin();
                     }}
                   >
-                    Delete forever
+                    {t('Delete forever')}
                   </button>
                 </div>
               );
@@ -281,30 +283,30 @@ export const ChapterIndexView: React.FC = () => {
       </div>
 
       <MarginsRail>
-        <RailBlock title="This manuscript">
+        <RailBlock title={t('This manuscript')}>
           <p>
-            {totalWords.toLocaleString()} {totalWords === 1 ? 'word' : 'words'} · {readMinutes(totalWords)}
+            {tp(totalWords, '{n} word', '{n} words')} · {readMinutes(totalWords)}
           </p>
         </RailBlock>
-        <RailBlock title="Chapters">
-          <RailRow label="Total" value={chapters.length} />
-          <RailRow label="Done" value={doneCount} />
-          <RailRow label="Still to finish" value={chapters.length - doneCount} />
+        <RailBlock title={t('Chapters')}>
+          <RailRow label={t('Total')} value={chapters.length} />
+          <RailRow label={t('Done')} value={doneCount} />
+          <RailRow label={t('Still to finish')} value={chapters.length - doneCount} />
         </RailBlock>
-        <RailBlock title="Your target">
+        <RailBlock title={t('Your target')}>
           {plan && projectGoal ? (
             <>
-              <progress max={plan.target} value={Math.min(plan.written, plan.target)} aria-label="Progress toward the manuscript target" style={{ width: '100%' }} />
+              <progress max={plan.target} value={Math.min(plan.written, plan.target)} aria-label={t('Progress toward the manuscript target')} style={{ width: '100%' }} />
               <p style={{ marginTop: 8 }}>
-                {plan.written.toLocaleString()} of {plan.target.toLocaleString()} words ({plan.percent}%)
-                {plan.state === 'on-track' && plan.perDay !== null && ` · about ${plan.perDay.toLocaleString()} a day for ${plan.daysLeft} ${plan.daysLeft === 1 ? 'day' : 'days'}`}
-                {plan.state === 'overdue' && ' · the deadline has passed'}
-                {plan.state === 'reached' && ' · reached'}
+                {t('{written} of {target} words ({percent}%)', { written: plan.written.toLocaleString(), target: plan.target.toLocaleString(), percent: plan.percent })}
+                {plan.state === 'on-track' && plan.perDay !== null && ` · ${t('about {perDay} a day for {days}', { perDay: plan.perDay.toLocaleString(), days: tp(plan.daysLeft ?? 0, '{n} day', '{n} days') })}`}
+                {plan.state === 'overdue' && ` · ${t('the deadline has passed')}`}
+                {plan.state === 'reached' && ` · ${t('reached')}`}
               </p>
             </>
           ) : (
             <p>
-              Set a length and a finish date on the <a className="link-accent" href="#/tracker">Progress</a> page and it shows here.
+              {t('Set a length and a finish date on the')} <a className="link-accent" href="#/tracker">{t('Progress')}</a> {t('page and it shows here.')}
             </p>
           )}
         </RailBlock>
@@ -324,13 +326,13 @@ export const ChapterIndexView: React.FC = () => {
             setShowNew(false);
           }}
         >
-          <p className="eyebrow">A FRESH PAGE</p>
-          <h2 id="ci-h">What comes next?</h2>
-          <label htmlFor="ci-title">Chapter title</label>
-          <input id="ci-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chapter 5: The tide table" required autoFocus />
+          <p className="eyebrow">{t('A FRESH PAGE')}</p>
+          <h2 id="ci-h">{t('What comes next?')}</h2>
+          <label htmlFor="ci-title">{t('Chapter title')}</label>
+          <input id="ci-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Chapter 5: The tide table')} required autoFocus />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setShowNew(false)}>Cancel</button>
-            <button className="button button-primary button-small">Create chapter</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setShowNew(false)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Create chapter')}</button>
           </div>
         </form>
       </Dialog>

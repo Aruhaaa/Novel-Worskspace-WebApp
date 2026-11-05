@@ -13,16 +13,16 @@ import { EntityDetails } from '../Notebook/EntityDetails';
 import { RelationshipMap } from '../Notebook/RelationshipMap';
 import { RoleBanner } from '../Collab/RoleBanner';
 import { can } from '../../lib/collab';
-import { useT } from '../../i18n';
+import { mark, tp, useT } from '../../i18n';
 
 type Tab = 'all' | 'character' | 'location' | 'item' | 'lore';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'all', label: 'Everything' },
-  { id: 'character', label: 'Characters' },
-  { id: 'location', label: 'Places' },
-  { id: 'item', label: 'Items' },
-  { id: 'lore', label: 'Lore' },
+  { id: 'all', label: mark('Everything') },
+  { id: 'character', label: mark('Characters') },
+  { id: 'location', label: mark('Places') },
+  { id: 'item', label: mark('Items') },
+  { id: 'lore', label: mark('Lore') },
 ];
 
 const typeIcon = (type: WikiEntity['type']) => {
@@ -98,7 +98,7 @@ export const NotebookView: React.FC = () => {
     try {
       setImage(await shrinkImage(file));
     } catch (err) {
-      setImageError(err instanceof Error ? err.message : 'Could not use that image.');
+      setImageError(err instanceof Error ? err.message : t('Could not use that image.'));
     }
   };
 
@@ -140,12 +140,12 @@ export const NotebookView: React.FC = () => {
     <>
     <div className="studio-toolbar">
       <h1>
-        World notebook <span>/ {notebook.length} {notebook.length === 1 ? 'note' : 'notes'}</span>
+        {t('World notebook')} <span>/ {tp(notebook.length, '{n} note', '{n} notes')}</span>
       </h1>
       <div className="toolbar-actions">
         {structure && (
           <button className="button button-primary button-small" onClick={() => openForm(null)}>
-            Add entity
+            {t('Add entity')}
           </button>
         )}
       </div>
@@ -157,15 +157,15 @@ export const NotebookView: React.FC = () => {
           <button aria-pressed={view === 'list'} onClick={() => setView('list')}>{t('List')}</button>
           <button aria-pressed={view === 'map'} onClick={() => setView('map')}>{t('Relationship map')}</button>
         </div>
-        <div className="world-filter" role="group" aria-label="Filter the world notebook">
-          {TABS.map((t) => (
-            <button key={t.id} aria-pressed={activeTab === t.id} onClick={() => setActiveTab(t.id)}>
-              {t.label}
+        <div className="world-filter" role="group" aria-label={t('Filter the world notebook')}>
+          {TABS.map((tab) => (
+            <button key={tab.id} aria-pressed={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>
+              {t(tab.label)}
             </button>
           ))}
         </div>
         {allTags.length > 0 && (
-          <div className="world-filter tag-filter" role="group" aria-label="Filter by tag">
+          <div className="world-filter tag-filter" role="group" aria-label={t('Filter by tag')}>
             {allTags.map(([tag, count]) => (
               <button key={tag} aria-pressed={activeTag === tag} onClick={() => setActiveTag(activeTag === tag ? null : tag)}>
                 #{tag} <small>{count}</small>
@@ -175,11 +175,11 @@ export const NotebookView: React.FC = () => {
         )}
 
         {visible.length === 0 ? (
-          <EmptyState icon="book" title="No notes here" text={activeTag ? `Nothing is tagged #${activeTag} in this category.` : 'Create your first note and it will show up here.'}>
+          <EmptyState icon="book" title={t('No notes here')} text={activeTag ? t('Nothing is tagged #{tag} in this category.', { tag: activeTag }) : t('Create your first note and it will show up here.')}>
             {activeTag ? (
-              <button className="small-btn" onClick={() => setActiveTag(null)}>Clear the tag filter</button>
+              <button className="small-btn" onClick={() => setActiveTag(null)}>{t('Clear the tag filter')}</button>
             ) : (
-              <button className="small-btn is-primary" onClick={() => openForm(null)}>Create your first note</button>
+              <button className="small-btn is-primary" onClick={() => openForm(null)}>{t('Create your first note')}</button>
             )}
           </EmptyState>
         ) : (
@@ -213,7 +213,7 @@ export const NotebookView: React.FC = () => {
             )}
 
             {selected && (
-              <aside className="card detail-panel" aria-live="polite" aria-label="Entity details">
+              <aside className="card detail-panel" aria-live="polite" aria-label={t('Entity details')}>
                 <EntityDetails
                   entity={selected}
                   entities={notebook}
@@ -227,10 +227,10 @@ export const NotebookView: React.FC = () => {
                 {structure && (
                 <div className="page-actions" style={{ marginTop: 18 }}>
                   <button className="small-btn" onClick={() => openForm(selected)}>
-                    <Pencil /> Edit entity
+                    <Pencil /> {t('Edit entity')}
                   </button>
                   <button className="small-btn is-danger" onClick={() => setConfirmDelete(true)}>
-                    <Trash2 /> Delete
+                    <Trash2 /> {t('Delete')}
                   </button>
                 </div>
                 )}
@@ -243,25 +243,25 @@ export const NotebookView: React.FC = () => {
       <MarginsRail
         thought={
           <>
-            A small detail, kept,
+            {t('A small detail, kept,')}
             <br />
-            makes a world believable.
+            {t('makes a world believable.')}
           </>
         }
       >
-        <RailBlock title="This notebook">
+        <RailBlock title={t('This notebook')}>
           <p>
-            {notebook.length} {notebook.length === 1 ? 'note' : 'notes'} so far.
+            {t('{notes} so far.', { notes: tp(notebook.length, '{n} note', '{n} notes') })}
           </p>
         </RailBlock>
-        <RailBlock title="By kind">
-          <RailRow label="Characters" value={notebook.filter((e) => e.type === 'character').length} />
-          <RailRow label="Places" value={notebook.filter((e) => e.type === 'location').length} />
-          <RailRow label="Items" value={notebook.filter((e) => e.type === 'item').length} />
-          <RailRow label="Lore" value={notebook.filter((e) => e.type === 'lore').length} />
+        <RailBlock title={t('By kind')}>
+          <RailRow label={t('Characters')} value={notebook.filter((e) => e.type === 'character').length} />
+          <RailRow label={t('Places')} value={notebook.filter((e) => e.type === 'location').length} />
+          <RailRow label={t('Items')} value={notebook.filter((e) => e.type === 'item').length} />
+          <RailRow label={t('Lore')} value={notebook.filter((e) => e.type === 'lore').length} />
         </RailBlock>
         {notebook.length > 0 && (
-          <RailBlock title="Recently added">
+          <RailBlock title={t('Recently added')}>
             {[...notebook]
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
               .slice(0, 3)
@@ -280,49 +280,49 @@ export const NotebookView: React.FC = () => {
 
       <Dialog open={showForm} onClose={() => setShowForm(false)} labelledBy="en-h" className="dialog-wide">
         <form onSubmit={handleSubmit}>
-          <p className="eyebrow">NOTEBOOK</p>
-          <h2 id="en-h">{editingEntity ? 'Edit entity' : 'Add an entity'}</h2>
-          <label htmlFor="en-name">Name</label>
-          <input id="en-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Lyra Vance, Spire of Whispers" required autoFocus />
-          <label htmlFor="en-type">Type</label>
+          <p className="eyebrow">{t('NOTEBOOK')}</p>
+          <h2 id="en-h">{editingEntity ? t('Edit entity') : t('Add an entity')}</h2>
+          <label htmlFor="en-name">{t('Name')}</label>
+          <input id="en-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('Lyra Vance, Spire of Whispers')} required autoFocus />
+          <label htmlFor="en-type">{t('Type')}</label>
           <select id="en-type" className="select" style={{ marginTop: 8 }} value={type} onChange={(e) => setType(e.target.value as WikiEntity['type'])}>
-            <option value="character">Character</option>
-            <option value="location">Location</option>
-            <option value="item">Item</option>
-            <option value="lore">Lore</option>
-            {editingEntity?.type === 'scene' && <option value="scene">Scene</option>}
+            <option value="character">{t('Character')}</option>
+            <option value="location">{t('Location')}</option>
+            <option value="item">{t('Item')}</option>
+            <option value="lore">{t('Lore')}</option>
+            {editingEntity?.type === 'scene' && <option value="scene">{t('Scene')}</option>}
           </select>
-          <label htmlFor="en-sum">Short summary</label>
-          <input id="en-sum" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="A quick summary of this entity" />
+          <label htmlFor="en-sum">{t('Short summary')}</label>
+          <input id="en-sum" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('A quick summary of this entity')} />
 
-          <label htmlFor="en-image" style={{ marginTop: 24 }}>Picture (optional)</label>
+          <label htmlFor="en-image" style={{ marginTop: 24 }}>{t('Picture (optional)')}</label>
           <div className="image-pick">
-            {image ? <img src={image} alt="Chosen picture" /> : <span aria-hidden="true"><ImagePlus /></span>}
+            {image ? <img src={image} alt={t('Chosen picture')} /> : <span aria-hidden="true"><ImagePlus /></span>}
             <div>
               <input id="en-image" type="file" accept="image/*" onChange={(e) => pickImage(e.target.files?.[0])} />
               {image && (
                 <button type="button" className="small-btn" onClick={() => setImage('')} style={{ marginTop: 8 }}>
-                  Remove picture
+                  {t('Remove picture')}
                 </button>
               )}
               {imageError && <p className="meta" role="alert" style={{ color: 'var(--danger)', marginTop: 6 }}>{imageError}</p>}
             </div>
           </div>
 
-          <label htmlFor="en-tags" style={{ marginTop: 24 }}>Tags (optional)</label>
-          <input id="en-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="ally, sailor, act one" />
+          <label htmlFor="en-tags" style={{ marginTop: 24 }}>{t('Tags (optional)')}</label>
+          <input id="en-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder={t('ally, sailor, act one')} />
 
-          <label style={{ marginTop: 24 }}>Connections (optional)</label>
+          <label style={{ marginTop: 24 }}>{t('Connections (optional)')}</label>
           <div style={{ marginTop: 8 }}>
             {links.map((row, i) => (
               <div className="kv-row" key={i}>
                 <select
                   className="select"
-                  aria-label="Connected to"
+                  aria-label={t('Connected to')}
                   value={row.to}
                   onChange={(e) => setLinks(links.map((r, j) => (j === i ? { ...r, to: e.target.value } : r)))}
                 >
-                  <option value="">Choose a note…</option>
+                  <option value="">{t('Choose a note…')}</option>
                   {notebook
                     .filter((e) => e.id !== editingEntity?.id)
                     .map((e) => (
@@ -331,45 +331,45 @@ export const NotebookView: React.FC = () => {
                 </select>
                 <input
                   className="input"
-                  aria-label="How they are connected"
+                  aria-label={t('How they are connected')}
                   value={row.label}
-                  placeholder="How (e.g. sister of, lives in)"
+                  placeholder={t('How (e.g. sister of, lives in)')}
                   onChange={(e) => setLinks(links.map((r, j) => (j === i ? { ...r, label: e.target.value } : r)))}
                 />
-                <button type="button" className="small-btn" aria-label="Remove connection" onClick={() => setLinks(links.filter((_, j) => j !== i))}>×</button>
+                <button type="button" className="small-btn" aria-label={t('Remove connection')} onClick={() => setLinks(links.filter((_, j) => j !== i))}>×</button>
               </div>
             ))}
             <button type="button" className="small-btn" onClick={() => setLinks([...links, { to: '', label: '' }])} disabled={notebook.filter((e) => e.id !== editingEntity?.id).length === 0}>
-              <Plus /> Add connection
+              <Plus /> {t('Add connection')}
             </button>
           </div>
 
-          <label style={{ marginTop: 24 }}>Structured attributes (optional)</label>
+          <label style={{ marginTop: 24 }}>{t('Structured attributes (optional)')}</label>
           <div style={{ marginTop: 8 }}>
             {attrs.map((row, i) => (
               <div className="kv-row" key={i}>
-                <input className="input" value={row.key} placeholder="Attribute (e.g. Age, Region)" onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, key: e.target.value } : r)))} />
-                <input className="input" value={row.value} placeholder="Value (e.g. 24, Stormpeaks)" onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))} />
-                <button type="button" className="small-btn" aria-label="Remove attribute" onClick={() => setAttrs(attrs.filter((_, j) => j !== i))}>×</button>
+                <input className="input" value={row.key} placeholder={t('Attribute (e.g. Age, Region)')} onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, key: e.target.value } : r)))} />
+                <input className="input" value={row.value} placeholder={t('Value (e.g. 24, Stormpeaks)')} onChange={(e) => setAttrs(attrs.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))} />
+                <button type="button" className="small-btn" aria-label={t('Remove attribute')} onClick={() => setAttrs(attrs.filter((_, j) => j !== i))}>×</button>
               </div>
             ))}
             <button type="button" className="small-btn" onClick={() => setAttrs([...attrs, { key: '', value: '' }])}>
-              <Plus /> Add attribute
+              <Plus /> {t('Add attribute')}
             </button>
           </div>
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="button button-primary button-small">Save entity</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setShowForm(false)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Save entity')}</button>
           </div>
         </form>
       </Dialog>
 
       <Dialog open={confirmDelete && !!selected} onClose={() => setConfirmDelete(false)} labelledBy="de-h">
-        <p className="eyebrow">CAREFUL</p>
-        <h2 id="de-h">Delete {selected?.name}?</h2>
-        <p>This can't be undone. Connections to it from other notes are dropped.</p>
+        <p className="eyebrow">{t('CAREFUL')}</p>
+        <h2 id="de-h">{t('Delete {name}?', { name: selected?.name ?? '' })}</h2>
+        <p>{t('This can\'t be undone. Connections to it from other notes are dropped.')}</p>
         <div className="dialog-actions">
-          <button className="button button-outline button-small" onClick={() => setConfirmDelete(false)}>Keep it</button>
+          <button className="button button-outline button-small" onClick={() => setConfirmDelete(false)}>{t('Keep it')}</button>
           <button
             className="button button-primary button-small"
             onClick={async () => {
@@ -378,7 +378,7 @@ export const NotebookView: React.FC = () => {
               setConfirmDelete(false);
             }}
           >
-            Yes, delete
+            {t('Yes, delete')}
           </button>
         </div>
       </Dialog>

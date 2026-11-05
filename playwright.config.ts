@@ -15,6 +15,9 @@ export default defineConfig({
   timeout: 45_000,
   expect: { timeout: 8_000 },
   fullyParallel: true,
+  // Few at once: the editor tests type and wait on timers, and too many together make them time out (with 4 at once a
+  // different test or two timed out on each full run; with 2 the whole suite passes, and it takes about as long)
+  workers: 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],

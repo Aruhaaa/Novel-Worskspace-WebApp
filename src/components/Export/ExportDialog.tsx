@@ -7,6 +7,7 @@ import { exportNovelToHTML } from '../../utils/exportUtils';
 import { exportBetaCopy } from '../../utils/betaCopy';
 import { exportBackup, exportDocx, exportEpub, exportText, manuscriptWords } from '../../utils/exportFormats';
 import { Dialog } from '../ui/Dialog';
+import { mark, tp, useT } from '../../i18n';
 
 interface ExportDialogProps {
   project: Project | null;
@@ -20,16 +21,17 @@ interface Option {
 }
 
 const OPTIONS: Option[] = [
-  { id: 'docx', title: 'Word document (.docx)', text: 'For editors, agents and submissions. Keeps headings, bold, italics and alignment.' },
-  { id: 'epub', title: 'E-book (.epub)', text: 'Read it on a Kindle app, Kobo, Apple Books or any e-reader.' },
-  { id: 'pdf', title: 'PDF', text: 'Opens the print view. Choose "Save as PDF" as the printer.' },
-  { id: 'txt', title: 'Plain text (.txt)', text: 'Just the words, with no formatting. Opens anywhere.' },
-  { id: 'html', title: 'Web page (.html)', text: 'A single readable page you can share or open in a browser.' },
-  { id: 'beta', title: 'Beta-reader copy (.html)', text: 'One page you can email. Readers select passages and comment, then send you a small feedback file to import. Nothing is uploaded.' },
-  { id: 'backup', title: 'Full backup (.json)', text: 'Everything in this project: chapters, notebook, outline and word log. Keep a copy somewhere safe.' },
+  { id: 'docx', title: mark('Word document (.docx)'), text: mark('For editors, agents and submissions. Keeps headings, bold, italics and alignment.') },
+  { id: 'epub', title: mark('E-book (.epub)'), text: mark('Read it on a Kindle app, Kobo, Apple Books or any e-reader.') },
+  { id: 'pdf', title: mark('PDF'), text: mark('Opens the print view. Choose "Save as PDF" as the printer.') },
+  { id: 'txt', title: mark('Plain text (.txt)'), text: mark('Just the words, with no formatting. Opens anywhere.') },
+  { id: 'html', title: mark('Web page (.html)'), text: mark('A single readable page you can share or open in a browser.') },
+  { id: 'beta', title: mark('Beta-reader copy (.html)'), text: mark('One page you can email. Readers select passages and comment, then send you a small feedback file to import. Nothing is uploaded.') },
+  { id: 'backup', title: mark('Full backup (.json)'), text: mark('Everything in this project: chapters, notebook, outline and word log. Keep a copy somewhere safe.') },
 ];
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) => {
+  const t = useT();
   const { setActiveProject } = useApp();
   const navigate = useNavigate();
   const [chapters, setChapters] = useState<Chapter[] | null>(null);
@@ -42,14 +44,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
     databaseService
       .getChapters(project.id)
       .then((c) => !cancelled && setChapters(c))
-      .catch(() => !cancelled && setMessage('Could not load the chapters. Check your connection and try again.'));
+      .catch(() => !cancelled && setMessage(t('Could not load the chapters. Check your connection and try again.')));
     return () => {
       cancelled = true;
       // Whatever was loaded or said belongs to that project; the next one starts clean
       setChapters(null);
       setMessage(null);
     };
-  }, [project]);
+  }, [project, t]);
 
   const run = async (option: Option) => {
     if (!project || !chapters) return;
@@ -74,10 +76,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
         ]);
         exportBackup(project, chapters, entities, logs);
       }
-      setMessage(`${option.title} saved to your downloads.`);
+      setMessage(t('{name} saved to your downloads.', { name: t(option.title) }));
     } catch (err) {
       console.error('Export failed:', err);
-      setMessage('That export did not work. Try again, or pick another format.');
+      setMessage(t('That export did not work. Try again, or pick another format.'));
     } finally {
       setBusy(null);
     }
@@ -87,12 +89,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
 
   return (
     <Dialog open={!!project} onClose={onClose} labelledBy="ex-h" className="dialog-wide">
-      <p className="eyebrow">EXPORT</p>
+      <p className="eyebrow">{t('EXPORT')}</p>
       <h2 id="ex-h">{project?.title}</h2>
       <p>
         {chapters
-          ? `${chapters.length} ${chapters.length === 1 ? 'chapter' : 'chapters'} · ${words.toLocaleString()} words. Choose a format.`
-          : 'Loading chapters…'}
+          ? t('{chapters} · {words}. Choose a format.', { chapters: tp(chapters.length, '{n} chapter', '{n} chapters'), words: tp(words, '{n} word', '{n} words') })
+          : t('Loading chapters…')}
       </p>
 
       <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
@@ -104,8 +106,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
             onClick={() => run(option)}
             style={{ justifyContent: 'space-between', textAlign: 'left', padding: '12px 14px', height: 'auto', alignItems: 'flex-start', flexDirection: 'column', gap: 2 }}
           >
-            <strong style={{ fontSize: 13 }}>{busy === option.id ? 'Preparing…' : option.title}</strong>
-            <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400, lineHeight: 1.5 }}>{option.text}</span>
+            <strong style={{ fontSize: 13 }}>{busy === option.id ? t('Preparing…') : t(option.title)}</strong>
+            <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400, lineHeight: 1.5 }}>{t(option.text)}</span>
           </button>
         ))}
       </div>
@@ -117,7 +119,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
       )}
 
       <div className="dialog-actions">
-        <button className="button button-outline button-small" onClick={onClose}>Close</button>
+        <button className="button button-outline button-small" onClick={onClose}>{t('Close')}</button>
       </div>
     </Dialog>
   );

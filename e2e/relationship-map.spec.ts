@@ -50,23 +50,32 @@ test.describe('relationship map', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByRole('complementary', { name: 'Entity details' }).getByRole('heading', { name: 'Salt House' })).toBeVisible();
 
-    // Dragging a note moves it, and the arrangement is remembered
-    const node = map.getByRole('button', { name: 'Lone Wolf, Character' });
-    const before = await node.boundingBox();
-    await page.mouse.move(before!.x + before!.width / 2, before!.y + before!.height / 2);
+    // Dragging a note moves it, and the arrangement is remembered. The dot itself is measured and grabbed, not the whole note:
+    // its name sits under it and changes width when the font arrives, which would move the middle of the whole note.
+    const dotOf = (p: Page) => p.getByRole('group', { name: 'Relationship map' }).getByRole('button', { name: 'Lone Wolf, Character' }).locator('circle');
+    const spot = async (p: Page) => {
+      const box = await dotOf(p).boundingBox();
+      return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
+    };
+    const before = await spot(page);
+    // Where the notes start depends on their (random) ids, and a note cannot be dragged off the edge of the map, so the
+    // drag goes toward the middle of the map from wherever the note is
+    const area = (await map.boundingBox())!;
+    const dx = before.x < area.x + area.width / 2 ? 160 : -160;
+    const dy = before.y < area.y + area.height / 2 ? 90 : -90;
+    await page.mouse.move(before.x, before.y);
     await page.mouse.down();
-    await page.mouse.move(before!.x + 160, before!.y + 90, { steps: 8 });
+    await page.mouse.move(before.x + dx, before.y + dy, { steps: 8 });
     await page.mouse.up();
-    const after = await node.boundingBox();
-    expect(Math.abs(after!.x - before!.x)).toBeGreaterThan(80);
+    // The picture redraws a moment after the mouse is released, and on a busy computer that can be later than this line
+    await expect.poll(async () => Math.abs((await spot(page)).x - before.x)).toBeGreaterThan(80);
+    const after = await spot(page);
     await page.reload();
     await page.getByRole('button', { name: 'Relationship map' }).click();
-    const reloaded = await page.getByRole('group', { name: 'Relationship map' }).getByRole('button', { name: 'Lone Wolf, Character' }).boundingBox();
-    expect(Math.abs(reloaded!.x - after!.x)).toBeLessThan(6);
+    await expect.poll(async () => Math.abs((await spot(page)).x - after.x)).toBeLessThan(6);
     // Reset layout puts everything back
     await page.getByRole('button', { name: 'Reset layout' }).click();
-    const reset = await page.getByRole('group', { name: 'Relationship map' }).getByRole('button', { name: 'Lone Wolf, Character' }).boundingBox();
-    expect(Math.abs(reset!.x - before!.x)).toBeLessThan(6);
+    await expect.poll(async () => Math.abs((await spot(page)).x - before.x)).toBeLessThan(6);
 
     // The filters above the map apply to it: only places, so only one note and no lines
     await page.getByRole('button', { name: 'Places' }).click();

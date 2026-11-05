@@ -61,3 +61,12 @@ The tests cover the HTML to editor round trip against real web chapters, the rea
 - No version history, export, outline, timeline, tour or story search on the phone yet. Use the web app for those.
 - The extra toolbar buttons (mention, highlight, scene break) sit at the end of the scrolling toolbar.
 - Reading typefaces are downloaded on first use and the phone's serif is used until then.
+
+## Notifications and error reporting (added 2026-11-05)
+
+- **Notifications.** Me > Notifications lists what happened while you were away (follows, comments, reviews, messages, reading-link comments, people joining a project), newest first, with a count on the Me tab. Tap one to mark it read, or use "Mark all read". Each kind can be switched off, which means the server stops recording it. They come from the same `notifications` table the website uses, so they need the cloud database **and** `supabase/setup_scripts/20261105_next_features.sql` run once. On the phone alone, or before that script, the screen says what is needed.
+  - They are checked when the app signs in, when the screen opens, and when you pull down to refresh. They do not arrive the moment they happen, and there are no push messages yet: that needs a Firebase project and keys only you can make.
+- **Help fix problems.** Me has a switch, on by default. When something breaks, a short note goes to the admin's error list (Admin > Errors on the website): what the error said, where in the program, and which version (`--dart-define=APP_VERSION=1.2.3` sets the version). Never anything you wrote, and never your name or email; addresses, sign-in tokens, a piece of text an error quotes, and folders on the phone are removed before sending. The same problem is sent three times at most. It needs the same setup script; without it the note is simply dropped.
+- Tested with `test/notifications_test.dart` and `test/error_reporter_test.dart` against stand-ins for the cloud. Not tried against a real Supabase project or on a real phone.
+
+Still not on the phone: sign in with Google or Apple, shared projects and live writing, read aloud, the relationship map, and Malay. The website has all of these.

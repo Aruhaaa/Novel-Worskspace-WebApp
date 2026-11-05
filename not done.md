@@ -4,11 +4,20 @@ What is still wanted. When one is started, move it into `limit.md` if it is only
 
 ## Finish the Malay translation
 
-The language system and about 300 marked sentences are in, but `src/i18n/ms.ts` is empty. Left to do: write the Malay for every marked sentence (`npm run i18n:check` lists them), then mark and translate the rest of the main screens: the landing page and its sample workspace labels, the sign-in form (`AuthView.tsx`), the genre names (`src/lib/genres.ts` and `GenreChips.tsx`), the Public Library headings and the reader. Other screens can follow.
+The website is in Malay on its main screens and in the Write space: language choice, the landing page, sign-in, the Read space (reader home, Public Library, the reader, comments, reviews), messages, notifications, preferences (including the account section), sharing a project, the top bar and side panel, and the Write space (Home, Manuscripts, chapter index, the editor with its toolbar, rail, version history and writing sprints, outline, notebook, tracker, profile, export, import, reader feedback and private reading links), the Ctrl K search, the first-visit tours, reporting, and the page a private reading link opens. About 1,340 sentences are translated in `src/i18n/ms-1.ts` to `ms-10.ts`. Left to do:
+
+- A Malay speaker has to read all of it: Claude wrote the translations and nobody has checked them.
+- The admin pages (`src/components/Admin/`).
+- Text written inside `src/lib` and `src/utils` instead of a screen: the writing-sprint announcements read out for screen readers (`lib/sprint.ts`), several error texts, and the beta-reader web page that Export writes (`utils/betaCopy.ts`).
+- Error messages that come back from the database or the sign-in service (they are in English as the service words them).
+- Text the browser itself draws, such as the "Choose File" button on the picture field.
+- The phone app (`mobile/`) is English only.
+
+`npm run i18n:check` lists what is marked and what is missing, but it cannot see text that was never wrapped in `t()`: look at each new screen in Malay (Preferences > Language).
 
 ## Phone app (`mobile/`) catches up
 
-Not started in this round: a notifications screen and unread counts, sign in with Google and Apple (deep link back into the app), error reporting to the admin, read aloud, shared projects and live writing, the relationship map, and the language choice.
+Done: notifications (cloud only, no push) and error reporting. Not started: sign in with Google and Apple (deep link back into the app), shared projects and live writing, read aloud, the relationship map, and Malay.
 
 ## Push messages
 
@@ -16,7 +25,7 @@ On the phone (Firebase Cloud Messaging and Apple push) and in the browser (web p
 
 ## Checks against the real thing
 
-Everything cloud-side was tried only against a stand-in server. Still to do with real accounts: a real Supabase project (the setup script, Realtime, private channels), a real email service for notifications, real Google and Apple sign-in, and a real published desktop release for automatic updates.
+Everything cloud-side was tried only against a stand-in server. Still to do with real accounts: a real Supabase project (the setup script, Realtime, private channels for live writing), a real email service for notifications, real Google and Apple sign-in, and a real published desktop release for automatic updates.
 
 ## Left out on purpose
 

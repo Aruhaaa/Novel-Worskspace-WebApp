@@ -9,8 +9,10 @@ import { MessageSquare, ArrowLeft, Ban } from 'lucide-react';
 import { ReportButton } from '../Safety/ReportDialog';
 import { useToast } from '../ui/toastContext';
 import { isBundledAuthor } from '../../lib/bundledLibrary';
+import { useT } from '../../i18n';
 
 export const PublicProfileView: React.FC = () => {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const { user, isGuest, profile, toggleFollow, setActivePublicProject, blockedIds, blockUser, unblockUser } = useApp();
   const { toast } = useToast();
@@ -43,7 +45,7 @@ export const PublicProfileView: React.FC = () => {
   if (loading) {
     return (
       <div className="studio-view">
-        <div className="page"><p className="meta" role="status">Loading profile…</p></div>
+        <div className="page"><p className="meta" role="status">{t('Loading profile…')}</p></div>
       </div>
     );
   }
@@ -52,8 +54,8 @@ export const PublicProfileView: React.FC = () => {
     return (
       <div className="studio-view">
         <div className="page">
-          <EmptyState icon="users" title="Author not found" text="We couldn't find that author. They may have removed their profile.">
-            <button className="small-btn is-primary" onClick={() => navigate('/library')}>Return to Library</button>
+          <EmptyState icon="users" title={t('Author not found')} text={t('We couldn\'t find that author. They may have removed their profile.')}>
+            <button className="small-btn is-primary" onClick={() => navigate('/library')}>{t('Return to Library')}</button>
           </EmptyState>
         </div>
       </div>
@@ -96,12 +98,12 @@ export const PublicProfileView: React.FC = () => {
     navigate(`/library/novel/${project.id}`);
   };
 
-  const name = authorProfile.display_name || 'Anonymous author';
+  const name = authorProfile.display_name || t('Anonymous author');
 
   const handleBlock = async () => {
-    if (!window.confirm(`Block ${name}? You will not see what they write or publish, and neither of you can message the other. You can unblock them in Preferences.`)) return;
+    if (!window.confirm(t('Block {name}? You will not see what they write or publish, and neither of you can message the other. You can unblock them in Preferences.', { name }))) return;
     const { saved } = await blockUser(authorProfile.id);
-    toast({ message: saved === 'saved' ? `${name} is blocked.` : `${name} is blocked on this device. It could not be saved to your account right now.` });
+    toast({ message: saved === 'saved' ? t('{name} is blocked.', { name }) : t('{name} is blocked on this device. It could not be saved to your account right now.', { name }) });
   };
 
   const handleUnblock = async () => {
@@ -113,7 +115,7 @@ export const PublicProfileView: React.FC = () => {
     <div className="studio-view">
       <div className="page">
         <button className="small-btn" onClick={() => navigate('/library')} style={{ marginBottom: 26 }}>
-          <ArrowLeft /> Back to Library
+          <ArrowLeft /> {t('Back to Library')}
         </button>
 
         <section className="profile-hero">
@@ -121,26 +123,26 @@ export const PublicProfileView: React.FC = () => {
           <div style={{ flex: 1, minWidth: 260 }}>
             <h1>{name}</h1>
             {authorProfile.bio && <p className="bio">{authorProfile.bio}</p>}
-            {sampleAuthor && <p className="meta">A pen name from the sample library that comes with the site. There is no one to follow or message.</p>}
+            {sampleAuthor && <p className="meta">{t('A pen name from the sample library that comes with the site. There is no one to follow or message.')}</p>}
             <div className="profile-stats">
-              <div><strong>{authorProjects.length}</strong>Published works</div>
-              <div><strong>{authorProfile.followers?.length || 0}</strong>Followers</div>
-              <div><strong>{authorProfile.following?.length || 0}</strong>Following</div>
+              <div><strong>{authorProjects.length}</strong>{t('Published works')}</div>
+              <div><strong>{authorProfile.followers?.length || 0}</strong>{t('Followers')}</div>
+              <div><strong>{authorProfile.following?.length || 0}</strong>{t('Following')}</div>
             </div>
           </div>
           {!isMe && !sampleAuthor && (
             <div className="page-actions">
               {isBlocked ? (
                 <button className="small-btn" onClick={handleUnblock}>
-                  <Ban /> Blocked · Unblock
+                  <Ban /> {t('Blocked · Unblock')}
                 </button>
               ) : (
                 <>
                   <button className={`small-btn${isFollowing ? '' : ' is-primary'}`} onClick={handleFollow} aria-pressed={!!isFollowing}>
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? t('Following') : t('Follow')}
                   </button>
                   <button className="small-btn" onClick={handleMessage}>
-                    <MessageSquare /> Message
+                    <MessageSquare /> {t('Message')}
                   </button>
                 </>
               )}
@@ -148,12 +150,12 @@ export const PublicProfileView: React.FC = () => {
                 <>
                   {!isBlocked && (
                     <button className="small-btn" onClick={handleBlock}>
-                      <Ban /> Block
+                      <Ban /> {t('Block')}
                     </button>
                   )}
                   <ReportButton
                     className="small-btn"
-                    label="Report"
+                    label={t('Report')}
                     subject={{ type: 'author', targetId: authorProfile.id, authorId: authorProfile.id, authorName: name, excerpt: `${authorProfile.display_name || ''} - ${authorProfile.bio || ''}` }}
                   />
                 </>
@@ -163,20 +165,20 @@ export const PublicProfileView: React.FC = () => {
         </section>
 
         <section aria-labelledby="works-h">
-          <h2 className="section-title" id="works-h">Published works</h2>
-          <p className="section-note">Everything {name} has shared with the library.</p>
+          <h2 className="section-title" id="works-h">{t('Published works')}</h2>
+          <p className="section-note">{t('Everything {name} has shared with the library.', { name })}</p>
           {authorProjects.length === 0 ? (
-            <EmptyState icon="book" title="No published novels" text="This author hasn't published any novels yet." />
+            <EmptyState icon="book" title={t('No published novels')} text={t('This author hasn\'t published any novels yet.')} />
           ) : (
             <div className="grid-2">
               {authorProjects.map((project) => (
                 <article className="card" key={project.id}>
-                  {project.genre ? <GenreTag genre={project.genre} /> : <span className="badge">Uncategorized</span>}
+                  {project.genre ? <GenreTag genre={project.genre} /> : <span className="badge">{t('Uncategorized')}</span>}
                   <h3 style={{ marginTop: 12 }}>{project.title}</h3>
-                  <p style={{ margin: '8px 0 14px' }}>{project.description || 'No description provided.'}</p>
+                  <p style={{ margin: '8px 0 14px' }}>{project.description || t('No description provided.')}</p>
                   <p className="meta">
                     {(project.likes || []).length} likes · {(project.views || []).length} views ·{' '}
-                    <button className="link-accent" onClick={() => handleReadNovel(project)}>Read</button>
+                    <button className="link-accent" onClick={() => handleReadNovel(project)}>{t('Read')}</button>
                   </p>
                 </article>
               ))}

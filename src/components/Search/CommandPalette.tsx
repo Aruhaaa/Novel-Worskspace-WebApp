@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { htmlToText } from '../../lib/text';
 import { FIND_HANDOFF_KEY, NOTE_HANDOFF_KEY, openCapture } from '../../lib/uiEvents';
 import { Dialog } from '../ui/Dialog';
+import { mark, useT } from '../../i18n';
 
 interface Item {
   id: string;
@@ -14,6 +15,15 @@ interface Item {
 }
 
 const MAX_TEXT_RESULTS = 12;
+
+/** What a note is, for the small line under its name */
+const TYPE_NAME: Record<string, string> = {
+  character: mark('Character'),
+  location: mark('Location'),
+  item: mark('Item'),
+  scene: mark('Scene'),
+  lore: mark('Lore'),
+};
 
 /** A snippet around a match, with the match marked. */
 const snippet = (text: string, at: number, len: number): React.ReactNode => {
@@ -31,6 +41,7 @@ const snippet = (text: string, at: number, len: number): React.ReactNode => {
 };
 
 const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const t = useT();
   const { activeProject, chapters, entities, setActiveChapter } = useApp();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -45,34 +56,34 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const jotItems: Item[] = [];
 
     const actions: { label: string; hint?: string; run: () => void; project?: boolean }[] = [
-      { label: 'Open the manuscript', run: go('/editor'), project: true },
-      { label: 'Chapter index', run: go('/chapters'), project: true },
-      { label: 'Story outline', run: go('/outline'), project: true },
-      { label: 'World notebook', run: go('/notebook'), project: true },
-      { label: 'Progress and goals', run: go('/tracker'), project: true },
-      { label: 'Jot an idea', hint: 'Add to your outline', run: () => openCapture(), project: true },
-      { label: 'All projects', run: go('/manuscripts') },
-      { label: 'Home dashboard', run: go('/') },
-      { label: 'Library', run: go('/library') },
-      { label: 'Preferences', run: go('/preferences') },
+      { label: t('Open the manuscript'), run: go('/editor'), project: true },
+      { label: t('Chapter index'), run: go('/chapters'), project: true },
+      { label: t('Story outline'), run: go('/outline'), project: true },
+      { label: t('World notebook'), run: go('/notebook'), project: true },
+      { label: t('Progress and goals'), run: go('/tracker'), project: true },
+      { label: t('Jot an idea'), hint: t('Add to your outline'), run: () => openCapture(), project: true },
+      { label: t('All projects'), run: go('/manuscripts') },
+      { label: t('Home dashboard'), run: go('/') },
+      { label: t('Library'), run: go('/library') },
+      { label: t('Preferences'), run: go('/preferences') },
     ];
     for (const a of actions) {
       if (a.project && !activeProject) continue;
-      if (!q || a.label.toLowerCase().includes(lower)) goItems.push({ id: `a-${a.label}`, group: 'Go to', title: a.label, hint: a.hint, run: a.run });
+      if (!q || a.label.toLowerCase().includes(lower)) goItems.push({ id: `a-${a.label}`, group: t('Go to'), title: a.label, hint: a.hint, run: a.run });
     }
 
     if (q && activeProject) {
-      jotItems.push({ id: 'a-jot', group: 'Capture', title: <>Jot “{q}” as an idea</>, hint: 'Add to your outline', run: () => openCapture(q) });
+      jotItems.push({ id: 'a-jot', group: t('Capture'), title: <>{t('Jot “{q}” as an idea', { q })}</>, hint: t('Add to your outline'), run: () => openCapture(q) });
     }
 
     if (activeProject) {
       chapters.forEach((c, i) => {
-        if (!q || (c.title || 'Untitled chapter').toLowerCase().includes(lower)) {
+        if (!q || (c.title || t('Untitled chapter')).toLowerCase().includes(lower)) {
           out.push({
             id: `c-${c.id}`,
-            group: 'Chapters',
-            title: c.title || 'Untitled chapter',
-            hint: `Chapter ${String(i + 1).padStart(2, '0')}`,
+            group: t('Chapters'),
+            title: c.title || t('Untitled chapter'),
+            hint: t('Chapter {n}', { n: String(i + 1).padStart(2, '0') }),
             run: () => {
               setActiveChapter(c);
               navigate('/editor');
@@ -86,9 +97,9 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           if (e.name.toLowerCase().includes(lower) || (e.description || '').toLowerCase().includes(lower)) {
             out.push({
               id: `e-${e.id}`,
-              group: e.type === 'scene' ? 'Outline' : 'Notebook',
+              group: e.type === 'scene' ? t('Outline') : t('Notebook'),
               title: e.name,
-              hint: e.type,
+              hint: t(TYPE_NAME[e.type] ?? e.type).toLowerCase(),
               run: () => {
                 if (e.type === 'scene') {
                   navigate('/outline');
@@ -120,9 +131,9 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             const keep = at;
             out.push({
               id: `t-${c.id}-${keep}`,
-              group: 'In the text',
+              group: t('In the text'),
               title: snippet(text, keep, q.length),
-              hint: `Chapter ${String(i + 1).padStart(2, '0')}`,
+              hint: t('Chapter {n}', { n: String(i + 1).padStart(2, '0') }),
               run: () => {
                 try {
                   sessionStorage.setItem(FIND_HANDOFF_KEY, q);
@@ -142,7 +153,7 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
     // With a search word, real matches come first so Enter opens what you were looking for
     return q ? [...out, ...goItems, ...jotItems] : [...goItems, ...out];
-  }, [query, activeProject, chapters, entities, navigate, setActiveChapter]);
+  }, [query, activeProject, chapters, entities, navigate, setActiveChapter, t]);
 
   const choose = (item: Item | undefined) => {
     if (!item) return;
@@ -172,7 +183,7 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   let lastGroup = '';
   return (
     <div onKeyDown={onKeyDown}>
-      <h2 id="pal-h" className="sr-only">Search and jump</h2>
+      <h2 id="pal-h" className="sr-only">{t('Search and jump')}</h2>
       <input
         className="palette-input"
         value={query}
@@ -180,8 +191,8 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           setQuery(e.target.value);
           setActive(0);
         }}
-        placeholder={activeProject ? 'Search chapters, notes and your text, or jump anywhere' : 'Jump anywhere'}
-        aria-label="Search"
+        placeholder={activeProject ? t('Search chapters, notes and your text, or jump anywhere') : t('Jump anywhere')}
+        aria-label={t('Search')}
         role="combobox"
         aria-expanded="true"
         aria-controls="pal-list"
@@ -189,7 +200,7 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         autoFocus
       />
       <div className="palette-list" id="pal-list" role="listbox" ref={listRef}>
-        {items.length === 0 && <p className="palette-empty">Nothing matches “{query}”.</p>}
+        {items.length === 0 && <p className="palette-empty">{t('Nothing matches “{query}”.', { query })}</p>}
         {items.map((item, i) => {
           const header = item.group !== lastGroup ? item.group : null;
           lastGroup = item.group;
@@ -212,9 +223,9 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         })}
       </div>
       <p className="palette-foot">
-        <span>↑ ↓ to move</span>
-        <span>Enter to open</span>
-        <span>Esc to close</span>
+        <span>{t('↑ ↓ to move')}</span>
+        <span>{t('Enter to open')}</span>
+        <span>{t('Esc to close')}</span>
       </p>
     </div>
   );

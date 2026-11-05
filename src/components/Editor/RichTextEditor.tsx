@@ -40,7 +40,7 @@ import { loadLookupAllowed, loadTypewriter, saveTypewriter } from '../../lib/wri
 import { useReadAloud } from '../../lib/useReadAloud';
 import { ReadAloudBar } from '../Speech/ReadAloudBar';
 import { LookupPanel } from './LookupPanel';
-import { useT } from '../../i18n';
+import { mark, useT } from '../../i18n';
 import { FIND_HANDOFF_KEY, onRequestFind } from '../../lib/uiEvents';
 import { STYLE_KINDS, type StyleKind } from '../../lib/style';
 import { loadSpellPrefs, loadStylePrefs, saveStylePrefs } from '../../lib/spell';
@@ -107,42 +107,42 @@ const MenuBar = ({ editor, onToggleFindReplace, fontId, onFontChange, styleOn, o
   }
 
   return (
-    <div className="tools" role="toolbar" aria-label="Formatting">
-      <label className="sr-only" htmlFor="font-select">Writing font</label>
+    <div className="tools" role="toolbar" aria-label={t('Formatting')}>
+      <label className="sr-only" htmlFor="font-select">{t('Writing font')}</label>
       <select
         id="font-select"
         className="select font-select"
         value={fontId}
         onChange={(e) => onFontChange(e.target.value)}
-        title="Writing font"
+        title={t('Writing font')}
       >
         {EDITOR_FONTS.map((font) => (
           <option key={font.id} value={font.id}>{font.label}</option>
         ))}
       </select>
       <span className="sep" />
-      <Tool label="Bold" active={editor.isActive('bold')} disabled={!editor.can().chain().focus().toggleBold().run()} onClick={() => editor.chain().focus().toggleBold().run()}><Bold /></Tool>
-      <Tool label="Italic" active={editor.isActive('italic')} disabled={!editor.can().chain().focus().toggleItalic().run()} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic /></Tool>
-      <Tool label="Heading 1" active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 /></Tool>
-      <Tool label="Heading 2" active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></Tool>
+      <Tool label={t('Bold')} active={editor.isActive('bold')} disabled={!editor.can().chain().focus().toggleBold().run()} onClick={() => editor.chain().focus().toggleBold().run()}><Bold /></Tool>
+      <Tool label={t('Italic')} active={editor.isActive('italic')} disabled={!editor.can().chain().focus().toggleItalic().run()} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic /></Tool>
+      <Tool label={t('Heading 1')} active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}><Heading1 /></Tool>
+      <Tool label={t('Heading 2')} active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 /></Tool>
       <span className="sep" />
-      <Tool label="Bullet list" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List /></Tool>
-      <Tool label="Numbered list" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></Tool>
-      <Tool label="Blockquote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote /></Tool>
+      <Tool label={t('Bullet list')} active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List /></Tool>
+      <Tool label={t('Numbered list')} active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered /></Tool>
+      <Tool label={t('Blockquote')} active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote /></Tool>
       <span className="sep" />
-      <Tool label="Align left" active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()}><AlignLeft /></Tool>
-      <Tool label="Align centre" active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter /></Tool>
-      <Tool label="Align right" active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()}><AlignRight /></Tool>
-      <Tool label="Justify" active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()}><AlignJustify /></Tool>
+      <Tool label={t('Align left')} active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()}><AlignLeft /></Tool>
+      <Tool label={t('Align centre')} active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter /></Tool>
+      <Tool label={t('Align right')} active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()}><AlignRight /></Tool>
+      <Tool label={t('Justify')} active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()}><AlignJustify /></Tool>
       <span className="sep" />
-      <Tool label="Highlight" active={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()}><Highlighter /></Tool>
-      <Tool label="Insert scene separator" onClick={() => editor.chain().focus().setHorizontalRule().run()}><MoreHorizontal /></Tool>
+      <Tool label={t('Highlight')} active={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()}><Highlighter /></Tool>
+      <Tool label={t('Insert scene separator')} onClick={() => editor.chain().focus().setHorizontalRule().run()}><MoreHorizontal /></Tool>
       <span className="sep" />
-      <Tool label="Undo" disabled={!editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}><Undo /></Tool>
-      <Tool label="Redo" disabled={!editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}><Redo /></Tool>
+      <Tool label={t('Undo')} disabled={!editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}><Undo /></Tool>
+      <Tool label={t('Redo')} disabled={!editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}><Redo /></Tool>
       <span className="sep" />
-      <Tool label="Find and replace" onClick={onToggleFindReplace}><Search /></Tool>
-      <Tool label="Style notes" active={styleOn} onClick={onToggleStyle}><SpellCheck /></Tool>
+      <Tool label={t('Find and replace')} onClick={onToggleFindReplace}><Search /></Tool>
+      <Tool label={t('Style notes')} active={styleOn} onClick={onToggleStyle}><SpellCheck /></Tool>
       <Tool label={t('Typewriter scrolling')} active={typewriterOn} onClick={onToggleTypewriter}><Keyboard /></Tool>
       {canLookup && <Tool label={t('Look up a word')} active={lookupOn} onClick={onToggleLookup}><BookA /></Tool>}
       {canListen && <Tool label={t('Read aloud')} active={listening} onClick={onToggleListen}><Volume2 /></Tool>}
@@ -150,7 +150,8 @@ const MenuBar = ({ editor, onToggleFindReplace, fontId, onFontChange, styleOn, o
   );
 };
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = 'Every world begins somewhere…', header, onMentionClick, live = null, editable = true, replaceWith = null }) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = mark('Every world begins somewhere…'), header, onMentionClick, live = null, editable = true, replaceWith = null }) => {
+  const t = useT();
   const mentionClick = React.useRef(onMentionClick);
   useEffect(() => {
     mentionClick.current = onMentionClick;
@@ -264,7 +265,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
       // Writing together keeps its own undo history, which only undoes this person's changes
       StarterKit.configure(live ? { undoRedo: false } : {}),
       Placeholder.configure({
-        placeholder,
+        placeholder: t(placeholder),
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -510,18 +511,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
       {editable && <MenuBar editor={editor} onToggleFindReplace={() => setShowFindReplace(!showFindReplace)} fontId={fontId} onFontChange={handleFontChange} styleOn={styleOn} onToggleStyle={toggleStyle} typewriterOn={typewriter} onToggleTypewriter={toggleTypewriter} canListen={ra.supported} listening={ra.state !== 'idle'} onToggleListen={ra.state === 'idle' ? ra.start : ra.stop} canLookup={lookupAllowed} lookupOn={lookupOpen} onToggleLookup={() => setLookupOpen((v) => !v)} />}
 
       {styleOn && (
-        <div className="style-bar" role="region" aria-label="Style notes">
+        <div className="style-bar" role="region" aria-label={t('Style notes')}>
           <div className="chips">
             {STYLE_KINDS.map((k) => (
               <button
                 key={k.id}
                 className="chip"
                 aria-pressed={styleKinds.includes(k.id)}
-                title={`${k.hint} Click to show or hide.`}
+                title={t('{hint} Click to show or hide.', { hint: t(k.hint) })}
                 onClick={() => toggleKind(k.id)}
               >
                 <span className={`style-dot style-dot-${k.id}`} aria-hidden="true" />
-                {k.label}
+                {t(k.label)}
                 <b>{styleReport ? styleReport.counts[k.id] : 0}</b>
               </button>
             ))}
@@ -529,12 +530,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
           <div className="style-meta">
             {styleReport && (
               <>
-                <span>Average sentence {styleReport.stats.avgSentence} words</span>
-                <span>Longest {styleReport.stats.longest}</span>
-                <span>Dialogue {styleReport.stats.dialogue}%</span>
+                <span>{t('Average sentence {n} words', { n: styleReport.stats.avgSentence })}</span>
+                <span>{t('Longest {n}', { n: styleReport.stats.longest })}</span>
+                <span>{t('Dialogue {n}%', { n: styleReport.stats.dialogue })}</span>
               </>
             )}
-            <button className="small-btn" onClick={stepStyle}>Next note</button>
+            <button className="small-btn" onClick={stepStyle}>{t('Next note')}</button>
           </div>
         </div>
       )}
@@ -546,8 +547,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
             type="text"
             value={findText}
             onChange={(e) => setFindText(e.target.value)}
-            placeholder="Find…"
-            aria-label="Find"
+            placeholder={t('Find…')}
+            aria-label={t('Find')}
             autoFocus={!handoff}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -557,20 +558,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
             }}
           />
           <span className="meta" role="status" aria-live="polite" style={{ minWidth: 70 }}>
-            {findText ? (matchInfo.count === 0 ? 'No matches' : `${matchInfo.current + 1} of ${matchInfo.count}`) : ''}
+            {findText ? (matchInfo.count === 0 ? t('No matches') : t('{current} of {count}', { current: matchInfo.current + 1, count: matchInfo.count })) : ''}
           </span>
-          <button className="small-btn" onClick={() => stepMatch(-1)} disabled={matchInfo.count === 0}>Previous</button>
-          <button className="small-btn" onClick={() => stepMatch(1)} disabled={matchInfo.count === 0}>Next</button>
+          <button className="small-btn" onClick={() => stepMatch(-1)} disabled={matchInfo.count === 0}>{t('Previous')}</button>
+          <button className="small-btn" onClick={() => stepMatch(1)} disabled={matchInfo.count === 0}>{t('Next')}</button>
           <input
             className="input"
             type="text"
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
-            placeholder="Replace with…"
-            aria-label="Replace with"
+            placeholder={t('Replace with…')}
+            aria-label={t('Replace with')}
           />
           <button className="small-btn is-primary" onClick={handleReplaceAll} disabled={!findText}>
-            Replace all
+            {t('Replace all')}
           </button>
         </div>
       )}

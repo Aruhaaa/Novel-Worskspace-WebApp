@@ -14,6 +14,7 @@ import {
 import { useOpenChapter } from '../../lib/useOpenChapter';
 import { Dialog } from '../ui/Dialog';
 import { ShareLinksPanel } from './ShareLinksPanel';
+import { fmtDate, tp, useT } from '../../i18n';
 
 interface FeedbackDialogProps {
   project: Project | null;
@@ -21,6 +22,7 @@ interface FeedbackDialogProps {
 }
 
 const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ project, onClose }) => {
+  const t = useT();
   const { chapters } = useApp();
   const openChapter = useOpenChapter();
   const feedback = useFeedback(project.id);
@@ -50,9 +52,9 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
       skipped += result.skipped;
     }
     const parts: string[] = [];
-    if (added) parts.push(`${added} new ${added === 1 ? 'comment' : 'comments'} added.`);
-    if (skipped) parts.push(`${skipped} already imported.`);
-    setMessage({ text: [...parts, ...problems].join(' ') || 'Nothing to import.', bad: problems.length > 0 && added === 0 });
+    if (added) parts.push(tp(added, '{n} new comment added.', '{n} new comments added.'));
+    if (skipped) parts.push(t('{n} already imported.', { n: skipped }));
+    setMessage({ text: [...parts, ...problems].join(' ') || t('Nothing to import.'), bad: problems.length > 0 && added === 0 });
   };
 
   const order = new Map(chapters.map((c, i) => [c.id, i]));
@@ -72,22 +74,22 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
     <div className="peek">
       <div className="peek-head">
         <div>
-          <p className="eyebrow">READER FEEDBACK</p>
-          <h2 id="fb-h">What your readers said</h2>
+          <p className="eyebrow">{t('READER FEEDBACK')}</p>
+          <h2 id="fb-h">{t('What your readers said')}</h2>
         </div>
-        <button className="small-btn" onClick={onClose} aria-label="Close reader feedback">Close</button>
+        <button className="small-btn" onClick={onClose} aria-label={t('Close reader feedback')}>{t('Close')}</button>
       </div>
       <p>
-        Readers can comment through a private link (live, below), or you can send a <strong>Beta-reader copy</strong> from Export and import the feedback file they send back. Either way the comments appear against the right chapters.
+        {t('Readers can comment through a private link (live, below), or you can send a')} <strong>{t('Beta-reader copy')}</strong> {t('from Export and import the feedback file they send back. Either way the comments appear against the right chapters.')}
       </p>
 
       <ShareLinksPanel project={project} />
 
-      <h3 className="feedback-chapter">From feedback files</h3>
+      <h3 className="feedback-chapter">{t('From feedback files')}</h3>
 
       <div style={{ margin: '16px 0' }}>
         <label className="small-btn" style={{ cursor: 'pointer' }}>
-          Import feedback files
+          {t('Import feedback files')}
           <input type="file" accept=".json,application/json" multiple style={{ display: 'none' }} onChange={(e) => { void readFiles(e.target.files); e.target.value = ''; }} />
         </label>
         {message && (
@@ -98,39 +100,39 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
       </div>
 
       {feedback.length === 0 ? (
-        <p className="meta">No feedback imported yet.</p>
+        <p className="meta">{t('No feedback imported yet.')}</p>
       ) : (
         <>
           <label className="check-row" style={{ marginBottom: 8 }}>
             <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
-            <span>Show resolved ({doneCount})</span>
+            <span>{t('Show resolved ({n})', { n: doneCount })}</span>
           </label>
-          {visible.length === 0 && <p className="meta">Everything is resolved. Nice work.</p>}
+          {visible.length === 0 && <p className="meta">{t('Everything is resolved. Nice work.')}</p>}
           {visible.map((c, i) => {
             const chapterIndex = order.get(c.chapterId);
             const heading =
-              chapterIndex === undefined ? `${c.chapterTitle || 'A chapter'} (no longer in the manuscript)` : `${String(chapterIndex + 1).padStart(2, '0')} · ${chapters[chapterIndex].title || 'Untitled chapter'}`;
+              chapterIndex === undefined ? t('{title} (no longer in the manuscript)', { title: c.chapterTitle || t('A chapter') }) : `${String(chapterIndex + 1).padStart(2, '0')} · ${chapters[chapterIndex].title || t('Untitled chapter')}`;
             const showHeading = i === 0 || visible[i - 1].chapterId !== c.chapterId;
             return (
               <React.Fragment key={`${c.reader}-${c.id}`}>
                 {showHeading && <h3 className="feedback-chapter">{heading}</h3>}
                 <article className={`feedback-item${c.status === 'done' ? ' is-done' : ''}`}>
                   <p className="meta">
-                    {c.reader} · {new Date(c.createdAt).toLocaleDateString()}{c.source === 'link' ? ' · via link' : ''}
+                    {c.reader} · {fmtDate(c.createdAt)}{c.source === 'link' ? ` · ${t('via link')}` : ''}
                   </p>
                   {c.quote && <blockquote>{c.quote}</blockquote>}
                   <p style={{ whiteSpace: 'pre-wrap' }}>{c.note}</p>
                   <div className="page-actions" style={{ marginTop: 8 }}>
                     {chapterIndex !== undefined && (
                       <button className="small-btn" onClick={() => show(c)}>
-                        {c.quote ? 'Show the passage' : 'Open the chapter'}
+                        {c.quote ? t('Show the passage') : t('Open the chapter')}
                       </button>
                     )}
                     <button className="small-btn" onClick={() => setFeedbackStatus(project.id, c, c.status === 'open' ? 'done' : 'open')}>
-                      {c.status === 'open' ? 'Mark done' : 'Reopen'}
+                      {c.status === 'open' ? t('Mark done') : t('Reopen')}
                     </button>
                     <button className="small-btn is-danger" onClick={() => removeFeedback(project.id, c)}>
-                      Remove
+                      {t('Remove')}
                     </button>
                   </div>
                 </article>
@@ -140,9 +142,9 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
         </>
       )}
 
-      <p className="meta" style={{ marginTop: 16 }}>Comments from reading links are stored in the cloud. Imported feedback files are kept on this device.</p>
+      <p className="meta" style={{ marginTop: 16 }}>{t('Comments from reading links are stored in the cloud. Imported feedback files are kept on this device.')}</p>
       <div className="dialog-actions">
-        <button className="button button-primary button-small" onClick={onClose}>Close</button>
+        <button className="button button-primary button-small" onClick={onClose}>{t('Close')}</button>
       </div>
     </div>
   );

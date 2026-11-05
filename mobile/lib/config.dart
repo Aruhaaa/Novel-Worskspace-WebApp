@@ -11,9 +11,12 @@ class Config {
   static bool get hasCloud =>
       supabaseUrl.trim().isNotEmpty && supabaseAnonKey.trim().isNotEmpty;
 
+  /// Which build this is, so a report says which release it came from (`--dart-define=APP_VERSION=1.2.3`)
+  static const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: 'phone');
+
   /// Where reading links point. Anyone with a link can read in a browser, or paste it into the app.
   static const publicAppUrl = String.fromEnvironment(
     'PUBLIC_APP_URL',
-    defaultValue: 'https://novel-worskspace-web-app.vercel.app/',
+    defaultValue: 'https://novelistworkspace.kakamond.com/',
   );
 }

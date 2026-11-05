@@ -1,4 +1,7 @@
 import { _electron as electron } from '@playwright/test';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from './fixtures';
 import { PASSWORD, signIn } from './helpers';
 import packageJson from '../package.json' with { type: 'json' };
@@ -118,8 +121,10 @@ test.describe('the real desktop app', () => {
   // The app is started from source, showing this test run's own copy of the website
   test('the bridge reaches the window and the program around it, and a copy from source does not update', async () => {
     test.setTimeout(120_000);
+    // A profile folder of its own, so nothing a past run left behind (a signed-in account, a language) is there
+    const profile = mkdtempSync(join(tmpdir(), 'novelist-electron-'));
     const app = await electron.launch({
-      args: ['.'],
+      args: ['.', `--user-data-dir=${profile}`],
       env: { ...process.env, ELECTRON_START_URL: 'http://localhost:5181', ELECTRON_NO_DEVTOOLS: '1' },
     });
     try {
@@ -144,7 +149,11 @@ test.describe('the real desktop app', () => {
       // And the screens use it: sign in inside the desktop window and look at Preferences
       await window.addInitScript((address) => {
         for (const name of ['welcome', 'workspace']) localStorage.setItem(`novelist_tour_${name}_mock-user-${address}`, 'done');
+        // The desktop window follows the language of the computer it runs on (Malay on some), so the test says English
+        localStorage.setItem('novelist_lang', 'en');
       }, 'native@example.com');
+      // The window is already open in the computer's language: load it again so the script above applies
+      await window.reload();
       await window.goto('http://localhost:5181/#/login');
       await window.getByLabel('Email address').fill('native@example.com');
       await window.getByLabel('Password', { exact: true }).fill(PASSWORD);
@@ -158,6 +167,11 @@ test.describe('the real desktop app', () => {
       await expect(section.getByText('This copy is running from source, so it does not update itself.')).toBeVisible();
     } finally {
       await app.close();
+      try {
+        rmSync(profile, { recursive: true, force: true });
+      } catch {
+        // still in use for a moment; the system's temporary folder is cleaned out later
+      }
     }
   });
 });

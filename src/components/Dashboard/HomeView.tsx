@@ -14,6 +14,7 @@ import { GuestGateModal } from '../Auth/GuestGateModal';
 import { Dialog } from '../ui/Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
+import { fmtDate, tp, useT } from '../../i18n';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
 
@@ -32,6 +33,7 @@ const Cover: React.FC<{ project: Project; index: number; small?: boolean }> = ({
   );
 
 export const HomeView: React.FC = () => {
+  const t = useT();
   const {
     user,
     profile,
@@ -60,7 +62,7 @@ export const HomeView: React.FC = () => {
     .map((id) => publicProjects.find((p) => p.id === id))
     .filter((p): p is Project => p !== undefined);
 
-  const greetingName = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'Author');
+  const greetingName = profile?.display_name || (user?.email ? user.email.split('@')[0] : t('Author'));
 
   const startNewProject = () => (isGuest ? setShowGuestModal(true) : setShowNewProject(true));
 
@@ -89,20 +91,20 @@ export const HomeView: React.FC = () => {
     <div className="studio-view">
       <div className="page page-wide">
         <PageHead
-          eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase()}
+          eyebrow={fmtDate(new Date(), { weekday: 'long' }).toUpperCase()}
           title={
             <>
-              Welcome back, <em>{greetingName}.</em>
+              {t('Welcome back,')} <em>{greetingName}.</em>
             </>
           }
-          lead={`${projects.length} ${projects.length === 1 ? 'project' : 'projects'} · ${daily.written.toLocaleString()} words written today. Pick up where you left off.`}
+          lead={t('{projects} · {words} written today. Pick up where you left off.', { projects: tp(projects.length, '{n} project', '{n} projects'), words: tp(daily.written, '{n} word', '{n} words') })}
           actions={
             <>
               <Link className="small-btn" to="/library">
-                <Globe /> Public Library
+                <Globe /> {t('Public Library')}
               </Link>
               <button className="small-btn is-primary" onClick={startNewProject}>
-                <Plus /> New project
+                <Plus /> {t('New project')}
               </button>
             </>
           }
@@ -112,12 +114,12 @@ export const HomeView: React.FC = () => {
 
         <div className="split">
           <section aria-labelledby="projects-h">
-            <h2 className="section-title" id="projects-h">Your projects</h2>
-            <p className="section-note">Open a project to write, or see who is reading it.</p>
+            <h2 className="section-title" id="projects-h">{t('Your projects')}</h2>
+            <p className="section-note">{t('Open a project to write, or see who is reading it.')}</p>
 
             {projects.length === 0 ? (
-              <EmptyState icon="book" title="No projects yet" text="You haven't started a novel. Give it a title and a few lines of description, and the rest can wait.">
-                <button className="small-btn is-primary" onClick={startNewProject}>Create your first project</button>
+              <EmptyState icon="book" title={t('No projects yet')} text={t('You haven\'t started a novel. Give it a title and a few lines of description, and the rest can wait.')}>
+                <button className="small-btn is-primary" onClick={startNewProject}>{t('Create your first project')}</button>
                 <SampleButton onNeedAccount={() => setShowGuestModal(true)} />
               </EmptyState>
             ) : (
@@ -126,32 +128,32 @@ export const HomeView: React.FC = () => {
                   <Cover project={project} index={i} />
                   <div>
                     <h3>{project.title}</h3>
-                    <p>{project.description || 'No description yet.'}</p>
+                    <p>{project.description || t('No description yet.')}</p>
                     <p className="meta" style={{ marginTop: 10 }}>
                       <span className={`badge${project.is_published ? ' is-accent' : ''}`}>
-                        <span className="small-dot" /> {project.is_published ? 'Published' : 'Draft'}
+                        <span className="small-dot" /> {project.is_published ? t('Published') : t('Draft')}
                       </span>{' '}
-                      {isSampleProject(project.id) && <span className="badge">Sample</span>}{' '}
-                      &nbsp; Updated {new Date(project.updated_at).toLocaleDateString()}
+                      {isSampleProject(project.id) && <span className="badge">{t('Sample')}</span>}{' '}
+                      &nbsp; {t('Updated {date}', { date: fmtDate(project.updated_at) })}
                     </p>
                   </div>
                   <div className="project-actions">
                     {project.is_published && (
                       <button className="small-btn" onClick={() => setAnalyticsProject(project)}>
-                        <Users /> Audience
+                        <Users /> {t('Audience')}
                       </button>
                     )}
                     <button className="small-btn" onClick={() => togglePublish(project)} aria-pressed={!!project.is_published}>
-                      {project.is_published ? 'Unpublish' : 'Publish'}
+                      {project.is_published ? t('Unpublish') : t('Publish')}
                     </button>
                     {isSampleProject(project.id) && (
-                      <button className="small-btn" onClick={() => setRemoveSample(project)}>Remove sample</button>
+                      <button className="small-btn" onClick={() => setRemoveSample(project)}>{t('Remove sample')}</button>
                     )}
                     <button className="small-btn" onClick={() => setExportProject(project)}>
-                      <Download /> Export
+                      <Download /> {t('Export')}
                     </button>
                     <button className="small-btn is-primary" onClick={() => handleOpenProject(project)}>
-                      Open
+                      {t('Open')}
                     </button>
                   </div>
                 </article>
@@ -159,29 +161,29 @@ export const HomeView: React.FC = () => {
             )}
           </section>
 
-          <aside className="stack" aria-label="Today">
+          <aside className="stack" aria-label={t('Today')}>
             <div className="card" style={{ textAlign: 'center' }}>
-              <span className="eyebrow">TODAY'S GOAL</span>
+              <span className="eyebrow">{t('TODAY\'S GOAL')}</span>
               <div
                 className="goal-ring"
                 style={{ ['--pct' as string]: daily.percent } as React.CSSProperties}
                 role="img"
-                aria-label={`${daily.written} of ${daily.goal} words, ${daily.percent} percent`}
+                aria-label={t('{written} of {goal} words, {percent} percent', { written: daily.written, goal: daily.goal, percent: daily.percent })}
               >
                 <div>
                   <strong>{daily.percent}%</strong>
                   <span>
-                    {daily.written.toLocaleString()} / {daily.goal.toLocaleString()} words
+                    {t('{written} / {goal} words', { written: daily.written.toLocaleString(), goal: daily.goal.toLocaleString() })}
                   </span>
                 </div>
               </div>
-              <Link className="link-accent" to="/tracker">View tracker details</Link>
-              {goalMet && <p className="meta" style={{ marginTop: 14 }}><em>Goal met. Rest well.</em></p>}
+              <Link className="link-accent" to="/tracker">{t('View tracker details')}</Link>
+              {goalMet && <p className="meta" style={{ marginTop: 14 }}><em>{t('Goal met. Rest well.')}</em></p>}
             </div>
 
             {recentlyReadProjects.length > 0 && (
               <div className="card">
-                <span className="eyebrow">CONTINUE READING</span>
+                <span className="eyebrow">{t('CONTINUE READING')}</span>
                 {recentlyReadProjects.map((proj, i) => (
                   <button
                     key={proj.id}
@@ -192,17 +194,17 @@ export const HomeView: React.FC = () => {
                     <Cover project={proj} index={i} small />
                     <div>
                       <strong>{proj.title}</strong>
-                      <small>By {proj.author_name || 'Unknown'}</small>
+                      <small>{t('By {name}', { name: proj.author_name || t('Unknown') })}</small>
                     </div>
                   </button>
                 ))}
-                <Link className="link-accent" to="/saved">Go to Your Library</Link>
+                <Link className="link-accent" to="/saved">{t('Go to Your Library')}</Link>
               </div>
             )}
 
             {projects.length > 0 && (
               <p className="meta" style={{ lineHeight: 1.7 }}>
-                A practice, not a performance. A few good words count, too.
+                {t('A practice, not a performance. A few good words count, too.')}
               </p>
             )}
           </aside>
@@ -211,15 +213,15 @@ export const HomeView: React.FC = () => {
 
       <Dialog open={showNewProject} onClose={() => setShowNewProject(false)} labelledBy="home-np-h">
         <form onSubmit={handleCreateProject}>
-          <p className="eyebrow">A NEW BOOK</p>
-          <h2 id="home-np-h">Start a project</h2>
-          <label htmlFor="home-np-title">Project title</label>
-          <input id="home-np-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Whispers of the Starward" required autoFocus />
-          <label htmlFor="home-np-desc">Description</label>
-          <input id="home-np-desc" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="A short summary of the theme, setting or plot" />
+          <p className="eyebrow">{t('A NEW BOOK')}</p>
+          <h2 id="home-np-h">{t('Start a project')}</h2>
+          <label htmlFor="home-np-title">{t('Project title')}</label>
+          <input id="home-np-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={t('Whispers of the Starward')} required autoFocus />
+          <label htmlFor="home-np-desc">{t('Description')}</label>
+          <input id="home-np-desc" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t('A short summary of the theme, setting or plot')} />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setShowNewProject(false)}>Cancel</button>
-            <button className="button button-primary button-small">Create project</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setShowNewProject(false)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Create project')}</button>
           </div>
         </form>
       </Dialog>
@@ -232,7 +234,7 @@ export const HomeView: React.FC = () => {
       <GuestGateModal
         isOpen={showGuestModal}
         onClose={() => setShowGuestModal(false)}
-        message="You need a free account to start writing and saving your own novels. It takes about ten seconds. Guests can still browse and read everything in the Public Library."
+        message={t('You need a free account to start writing and saving your own novels. It takes about ten seconds. Guests can still browse and read everything in the Public Library.')}
       />
     </div>
   );

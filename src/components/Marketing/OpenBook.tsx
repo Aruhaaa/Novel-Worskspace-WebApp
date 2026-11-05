@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { FALLBACK_NOVEL, loadShelf, paginate, type FeaturedNovel, type TextPage } from '../../lib/featuredNovel';
+import { tp, useT } from '../../i18n';
 
 const COMPACT = '(max-width: 740px)';
 const subscribeCompact = (cb: () => void) => {
@@ -49,6 +50,7 @@ interface Flight {
  * right arrow) to turn a page; click the left page to turn back, and from the first page that closes the book.
  */
 export const OpenBook: React.FC = () => {
+  const t = useT();
   const { loginAsGuest } = useApp();
   const compact = useCompact();
   const [shelf, setShelf] = useState<FeaturedNovel[]>([FALLBACK_NOVEL]);
@@ -165,7 +167,7 @@ export const OpenBook: React.FC = () => {
     }
   };
 
-  const kicker = isTop ? 'MOST LIKED IN THE LIBRARY' : 'FROM THE LIBRARY';
+  const kicker = isTop ? t('MOST LIKED IN THE LIBRARY') : t('FROM THE LIBRARY');
 
   const renderFace = (face: Face) => {
     switch (face.kind) {
@@ -175,7 +177,7 @@ export const OpenBook: React.FC = () => {
             <span className="ob-cover-kicker">{kicker}</span>
             <h3>{novel.title}</h3>
             <span className="ob-cover-rule" aria-hidden="true" />
-            <span className="ob-cover-by">{novel.project ? novel.author : 'A novel in the making'}</span>
+            <span className="ob-cover-by">{novel.project ? novel.author : t('A novel in the making')}</span>
           </div>
         );
       case 'title':
@@ -183,12 +185,12 @@ export const OpenBook: React.FC = () => {
           <div className="ob-in ob-title">
             <span className="ob-kicker">{kicker}</span>
             <h3>{novel.title}</h3>
-            <p className="ob-by">{novel.project ? `by ${novel.author}` : novel.author}</p>
+            <p className="ob-by">{novel.project ? t('by {name}', { name: novel.author }) : novel.author}</p>
             {novel.genre && <span className="badge">{novel.genre}</span>}
             {novel.description && <p className="ob-blurb is-plain">{novel.description}</p>}
             {novel.likes > 0 && (
               <span className="ob-likes">
-                <Heart aria-hidden="true" /> {novel.likes} {novel.likes === 1 ? 'like' : 'likes'}
+                <Heart aria-hidden="true" /> {tp(novel.likes, '{n} like', '{n} likes')}
               </span>
             )}
           </div>
@@ -201,12 +203,12 @@ export const OpenBook: React.FC = () => {
             <span className="ob-ornament" aria-hidden="true">
               ✳
             </span>
-            <h3>{novel.project ? 'The story goes on.' : 'Your story goes here.'}</h3>
+            <h3>{novel.project ? t('The story goes on.') : t('Your story goes here.')}</h3>
             <p className="is-plain">
-              {novel.project ? 'Read the rest of this novel in the library, free, with no account.' : 'Start a page of your own, or see what others are writing.'}
+              {novel.project ? t('Read the rest of this novel in the library, free, with no account.') : t('Start a page of your own, or see what others are writing.')}
             </p>
             <button className="button button-primary" onClick={readNovel}>
-              {novel.project ? 'Read the whole novel' : 'Start reading'} <span aria-hidden="true">↗</span>
+              {novel.project ? t('Read the whole novel') : t('Start reading')} <span aria-hidden="true">↗</span>
             </button>
           </div>
         );
@@ -220,8 +222,8 @@ export const OpenBook: React.FC = () => {
   return (
     <div className="open-book">
       <div className="shelf-head">
-        <span className="eyebrow">ON THE SHELF</span>
-        <span>Pick a spine and it opens on the table.</span>
+        <span className="eyebrow">{t('ON THE SHELF')}</span>
+        <span>{t('Pick a spine and it opens on the table.')}</span>
       </div>
       <div className="shelf">
         <ul className="shelf-books">
@@ -234,7 +236,7 @@ export const OpenBook: React.FC = () => {
                   onClick={(e) => choose(n, e.currentTarget)}
                   tabIndex={away ? -1 : undefined}
                   aria-hidden={away ? 'true' : undefined}
-                  aria-label={`Open ${n.title}${n.project ? ` by ${n.author}` : ''} on the table`}
+                  aria-label={n.project ? t('Open {title} by {author} on the table', { title: n.title, author: n.author }) : t('Open {title} on the table', { title: n.title })}
                   title={n.title}
                 >
                   {i === 0 && n.likes > 0 && <span className="spine-ribbon" aria-hidden="true" />}
@@ -254,7 +256,7 @@ export const OpenBook: React.FC = () => {
             className={`ob${at === 0 ? ' is-closed' : ''}`}
             role="group"
             aria-roledescription="book"
-            aria-label={`${novel.title}. Use the arrow keys or the buttons below to open the book and turn the page.`}
+            aria-label={t('{title}. Use the arrow keys or the buttons below to open the book and turn the page.', { title: novel.title })}
             tabIndex={0}
             onClick={onClick}
             onKeyDown={onKey}
@@ -289,24 +291,24 @@ export const OpenBook: React.FC = () => {
       </div>
 
       <div className="ob-controls">
-        <button className="icon-button" onClick={prev} disabled={at === 0} aria-label={at === 1 ? 'Close the book' : 'Turn back a page'}>
+        <button className="icon-button" onClick={prev} disabled={at === 0} aria-label={at === 1 ? t('Close the book') : t('Turn back a page')}>
           <ChevronLeft />
         </button>
         <span className="ob-count" role="status">
-          {at === 0 ? 'Closed' : `Spread ${at} of ${leaves}`}
+          {at === 0 ? t('Closed') : t('Spread {at} of {leaves}', { at, leaves })}
         </span>
         {atEnd ? (
           <button className="text-link" onClick={() => setTurned(0)}>
-            Close the book
+            {t('Close the book')}
           </button>
         ) : (
-          <button className="icon-button" onClick={next} aria-label={at === 0 ? 'Open the book' : 'Turn the page'}>
+          <button className="icon-button" onClick={next} aria-label={at === 0 ? t('Open the book') : t('Turn the page')}>
             <ChevronRight />
           </button>
         )}
         {novel.project && (
           <button className="link-accent ob-read" onClick={readNovel}>
-            Read the whole novel <span aria-hidden="true">↗</span>
+            {t('Read the whole novel')} <span aria-hidden="true">↗</span>
           </button>
         )}
       </div>

@@ -11,10 +11,10 @@ export const SpaceSwitch: React.FC = () => {
   return (
     <nav className="space-switch" aria-label={t('Space')}>
       <Link to="/read" aria-current={space === 'read' ? 'page' : undefined}>
-        <BookOpen aria-hidden="true" /> Read
+        <BookOpen aria-hidden="true" /> {t('Read')}
       </Link>
       <Link to="/write" aria-current={space === 'write' ? 'page' : undefined}>
-        <PenLine aria-hidden="true" /> Write
+        <PenLine aria-hidden="true" /> {t('Write')}
       </Link>
     </nav>
   );
