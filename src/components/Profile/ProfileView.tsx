@@ -1,28 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Link } from 'react-router-dom';
 import { PageHead } from '../ui/PageHead';
 import { GuestGateModal } from '../Auth/GuestGateModal';
 
 export const ProfileView: React.FC = () => {
+  const { user, profile } = useApp();
+  if (!user) return null;
+  // The form starts from the saved profile, so it is built again once the profile has arrived
+  return <ProfileForm key={profile?.id ?? 'unsaved'} />;
+};
+
+const ProfileForm: React.FC = () => {
   const { user, profile, updateProfile, isGuest } = useApp();
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-  const [dailyGoal, setDailyGoal] = useState(1000);
+  const [displayName, setDisplayName] = useState(profile ? profile.display_name || '' : user?.email ? user.email.split('@')[0] : '');
+  const [bio, setBio] = useState(profile?.bio || '');
+  const [dailyGoal, setDailyGoal] = useState(profile?.daily_word_goal || 1000);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [showGuestModal, setShowGuestModal] = useState(false);
-
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.display_name || '');
-      setBio(profile.bio || '');
-      setDailyGoal(profile.daily_word_goal || 1000);
-    } else if (user) {
-      // Default fallback
-      setDisplayName(user.email ? user.email.split('@')[0] : '');
-    }
-  }, [profile, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +46,6 @@ export const ProfileView: React.FC = () => {
       setTimeout(() => setMessage(''), 3000);
     }
   };
-
-  if (!user) return null;
 
   return (
     <div className="studio-view">

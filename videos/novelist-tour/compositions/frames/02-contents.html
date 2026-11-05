@@ -1,0 +1,104 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f02-h{top:166px;font-size:88px}
+.f02-row{position:absolute;left:134px;width:720px;height:66px}
+.f02-row .no{position:absolute;left:0;top:14px;font-family:"Instrument Serif",serif;font-size:30px;color:#813F38}
+.f02-row .nm{position:absolute;left:84px;top:6px;font-family:"Instrument Serif",serif;font-size:42px;color:#262722;line-height:1.1}
+.f02-row .rl{position:absolute;left:0;bottom:0;width:720px;height:1px;background:#E7CF93}
+#f02-sw{left:1050px;top:250px;width:700px;height:145px}
+#f02-wl{left:1050px;top:480px;width:700px;height:140px}
+#f02-c1{left:1050px;top:413px}
+#f02-c2{left:1050px;top:638px}
+#f02-mk{position:absolute;left:0;top:0;width:700px;height:145px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-cg7k" id="root" data-composition-id="02-contents" data-start="0" data-duration="5.5" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-ak47" id="f02-bg" class="clip bg" data-start="0" data-duration="5.5" data-track-index="0"></div>
+    <div data-hf-id="hf-2gij" id="f02-cam" class="cam">
+    <div data-hf-id="hf-opgh" class="eyebrow" id="f02-eyebrow">Contents</div>
+    <div data-hf-id="hf-vxod" class="h" id="f02-h"><span data-hf-id="hf-588l" class="l " id="f02-h1"><span data-hf-id="hf-j382" class="w">Two</span> <span data-hf-id="hf-s8p8" class="w">rooms,</span></span><span data-hf-id="hf-96cm" class="l" id="f02-h2"><em data-hf-id="hf-2lav"><span data-hf-id="hf-rpws" class="w">one</span> <span data-hf-id="hf-wilu" class="w">door.</span></em></span></div>
+    <div data-hf-id="hf-d5xe" class="f02-row" id="f02-row0" style="top:470px"><span data-hf-id="hf-8re1" class="no" id="f02-no0">01</span><span data-hf-id="hf-7qbx" class="nm" id="f02-nm0">Write</span><span data-hf-id="hf-fcte" class="rl" id="f02-rl0"></span></div>
+    <div data-hf-id="hf-qt2g" class="f02-row" id="f02-row1" style="top:536px"><span data-hf-id="hf-wo1h" class="no" id="f02-no1">02</span><span data-hf-id="hf-0w30" class="nm" id="f02-nm1">Plan</span><span data-hf-id="hf-jaxf" class="rl" id="f02-rl1"></span></div>
+    <div data-hf-id="hf-ccnl" class="f02-row" id="f02-row2" style="top:602px"><span data-hf-id="hf-2i3p" class="no" id="f02-no2">03</span><span data-hf-id="hf-opv3" class="nm" id="f02-nm2">Track</span><span data-hf-id="hf-an1k" class="rl" id="f02-rl2"></span></div>
+    <div data-hf-id="hf-4ye8" class="f02-row" id="f02-row3" style="top:668px"><span data-hf-id="hf-ds4x" class="no" id="f02-no3">04</span><span data-hf-id="hf-5s1z" class="nm" id="f02-nm3">In and out</span><span data-hf-id="hf-bepd" class="rl" id="f02-rl3"></span></div>
+    <div data-hf-id="hf-540x" class="f02-row" id="f02-row4" style="top:734px"><span data-hf-id="hf-2tq1" class="no" id="f02-no4">05</span><span data-hf-id="hf-tzsu" class="nm" id="f02-nm4">Read</span><span data-hf-id="hf-2qti" class="rl" id="f02-rl4"></span></div>
+    <div data-hf-id="hf-vfqi" class="f02-row" id="f02-row5" style="top:800px"><span data-hf-id="hf-9zj1" class="no" id="f02-no5">06</span><span data-hf-id="hf-cmva" class="nm" id="f02-nm5">Two doors</span><span data-hf-id="hf-6oxj" class="rl" id="f02-rl5"></span></div>
+    <div data-hf-id="hf-kvhj" class="card" id="f02-sw"><img data-hf-id="hf-mmtm" src="assets/crops/f02-switch.png" alt=""><svg data-hf-id="hf-ub85" id="f02-mk" viewBox="0 0 700 145"><ellipse data-hf-id="hf-4y6i" id="f02-ell" cx="500" cy="72" rx="100" ry="46" fill="none" stroke="#813F38" stroke-width="3.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" transform="rotate(-3 500 72)"/></svg></div>
+    <div data-hf-id="hf-0ch4" class="card" id="f02-wl"><img data-hf-id="hf-uo3s" src="assets/crops/f02-welcome.png" alt=""></div>
+    <div data-hf-id="hf-74dj" class="cap" id="f02-c1">The Read | Write switch</div>
+    <div data-hf-id="hf-s9ta" class="cap" id="f02-c2">The studio home</div>
+    </div>
+
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f02-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    tl.fromTo("#f02-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.15);
+    slamLine("#f02-h1", 0.3);
+    slamLine("#f02-h2", 0.9);
+    // the contents land as a fast cascade, one line every 0.2s
+    for (let i = 0; i < 6; i++) {
+      const t = 1.25 + 0.2 * i;
+      tl.fromTo("#f02-rl" + i, { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.3, ease: "power3.out" }, t);
+      tl.fromTo("#f02-no" + i + ", #f02-nm" + i, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.45, ease: "power4.out" }, t + 0.06);
+    }
+    whip("#f02-sw", 2.5, { x: 200, y: 0 }, 1.0);
+    tl.fromTo("#f02-c1", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, 3.0);
+    whip("#f02-wl", 3.1, { x: 0, y: 60 }, 0.9);
+    tl.fromTo("#f02-c2", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, 3.6);
+    // "write", then "read": a ring closes around each half of the switch
+    tl.fromTo("#f02-ell", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.inOut" }, 3.4);
+    tl.to("#f02-nm0", { color: "#813F38", duration: 0.3, ease: "power2.out" }, 3.4);
+    tl.fromTo("#f02-ell", { x: 0 }, { x: -193, duration: 0.5, ease: "power3.inOut", immediateRender: false }, 4.2);
+    tl.to("#f02-nm0", { color: "#262722", duration: 0.3, ease: "power2.out" }, 4.2);
+    tl.to("#f02-nm4", { color: "#813F38", duration: 0.3, ease: "power2.out" }, 4.2);
+    push(1.03, 0, 5);
+    window.__timelines["02-contents"] = tl;
+  </script>
+</template>

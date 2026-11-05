@@ -95,6 +95,22 @@ const pruneLocal = async (chapterId: string) => {
   }
 };
 
+/** Remove every restore point and deleted chapter this device holds for the given projects and chapters. */
+export const forgetLocalHistory = async (projectIds: string[], chapterIds: string[]): Promise<void> => {
+  try {
+    for (const chapterId of chapterIds) {
+      const keys = await run<IDBValidKey[]>('readonly', (store) => store.index('chapterId').getAllKeys(chapterId));
+      for (const k of keys) await run('readwrite', (store) => store.delete(k));
+    }
+    for (const projectId of projectIds) {
+      const keys = await runStore<IDBValidKey[]>(BIN_STORE, 'readonly', (store) => store.index('projectId').getAllKeys(projectId));
+      for (const k of keys) await runStore(BIN_STORE, 'readwrite', (store) => store.delete(k));
+    }
+  } catch {
+    // history that cannot be reached cannot be read back either
+  }
+};
+
 // ---- In the cloud ----
 
 interface CloudRow {

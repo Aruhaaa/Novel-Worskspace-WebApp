@@ -1,0 +1,12 @@
+import { chromium } from '@playwright/test';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+const b = await chromium.launch({ channel: 'msedge' });
+const p = await b.newPage({ viewport: { width: 1500, height: 900 }, deviceScaleFactor: 1 });
+await p.goto(pathToFileURL(path.resolve('storyboard.html')).href);
+await p.evaluate(() => document.fonts.ready);
+await p.waitForTimeout(800);
+await p.screenshot({ path: 'capture/screenshots/preview/sheet-full.jpg', fullPage: true, type: 'jpeg', quality: 80 });
+const n = await p.locator('.card').count();
+console.log('cards', n);
+await b.close();

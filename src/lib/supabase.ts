@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+// Read the reset-link code from the address before the client below clears it
+import './recovery';
 
 // Load environment variables. In Vite, these are on import.meta.env
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';

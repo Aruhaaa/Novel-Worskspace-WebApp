@@ -6,9 +6,15 @@ List<String> _strings(dynamic v) =>
     v is List ? v.map((e) => e.toString()).toList() : <String>[];
 
 class AppUser {
-  const AppUser({required this.id, required this.email});
+  const AppUser({required this.id, required this.email, this.mode});
   final String id;
   final String email;
+
+  /// What the person said they came for ('read', 'write' or 'both'). It is kept on the account, so it follows them
+  /// to another phone or to the website.
+  final String? mode;
+
+  AppUser withMode(String mode) => AppUser(id: id, email: email, mode: mode);
 }
 
 class Profile {

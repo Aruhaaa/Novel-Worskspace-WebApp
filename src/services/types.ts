@@ -1,6 +1,8 @@
 export interface User {
   id: string;
   email: string;
+  /** What the person said they came for, kept on their account so it follows them to another device */
+  mode?: 'read' | 'write' | 'both';
 }
 
 export interface UserProfile {
@@ -84,4 +86,39 @@ export interface ChatMessage {
   receiver_id: string;
   content: string;
   created_at: string;
+}
+
+export type ReportTarget = 'novel' | 'comment' | 'review' | 'message' | 'author';
+export type ReportReason = 'spam' | 'harassment' | 'sexual' | 'violence' | 'copyright' | 'other';
+
+export interface Report {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTarget;
+  target_id: string;
+  /** Who wrote the reported thing, when known */
+  target_user_id?: string | null;
+  project_id?: string | null;
+  reason: ReportReason;
+  details: string;
+  /** What the reported content said when it was reported, kept in case it is later edited or removed */
+  excerpt: string;
+  status: 'open' | 'actioned' | 'dismissed';
+  created_at: string;
+  resolved_at?: string | null;
+}
+
+/** What an import is asked to bring in: into a new project, or after the last chapter of the open one. */
+export interface ImportInput {
+  target: { kind: 'new'; title: string; description: string; authorName?: string } | { kind: 'append' };
+  chapters: { title: string; html: string }[];
+}
+
+/** What an import reports back. Keep it to undo the import. */
+export interface ImportResult {
+  error: string | null;
+  kind?: 'new' | 'append';
+  projectId?: string;
+  chapterIds?: string[];
+  words?: number;
 }

@@ -6,11 +6,14 @@ import { Dialog } from '../ui/Dialog';
 import { MarginsRail, RailBlock, RailRow } from '../ui/MarginsRail';
 import { Storyboard } from './Storyboard';
 import { Timeline } from './Timeline';
+import { RoleBanner } from '../Collab/RoleBanner';
+import { can } from '../../lib/collab';
 
 type Mode = 'board' | 'timeline';
 
 export const OutlineView: React.FC = () => {
-  const { updateEntity, entities, chapters } = useApp();
+  const { updateEntity, entities, chapters, projectRole } = useApp();
+  const structure = can.editStructure(projectRole);
   const scenes = entities.filter((e) => e.type === 'scene');
   const sceneCount = scenes.length;
   const inColumn = (id: string) => scenes.filter((sc) => (sc.content.status || 'idea') === id).length;
@@ -28,6 +31,8 @@ export const OutlineView: React.FC = () => {
   const [when, setWhen] = useState('');
 
   const openEdit = (scene: WikiEntity) => {
+    // Only the owner and co-authors change the outline
+    if (!structure) return;
     setEditing(scene);
     setName(scene.name);
     setDesc(scene.description || '');
@@ -45,6 +50,7 @@ export const OutlineView: React.FC = () => {
     </div>
     <div className="studio-view">
       <div className="page page-wide" style={{ paddingTop: 28 }}>
+        <RoleBanner />
         <div className="world-filter" role="group" aria-label="How to view the outline">
           <button aria-pressed={mode === 'board'} onClick={() => setMode('board')}>Board</button>
           <button aria-pressed={mode === 'timeline'} onClick={() => setMode('timeline')}>Timeline</button>

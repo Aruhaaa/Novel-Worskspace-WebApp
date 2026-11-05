@@ -1,20 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Settings, LifeBuoy, LogOut, Download, BarChart2, MessageSquare, Shield, Compass } from 'lucide-react';
+import { User, Settings, LifeBuoy, LogOut, Download, BarChart2, MessageSquare, Shield, Compass, Bell } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useLive } from '../../context/LiveContext';
+import { useT } from '../../i18n';
 import { startTour } from '../../lib/tour';
 
 const SUPPORT_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/issues';
 const WINDOWS_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0/Novelist.Workspace.Setup.0.0.0.exe';
 const ANDROID_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0-android/app-debug.apk';
 
-type MenuView = 'profile' | 'preferences' | 'tracker' | 'messages' | 'admin';
+type MenuView = 'profile' | 'preferences' | 'tracker' | 'messages' | 'notifications' | 'admin';
 
 export const ProfileMenu: React.FC = () => {
-  const { user, profile, setActiveView, logout, activeView, activeProject } = useApp();
+  const t = useT();
+  const { user, profile, setActiveView, logout, activeView, activeProject, isGuest } = useApp();
+  const { unreadMessages, unreadNotifications } = useLive();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const name = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'Guest');
+  const name = profile?.display_name || (user?.email ? user.email.split('@')[0] : t('Guest'));
   const initial = name.trim().charAt(0).toUpperCase() || 'G';
   const isAdmin = user?.email === 'aruhaadmin@novelist.com';
 
@@ -47,7 +51,7 @@ export const ProfileMenu: React.FC = () => {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Open profile menu"
+        aria-label={t('Open profile menu')}
       >
         {initial}
       </button>
@@ -56,31 +60,38 @@ export const ProfileMenu: React.FC = () => {
         <div className="menu-pop" role="menu" style={{ maxHeight: 'calc(100dvh - 90px)', overflowY: 'auto' }}>
           <div className="menu-pop-head">
             <strong>{name}</strong>
-            <small>Account settings</small>
+            <small>{t('Account settings')}</small>
           </div>
           <button role="menuitem" type="button" onClick={() => go('profile')}>
-            <User /> Account
+            <User /> {t('Account')}
           </button>
           <button role="menuitem" type="button" onClick={() => go('preferences')}>
-            <Settings /> Preferences
+            <Settings /> {t('Preferences')}
           </button>
           <hr />
           <a role="menuitem" href={WINDOWS_URL} onClick={() => setOpen(false)}>
-            <Download /> Get the Windows app
+            <Download /> {t('Get the Windows app')}
           </a>
           <a role="menuitem" href={ANDROID_URL} onClick={() => setOpen(false)}>
-            <Download /> Get the Android app
+            <Download /> {t('Get the Android app')}
           </a>
           <hr />
           <button role="menuitem" type="button" onClick={() => go('tracker')}>
-            <BarChart2 /> Progress tracker
+            <BarChart2 /> {t('Progress tracker')}
           </button>
+          {!isGuest && (
+            <button role="menuitem" type="button" onClick={() => go('notifications')}>
+              <Bell /> {t('Notifications')}
+              {unreadNotifications > 0 && <span className="nav-count">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}
+            </button>
+          )}
           <button role="menuitem" type="button" onClick={() => go('messages')}>
-            <MessageSquare /> Messages
+            <MessageSquare /> {t('Messages')}
+            {unreadMessages > 0 && <span className="nav-count">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
           </button>
           {isAdmin && (
             <button role="menuitem" type="button" onClick={() => go('admin')}>
-              <Shield /> Admin dashboard
+              <Shield /> {t('Admin dashboard')}
             </button>
           )}
           <hr />
@@ -93,10 +104,10 @@ export const ProfileMenu: React.FC = () => {
               startTour(activeView === 'editor' && activeProject ? 'workspace' : 'welcome');
             }}
           >
-            <Compass /> Take the tour
+            <Compass /> {t('Take the tour')}
           </button>
           <a role="menuitem" href={SUPPORT_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
-            <LifeBuoy /> Support
+            <LifeBuoy /> {t('Support')}
           </a>
           <button
             role="menuitem"
@@ -106,7 +117,7 @@ export const ProfileMenu: React.FC = () => {
               logout();
             }}
           >
-            <LogOut /> Log out
+            <LogOut /> {t('Log out')}
           </button>
         </div>
       )}

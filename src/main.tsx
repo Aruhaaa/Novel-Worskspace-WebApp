@@ -6,6 +6,11 @@ import './index.css'
 import './editor-styles.css'
 import App from './App.tsx'
 import { applyTheme, loadTheme } from './lib/themes'
+import { initI18n } from './i18n'
+import { initErrorReporting } from './lib/errorReporter'
+
+// Anything that goes wrong from here on is noted, so it can be fixed (it can be switched off in Preferences)
+initErrorReporting()
 
 applyTheme(loadTheme(), false)
 
@@ -17,12 +22,15 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol.st
   })
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <HelmetProvider>
-      <HashRouter>
-        <App />
-      </HashRouter>
-    </HelmetProvider>
-  </StrictMode>,
-)
+// The language is ready before the first screen is drawn, so nothing flashes in English first
+void initI18n().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <HelmetProvider>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </HelmetProvider>
+    </StrictMode>,
+  )
+})

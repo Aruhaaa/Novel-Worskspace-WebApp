@@ -82,7 +82,7 @@ export const ShareLinksPanel: React.FC<{ project: Project }> = ({ project }) => 
       {state.kind === 'offline' && <p className="meta">Could not reach the server. Check your connection.</p>}
       {state.kind === 'setup' && (
         <p className="mock-note">
-          Reading links need a one-time database setup. Open <strong>supabase/migrations/20261003_cloud_sync.sql</strong> from the project, paste it into your Supabase project's SQL Editor and press Run. Then reopen this window.
+          Reading links need a one-time database setup. Open <strong>supabase/setup_scripts/20261003_cloud_sync.sql</strong> from the project, paste it into your Supabase project's SQL Editor and press Run. Then reopen this window.
         </p>
       )}
       {state.kind === 'ready' && (

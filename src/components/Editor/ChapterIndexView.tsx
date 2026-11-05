@@ -11,8 +11,11 @@ import { sceneChapterId } from '../../lib/notes';
 import { MarginsRail, RailBlock, RailRow } from '../ui/MarginsRail';
 import { Dialog } from '../ui/Dialog';
 import { useToast } from '../ui/toastContext';
-import { ExportDialog } from '../Export/ExportDialog';
+import { ExportDialog } from '../Export/ExportDialogLazy';
 import { FeedbackDialog } from '../Feedback/FeedbackDialog';
+import { ImportDialog } from '../Import/ImportDialogLazy';
+import { RoleBanner } from '../Collab/RoleBanner';
+import { can } from '../../lib/collab';
 import { useFeedback } from '../../lib/feedback';
 
 export const ChapterIndexView: React.FC = () => {
@@ -28,6 +31,7 @@ export const ChapterIndexView: React.FC = () => {
     restoreDeletedChapter,
     reorderChapters,
     updateChapterMeta,
+    projectRole,
   } = useApp();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,6 +40,7 @@ export const ChapterIndexView: React.FC = () => {
   const [bin, setBin] = useState<DeletedChapter[]>([]);
   const [showExport, setShowExport] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const feedback = useFeedback(activeProject?.id);
   const openNotes = feedback.filter((f) => f.status === 'open');
   const noteTotals = new Map<string, number>();
@@ -60,6 +65,9 @@ export const ChapterIndexView: React.FC = () => {
   }, [projectId]);
 
   if (!activeProject) return null;
+
+  // Adding, removing and reordering chapters is for the owner and co-authors
+  const structure = can.editStructure(projectRole);
 
   const totalWords = chapters.reduce((sum, c) => sum + countWords(c.content), 0);
   const plan = projectGoal ? planGoal(projectGoal, totalWords) : null;
@@ -116,26 +124,34 @@ export const ChapterIndexView: React.FC = () => {
       <h1>
         Chapter index <span>/ {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'}</span>
       </h1>
-      <div className="toolbar-actions">
+      <div className="toolbar-actions imp-toolbar">
         <button className="button button-outline button-small" onClick={() => setShowFeedback(true)}>
           Reader feedback{openNotes.length > 0 ? ` (${openNotes.length})` : ''}
         </button>
+        {structure && (
+          <button className="button button-outline button-small" onClick={() => setShowImport(true)}>
+            Import chapters
+          </button>
+        )}
         <button className="button button-outline button-small" onClick={() => setShowExport(true)}>
           Export
         </button>
-        <button className="button button-primary button-small" onClick={() => setShowNew(true)}>
-          Create new chapter
-        </button>
+        {structure && (
+          <button className="button button-primary button-small" onClick={() => setShowNew(true)}>
+            Create new chapter
+          </button>
+        )}
       </div>
     </div>
     <div className="studio-view">
       <div className="page" style={{ paddingTop: 28 }}>
+        <RoleBanner />
         {moveError && (
           <p className="mock-note" role="alert" style={{ marginBottom: 16 }}>
             Could not save the new order. It has been put back; check your connection and try again.
           </p>
         )}
-        {chapters.length > 1 && (
+        {structure && chapters.length > 1 && (
           <p className="section-note" style={{ marginBottom: 14 }}>
             Drag a chapter by its handle to reorder. With the keyboard, focus the handle, press Space, move with the arrow keys, then Space again.
           </p>
@@ -148,7 +164,7 @@ export const ChapterIndexView: React.FC = () => {
                   const words = countWords(chap.content);
                   const meta = metaFor(chapterMeta, chap.id);
                   return (
-                    <Draggable key={chap.id} draggableId={chap.id} index={i}>
+                    <Draggable key={chap.id} draggableId={chap.id} index={i} isDragDisabled={!structure}>
                       {(drag, snap) => (
                         <div
                           ref={drag.innerRef}
@@ -184,6 +200,7 @@ export const ChapterIndexView: React.FC = () => {
                               ))}
                             </select>
                           </div>
+                          {structure && (
                           <div className="tile-tools">
                             <span
                               {...drag.dragHandleProps}
@@ -204,22 +221,25 @@ export const ChapterIndexView: React.FC = () => {
                               <Trash2 />
                             </button>
                           </div>
+                          )}
                         </div>
                       )}
                     </Draggable>
                   );
                 })}
                 {drop.placeholder}
+                {structure && (
                 <button className="chapter-tile" onClick={() => setShowNew(true)} style={{ alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
                   <Plus style={{ width: 24, height: 24 }} />
                   New chapter
                 </button>
+                )}
               </div>
             )}
           </Droppable>
         </DragDropContext>
 
-        {bin.length > 0 && (
+        {structure && bin.length > 0 && (
           <section aria-labelledby="bin-h" style={{ marginTop: 44 }}>
             <h2 className="section-title" id="bin-h">Recently deleted</h2>
             <p className="section-note">Kept on this device so a mistake is never final. Restore a chapter to put it back where it was.</p>
@@ -291,6 +311,7 @@ export const ChapterIndexView: React.FC = () => {
       </MarginsRail>
 
       <ExportDialog project={showExport ? activeProject : null} onClose={() => setShowExport(false)} />
+      <ImportDialog open={showImport} onClose={() => setShowImport(false)} target="append" />
       <FeedbackDialog project={showFeedback ? activeProject : null} onClose={() => setShowFeedback(false)} />
 
       <Dialog open={showNew} onClose={() => setShowNew(false)} labelledBy="ci-h">

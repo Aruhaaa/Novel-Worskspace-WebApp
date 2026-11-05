@@ -1,0 +1,94 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f03-h{top:166px;font-size:104px}
+#f03-sub{position:absolute;left:134px;top:420px;width:380px;font:400 26px/1.45 "DM Sans",sans-serif;color:#5A5A5A;white-space:normal}
+#f03-view{position:absolute;left:580px;top:130px;width:1230px;height:692px;border:1px solid #E7CF93;overflow:hidden;background:#fff}
+#f03-world{position:absolute;left:0;top:0;width:1230px;height:692px;transform-origin:0 0}
+#f03-world img{position:absolute;left:0;top:0;width:1230px;height:692px;display:block}
+.f03-lab{position:absolute;left:580px;top:850px;height:48px;display:flex;align-items:center;gap:18px;white-space:nowrap}
+.f03-lab .no{width:44px;height:44px;border-radius:50%;border:1px solid #813F38;color:#813F38;font-family:"Instrument Serif",serif;font-size:28px;line-height:42px;text-align:center}
+.f03-lab .tx{font:500 26px/1 "DM Sans",sans-serif;color:#262722}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-ymzs" id="root" data-composition-id="03-write" data-start="0" data-duration="8" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-9vem" id="f03-bg" class="clip bg" data-start="0" data-duration="8" data-track-index="0"></div>
+    <div data-hf-id="hf-x0ua" id="f03-cam" class="cam">
+    <div data-hf-id="hf-42c7" class="eyebrow" id="f03-eyebrow">01 · Write</div>
+    <div data-hf-id="hf-klmg" class="h" id="f03-h"><span data-hf-id="hf-o3dm" class="l " id="f03-h1"><span data-hf-id="hf-ufi3" class="w">A</span> <span data-hf-id="hf-9475" class="w">clean</span></span><span data-hf-id="hf-k59l" class="l" id="f03-h2"><em data-hf-id="hf-2lav"><span data-hf-id="hf-dn93" class="w">page.</span></em></span></div>
+    <div data-hf-id="hf-ffb4" id="f03-sub">Your chapters beside you. Your private notes in the margin.</div>
+    <div data-hf-id="hf-ku4s" id="f03-view"><div data-hf-id="hf-4g71" id="f03-world"><img data-hf-id="hf-01ei" src="assets/web-02-editor.png" alt=""></div></div>
+    <div data-hf-id="hf-g9z1" class="f03-lab" id="f03-lab1"><span data-hf-id="hf-kh2n" class="no">1</span><span data-hf-id="hf-q8kj" class="tx">The page</span></div>
+    <div data-hf-id="hf-k832" class="f03-lab" id="f03-lab2"><span data-hf-id="hf-k2rm" class="no">2</span><span data-hf-id="hf-4emv" class="tx">Chapters</span></div>
+    <div data-hf-id="hf-o673" class="f03-lab" id="f03-lab3"><span data-hf-id="hf-jogl" class="no">3</span><span data-hf-id="hf-4bu6" class="tx">In the margins</span></div>
+    </div>
+
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f03-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    tl.fromTo("#f03-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.15);
+    slamLine("#f03-h1", 0.3);
+    slamLine("#f03-h2", 0.9);
+    tl.fromTo("#f03-sub", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.8, ease: E }, 1.0);
+    whip("#f03-view", 0.4, { x: 200, y: 0 }, 1.1);
+    // the camera: a decisive move between named targets, braking hard into each stop
+    gsap.set("#f03-world", { x: 0, y: 0, scale: 1 });
+    tl.to("#f03-world", { x: -145, y: -166.5, scale: 1.25, duration: 0.95, ease: "power4.inOut" }, 1.25);
+    tl.to("#f03-world", { x: -1.4, y: -567.1, scale: 2.3, duration: 0.8, ease: "power4.inOut" }, 3.125);
+    tl.to("#f03-world", { x: -1231, y: -128, scale: 2, duration: 0.9, ease: "power4.inOut" }, 4.375);
+    tl.to("#f03-world", { x: 0, y: 0, scale: 1, duration: 1, ease: "power3.inOut" }, 6.25);
+    tl.fromTo("#f03-lab1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 1.9);
+    tl.to("#f03-lab1", { opacity: 0, duration: 0.3, ease: "power2.in" }, 3.0);
+    tl.fromTo("#f03-lab2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 3.4);
+    tl.to("#f03-lab2", { opacity: 0, duration: 0.3, ease: "power2.in" }, 4.3);
+    tl.fromTo("#f03-lab3", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: E }, 4.65);
+    push(1.025, 0, 7.5);
+    window.__timelines["03-write"] = tl;
+  </script>
+</template>

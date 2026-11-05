@@ -5,12 +5,15 @@ import { useApp } from '../../context/AppContext';
 import type { Project } from '../../services/types';
 import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
+import { isBundledNovel } from '../../lib/bundledLibrary';
 import { GenreFilter, GenreTag } from './GenreChips';
+import { useT } from '../../i18n';
 
 type SortBy = 'newest' | 'liked' | 'az';
 
 /** One novel in the library grids: cover, author, genre, blurb, like and read. */
 export const NovelCard: React.FC<{ project: Project; index: number }> = ({ project, index }) => {
+  const t = useT();
   const { user, toggleLikeProject, setActivePublicProject } = useApp();
   const navigate = useNavigate();
   const liked = !!user && !!project.likes?.includes(user.id);
@@ -33,7 +36,16 @@ export const NovelCard: React.FC<{ project: Project; index: number }> = ({ proje
         <Link className="by" to={`/library/author/${project.user_id}`}>
           {project.author_name || 'Anonymous'}
         </Link>
-        {project.genre && <GenreTag genre={project.genre} />}
+        {(project.genre || isBundledNovel(project.id)) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {project.genre && <GenreTag genre={project.genre} />}
+            {isBundledNovel(project.id) && (
+              <span className="badge" title={t('Part of the sample library that comes with the site')}>
+                Sample
+              </span>
+            )}
+          </div>
+        )}
         <p>{project.description || 'No description provided for this novel.'}</p>
         <div className="novel-foot">
           <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
@@ -42,7 +54,7 @@ export const NovelCard: React.FC<{ project: Project; index: number }> = ({ proje
               <Heart />
               <span>{project.likes?.length || 0}</span>
             </button>{' '}
-            <button className="link-accent" onClick={handleRead}>Read</button>
+            <button className="link-accent" onClick={handleRead}>{t('Read')}</button>
           </span>
         </div>
       </div>
@@ -52,6 +64,7 @@ export const NovelCard: React.FC<{ project: Project; index: number }> = ({ proje
 
 /** The Public Library and Your Library are two tabs of one screen. */
 export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) => {
+  const t = useT();
   const { user, publicProjects, loadPublicProjects } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,16 +95,16 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
     <div className="studio-view">
       <div className="page page-wide">
         <PageHead
-          eyebrow="THE COMMONS"
+          eyebrow={t('THE COMMONS')}
           title={
             <>
-              Stories from <em>other rooms.</em>
+              Stories from <em>{t('other rooms.')}</em>
             </>
           }
-          lead="Read novels published by other authors in the Novelist Workspace community."
+          lead={t('Read novels published by other authors in the Novelist Workspace community.')}
         />
 
-        <div className="tabs" role="tablist" aria-label="Library">
+        <div className="tabs" role="tablist" aria-label={t('Library')}>
           <Link role="tab" to="/library" aria-selected={mode === 'public'} style={{ display: 'inline-flex', alignItems: 'center' }}>
             Public Library
           </Link>
@@ -114,11 +127,11 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
               />
             </label>
             <label>
-              <span className="sr-only">Sort</span>
+              <span className="sr-only">{t('Sort')}</span>
               <select className="select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
-                <option value="newest">Newest first</option>
-                <option value="liked">Most liked</option>
-                <option value="az">A–Z</option>
+                <option value="newest">{t('Newest first')}</option>
+                <option value="liked">{t('Most liked')}</option>
+                <option value="az">{t('A–Z')}</option>
               </select>
             </label>
           </div>
@@ -130,13 +143,13 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
 
         {projects.length === 0 ? (
           mode === 'saved' ? (
-            <EmptyState icon="bookmark" title="Nothing saved yet" text="Like a novel in the Public Library and it will wait for you here.">
-              <Link className="small-btn is-primary" to="/library">Browse the Public Library</Link>
+            <EmptyState icon="bookmark" title={t('Nothing saved yet')} text={t('Like a novel in the Public Library and it will wait for you here.')}>
+              <Link className="small-btn is-primary" to="/library">{t('Browse the Public Library')}</Link>
             </EmptyState>
           ) : (
             <EmptyState
               icon="book"
-              title="No novels found"
+              title={t('No novels found')}
               text={
                 publicProjects.length === 0
                   ? 'No one has published a novel yet. Be the first to share yours.'

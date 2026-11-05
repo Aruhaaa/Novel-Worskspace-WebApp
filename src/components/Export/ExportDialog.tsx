@@ -37,8 +37,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setChapters(null);
-    setMessage(null);
     if (!project) return;
     let cancelled = false;
     databaseService
@@ -47,6 +45,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ project, onClose }) 
       .catch(() => !cancelled && setMessage('Could not load the chapters. Check your connection and try again.'));
     return () => {
       cancelled = true;
+      // Whatever was loaded or said belongs to that project; the next one starts clean
+      setChapters(null);
+      setMessage(null);
     };
   }, [project]);
 

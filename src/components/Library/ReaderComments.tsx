@@ -3,6 +3,8 @@ import { Send } from 'lucide-react';
 import { databaseService } from '../../services/database';
 import { useApp } from '../../context/AppContext';
 import type { Comment, UserProfile } from '../../services/types';
+import { ReportButton } from '../Safety/ReportDialog';
+import { useT } from '../../i18n';
 
 interface Props {
   projectId: string;
@@ -10,7 +12,8 @@ interface Props {
 }
 
 export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
-  const { user } = useApp();
+  const t = useT();
+  const { user, blockedIds } = useApp();
   const [comments, setComments] = useState<(Comment & { profile?: UserProfile })[]>([]);
   const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState('');
@@ -47,18 +50,18 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
   };
 
   return (
-    <section aria-label="Chapter comments" style={{ marginTop: 40 }}>
-      <h2 className="section-title">Chapter comments</h2>
+    <section aria-label={t('Chapter comments')} style={{ marginTop: 40 }}>
+      <h2 className="section-title">{t('Chapter comments')}</h2>
       {user ? (
         <form onSubmit={handleSubmit}>
           <label className="field" style={{ marginBottom: 10 }}>
-            <span className="sr-only">Comment</span>
+            <span className="sr-only">{t('Comment')}</span>
             <textarea
               className="textarea"
               style={{ minHeight: 84 }}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
-              placeholder="Share your thoughts on this chapter…"
+              placeholder={t('Share your thoughts on this chapter…')}
             />
           </label>
           <button className="small-btn is-primary" disabled={!newContent.trim()}>
@@ -66,22 +69,23 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
           </button>
         </form>
       ) : (
-        <p className="meta">Sign in to join the discussion.</p>
+        <p className="meta">{t('Sign in to join the discussion.')}</p>
       )}
 
       <div style={{ marginTop: 20 }}>
         {loading ? (
-          <p className="meta">Loading comments…</p>
-        ) : comments.length === 0 ? (
-          <p className="meta">No comments yet. Be the first to share your thoughts.</p>
+          <p className="meta">{t('Loading comments…')}</p>
+        ) : comments.filter((c) => !blockedIds.includes(c.user_id)).length === 0 ? (
+          <p className="meta">{t('No comments yet. Be the first to share your thoughts.')}</p>
         ) : (
-          comments.map((c) => (
+          comments.filter((c) => !blockedIds.includes(c.user_id)).map((c) => (
             <div className="comment" key={c.id}>
               <span className="avatar">{(c.profile?.display_name || 'A')[0].toUpperCase()}</span>
               <div>
                 <strong>{c.profile?.display_name || 'Anonymous reader'}</strong>
                 <small>{new Date(c.created_at).toLocaleDateString()}</small>
                 <p>{c.content}</p>
+                <ReportButton subject={{ type: 'comment', targetId: c.id, authorId: c.user_id, authorName: c.profile?.display_name, projectId, excerpt: c.content }} />
               </div>
             </div>
           ))

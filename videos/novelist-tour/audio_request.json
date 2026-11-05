@@ -1,0 +1,46 @@
+{
+  "provider": "kokoro",
+  "speed": "1.0",
+  "lines": [
+    {
+      "id": "01",
+      "text": "A little room. A whole world."
+    },
+    {
+      "id": "02",
+      "text": "Novelist Workspace. A quiet place to write a novel, and to read one."
+    },
+    {
+      "id": "03",
+      "text": "Write on a clean page, with your chapters beside you and your private notes in the margin."
+    },
+    {
+      "id": "04",
+      "text": "Plan it as chapters, as a board of scenes, or as a notebook of people and places."
+    },
+    {
+      "id": "05",
+      "text": "Keep a streak. Race the clock in a sprint, and watch the words add up."
+    },
+    {
+      "id": "06",
+      "text": "Bring a manuscript in from Word. Send it out the same way."
+    },
+    {
+      "id": "07",
+      "text": "Then read. Other writers' novels, in the light or the dark, opening where you left off."
+    },
+    {
+      "id": "08",
+      "text": "And it all comes with you. The same novels, on your phone."
+    },
+    {
+      "id": "09",
+      "text": "A little room. A whole world."
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  },
+  "voice": "bf_emma"
+}

@@ -1,6 +1,16 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
-export default forwardRef((props: any, ref) => {
+/** What the suggestion list is given: notebook entries to offer, and the call that inserts the chosen one */
+export interface MentionListProps {
+  items: { id: string; name: string; type?: string }[];
+  command: (attrs: { id: string; label: string }) => void;
+}
+
+export interface MentionListHandle {
+  onKeyDown: (args: { event: KeyboardEvent }) => boolean;
+}
+
+const MentionList = forwardRef<MentionListHandle, MentionListProps>((props, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -27,7 +37,7 @@ export default forwardRef((props: any, ref) => {
   useEffect(() => setSelectedIndex(0), [props.items]);
 
   useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }: any) => {
+    onKeyDown: ({ event }) => {
       if (event.key === 'ArrowUp') {
         upHandler();
         return true;
@@ -50,7 +60,7 @@ export default forwardRef((props: any, ref) => {
   return (
     <div className="mention-pop" role="listbox" aria-label="Mention suggestions" style={{ position: 'static' }}>
       {props.items.length ? (
-        props.items.map((item: any, index: number) => (
+        props.items.map((item, index) => (
           <button
             role="option"
             aria-selected={index === selectedIndex}
@@ -67,3 +77,7 @@ export default forwardRef((props: any, ref) => {
     </div>
   );
 });
+
+MentionList.displayName = 'MentionList';
+
+export default MentionList;

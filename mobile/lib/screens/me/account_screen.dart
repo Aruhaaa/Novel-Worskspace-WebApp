@@ -6,6 +6,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../auth_screen.dart';
 import '../link/reading_link_screen.dart';
+import 'account_dialogs.dart';
 
 /// You: your name and goal, how the app looks, and sign out.
 class AccountScreen extends StatelessWidget {
@@ -291,6 +292,47 @@ class AccountScreen extends StatelessWidget {
             ),
           ),
           if (state.signedIn) ...[
+            const SizedBox(height: 22),
+            const Eyebrow('Account'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.lock_outline),
+              title: const Text('Change password'),
+              subtitle: Text(
+                state.backend.isCloud
+                    ? 'Choose a new one'
+                    : 'Only used when connected to the cloud database',
+              ),
+              enabled: state.backend.isCloud,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => changePasswordFlow(context),
+            ),
+            if (state.blockedPeople.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              const Eyebrow('Blocked writers'),
+              Text(
+                'You do not see their novels. They are not told.',
+                style: t.textTheme.bodySmall,
+              ),
+              for (final person in state.blockedPeople)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.block),
+                  title: Text(person.value),
+                  trailing: TextButton(
+                    onPressed: () async {
+                      final reached = await state.unblockAuthor(person.key);
+                      if (context.mounted) {
+                        say(
+                          context,
+                          reached ? '${person.value} is unblocked.' : 'Unblocked on this phone. It could not be saved to your account right now.',
+                        );
+                      }
+                    },
+                    child: const Text('Unblock'),
+                  ),
+                ),
+            ],
             const SizedBox(height: 10),
             OutlinedButton.icon(
               icon: const Icon(Icons.logout),
@@ -304,6 +346,30 @@ class AccountScreen extends StatelessWidget {
                 ))
                   await state.signOut();
               },
+            ),
+            const SizedBox(height: 22),
+            const Divider(),
+            const SizedBox(height: 6),
+            Text(
+              'Delete account',
+              style: t.textTheme.titleMedium?.copyWith(
+                color: t.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Removes your account and everything in it, for good: every novel and chapter, your notebook, notes, goals and profile.',
+              style: t.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: t.colorScheme.error,
+                side: BorderSide(color: t.colorScheme.error),
+              ),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Delete my account…'),
+              onPressed: () => deleteAccountFlow(context),
             ),
           ] else
             const SizedBox.shrink(),

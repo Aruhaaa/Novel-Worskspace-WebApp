@@ -4,11 +4,11 @@ import { isNetworkFailure } from './offlineCache';
 
 /**
  * Cloud storage for the features added after the first release (chapter notes, goals, version history,
- * the deleted-chapters bin and reading links). They live in tables created by
- * supabase/migrations/20261003_cloud_sync.sql. Until that has been run, every one of them quietly keeps
+ * the deleted-chapters bin and reading links), and later notifications, live messages, shared projects and the error log.
+ * They live in tables created by supabase/setup_scripts/20261003_cloud_sync.sql and 20261105_next_features.sql. Until that has been run, every one of them quietly keeps
  * working on this device, as before.
  */
-export type CloudFeature = 'notes' | 'settings' | 'history' | 'bin' | 'share';
+export type CloudFeature = 'notes' | 'settings' | 'history' | 'bin' | 'share' | 'reports' | 'blocks' | 'account' | 'notifications' | 'messages' | 'social' | 'collab' | 'errors';
 
 /** The cloud database, when there is one. */
 export const cloud = (): SupabaseClient | null => (isSupabaseConfigured && supabase ? supabase : null);

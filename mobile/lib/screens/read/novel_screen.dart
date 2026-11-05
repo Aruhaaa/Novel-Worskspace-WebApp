@@ -8,6 +8,7 @@ import '../../editor/html_codec.dart';
 import '../../state/app_state.dart';
 import '../../widgets/common.dart';
 import 'reader_screen.dart';
+import 'report_dialog.dart';
 
 /// A novel's page: its cover, blurb and chapters, with one button to start or carry on.
 class NovelScreen extends StatefulWidget {
@@ -53,6 +54,41 @@ class _NovelScreenState extends State<NovelScreen> {
     }
   }
 
+  Future<void> _report() async {
+    final state = context.read<AppState>();
+    if (state.user == null) {
+      say(context, 'Sign in to report a novel.');
+      return;
+    }
+    await reportNovelFlow(context, _project);
+  }
+
+  Future<void> _block() async {
+    final state = context.read<AppState>();
+    final name = _project.authorName.isEmpty
+        ? 'this writer'
+        : _project.authorName;
+    final ok = await confirm(
+      context,
+      title: 'Block $name?',
+      text: 'You will not see their novels. They are not told. You can unblock them in Me.',
+      action: 'Block',
+    );
+    if (!ok || !mounted) return;
+    final reached = await state.blockAuthor(
+      _project.userId,
+      _project.authorName,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    say(
+      context,
+      reached
+          ? '$name is blocked.'
+          : '$name is blocked on this phone. It could not be saved to your account right now.',
+    );
+  }
+
   void _read(List<Chapter> chapters, int index) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -89,6 +125,22 @@ class _NovelScreenState extends State<NovelScreen> {
               color: liked ? t.colorScheme.primary : null,
             ),
             onPressed: _like,
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (v) => v == 'report' ? _report() : _block(),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: Text('Report this novel'),
+              ),
+              // Not for your own novels, and not for guests, who have no account to keep a block on
+              if (state.user != null && state.user!.id != _project.userId)
+                const PopupMenuItem(
+                  value: 'block',
+                  child: Text('Block this writer'),
+                ),
+            ],
           ),
         ],
       ),

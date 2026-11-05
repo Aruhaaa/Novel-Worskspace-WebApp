@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
-import { Download, Plus, Settings } from 'lucide-react';
+import { Download, Plus, Settings, Upload, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import type { Project } from '../../services/types';
 import { GENRES } from '../../lib/genres';
 import { GuestGateModal } from '../Auth/GuestGateModal';
-import { ExportDialog } from '../Export/ExportDialog';
+import { ExportDialog } from '../Export/ExportDialogLazy';
+import { ImportDialog } from '../Import/ImportDialogLazy';
 import { RemoveSampleDialog, SampleButton } from './SampleProject';
 import { isSampleProject } from '../../lib/sample';
 import { Dialog } from '../ui/Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
+import { ShareProjectDialog } from '../Collab/ShareProjectDialog';
+import { removeMember, type SharedProject } from '../../lib/collab';
+import { ROLE_LABEL } from '../../lib/notifications';
+import { useT } from '../../i18n';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
 
 /** Every project, so the author can choose which manuscript to open. */
 export const ManuscriptsView: React.FC = () => {
-  const { projects, activeProject, setActiveProject, createProject, updateProjectSettings, isGuest } = useApp();
+  const { projects, activeProject, setActiveProject, createProject, updateProjectSettings, isGuest, user, sharedProjects, sharedProjectIds, refreshShared } = useApp();
+  const t = useT();
   const navigate = useNavigate();
+  const [sharing, setSharing] = useState<Project | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [showGate, setShowGate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [exportProject, setExportProject] = useState<Project | null>(null);
   const [removeSample, setRemoveSample] = useState<Project | null>(null);
   const [title, setTitle] = useState('');
@@ -44,7 +52,18 @@ export const ManuscriptsView: React.FC = () => {
     navigate('/editor');
   };
 
+  const leave = async (project: SharedProject) => {
+    if (!user || !window.confirm(t('Leave “{title}”? You will no longer see it. The owner can invite you again.', { title: project.title }))) return;
+    try {
+      await removeMember(project.id, user.id);
+      await refreshShared();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : t('That did not work. Please try again.'));
+    }
+  };
+
   const startNew = () => (isGuest ? setShowGate(true) : setShowNew(true));
+  const startImport = () => (isGuest ? setShowGate(true) : setShowImport(true));
 
   return (
     <div className="studio-view">
@@ -58,16 +77,24 @@ export const ManuscriptsView: React.FC = () => {
           }
           lead="Choose a novel to open its workspace: manuscript, story outline and world notebook."
           actions={
-            <button className="small-btn is-primary" onClick={startNew}>
-              <Plus /> New project
-            </button>
+            <>
+              <button className="small-btn" onClick={startImport}>
+                <Upload /> Import
+              </button>
+              <button className="small-btn is-primary" onClick={startNew}>
+                <Plus /> New project
+              </button>
+            </>
           }
         />
 
         {projects.length === 0 ? (
           <EmptyState icon="book" title="No projects yet" text="Give your first novel a title and a few lines of description, and the rest can wait.">
-            <button className="small-btn is-primary" onClick={startNew}>Create your first project</button>
-            <SampleButton onNeedAccount={() => setShowGate(true)} />
+            <div className="imp-empty-actions">
+              <button className="small-btn is-primary" onClick={startNew}>Create your first project</button>
+              <button className="small-btn" onClick={startImport}>Import a manuscript</button>
+              <SampleButton onNeedAccount={() => setShowGate(true)} />
+            </div>
           </EmptyState>
         ) : (
           projects.map((project, i) => (
@@ -87,6 +114,7 @@ export const ManuscriptsView: React.FC = () => {
                     <span className="small-dot" /> {project.is_published ? 'Published' : 'Draft'}
                   </span>
                   {isSampleProject(project.id) && <span className="badge" style={{ marginLeft: 8 }}>Sample</span>}
+                  {sharedProjectIds.includes(project.id) && <span className="badge" style={{ marginLeft: 8 }}>{t('Shared')}</span>}
                   {activeProject?.id === project.id && (
                     <span className="badge" style={{ marginLeft: 8 }}>Last opened</span>
                   )}{' '}
@@ -96,6 +124,11 @@ export const ManuscriptsView: React.FC = () => {
               <div className="project-actions">
                 {isSampleProject(project.id) && (
                   <button className="small-btn" onClick={() => setRemoveSample(project)}>Remove sample</button>
+                )}
+                {!isGuest && !isSampleProject(project.id) && (
+                  <button className="small-btn" onClick={() => setSharing(project)}>
+                    <Users /> {t('Share')}
+                  </button>
                 )}
                 <button className="small-btn" onClick={() => setExportProject(project)}>
                   <Download /> Export
@@ -110,7 +143,42 @@ export const ManuscriptsView: React.FC = () => {
             </article>
           ))
         )}
+
+        {sharedProjects.length > 0 && (
+          <section aria-labelledby="shared-with-you-h" style={{ marginTop: 40 }}>
+            <h2 className="section-title" id="shared-with-you-h">{t('Shared with you')}</h2>
+            <p className="section-note">{t('Projects other people have invited you to write in.')}</p>
+            {sharedProjects.map((project, i) => (
+              <article className="project-card" key={project.id}>
+                {project.cover_url ? (
+                  <img src={project.cover_url} alt="" className="cover-mini" style={{ objectFit: 'cover', padding: 0 }} />
+                ) : (
+                  <div className={`cover-mini ${COVER_TONES[i % COVER_TONES.length]}`} aria-hidden="true">
+                    {project.title}
+                  </div>
+                )}
+                <div>
+                  <h3>{project.title}</h3>
+                  <p>{project.description || 'No description yet.'}</p>
+                  <p className="meta" style={{ marginTop: 10 }}>
+                    <span className="badge is-accent">{ROLE_LABEL[project.role]()}</span>
+                    <span style={{ marginLeft: 8 }}>{t('by {owner}', { owner: project.ownerName })}</span>
+                    {activeProject?.id === project.id && <span className="badge" style={{ marginLeft: 8 }}>Last opened</span>}
+                  </p>
+                </div>
+                <div className="project-actions">
+                  <button className="small-btn" onClick={() => void leave(project)}>{t('Leave')}</button>
+                  <button className="small-btn is-primary" onClick={() => open(project)}>
+                    Open
+                  </button>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
       </div>
+
+      <ShareProjectDialog project={sharing} onClose={() => setSharing(null)} />
 
       <Dialog open={showNew} onClose={() => setShowNew(false)} labelledBy="ms-np-h">
         <form
@@ -168,6 +236,7 @@ export const ManuscriptsView: React.FC = () => {
       </Dialog>
 
       <ExportDialog project={exportProject} onClose={() => setExportProject(null)} />
+      <ImportDialog open={showImport} onClose={() => setShowImport(false)} target="new" />
       <RemoveSampleDialog project={removeSample} onClose={() => setRemoveSample(null)} />
 
       <GuestGateModal

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Brand } from '../Brand';
 import landscape from '../../assets/quiet-landscape.svg';
+import { OpenBook } from './OpenBook';
 
 type PreviewTab = 'write' | 'shape' | 'world';
 
@@ -110,13 +111,13 @@ export const LandingView: React.FC = () => {
           <button onClick={() => scrollToId('everything')}>Everything else</button>
           <button onClick={() => navigate('/login')}>Sign in</button>
         </nav>
-        <button className="button button-outline header-cta" onClick={loginAsGuest}>
+        <button className="button button-outline header-cta" onClick={() => loginAsGuest()}>
           Start reading <span aria-hidden="true">↗</span>
         </button>
       </header>
 
       <main id="main">
-        <section className="hero wrap" aria-labelledby="hero-title">
+        <section className="hero hero-v2 wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="eyebrow hero-enter">
               <span className="small-dot" /> FOR THE WORLDS WITHIN YOU
@@ -125,72 +126,64 @@ export const LandingView: React.FC = () => {
               A little room.
               <br />A whole <em>world.</em>
             </h1>
-            <p className="hero-description hero-enter delay-2">
-              Somewhere between the first thought and the final full stop, a story becomes yours.
-              <br />
-              This is your space to write it.
-            </p>
             <div className="hero-actions hero-enter delay-3">
               <button className="button button-primary" onClick={() => navigate('/login')}>
                 Start writing <span aria-hidden="true">↗</span>
               </button>
-              <button className="button button-outline" onClick={loginAsGuest}>
+              <button className="button button-outline" onClick={() => loginAsGuest()}>
                 Start reading <span aria-hidden="true">↗</span>
               </button>
               <button className="text-link" onClick={() => scrollToId('workspace')}>
                 Take a look inside <span aria-hidden="true">↓</span>
               </button>
             </div>
-            <p className="hero-footnote hero-enter delay-3">
-              A writing space. Not another distraction. &nbsp;
-              <button className="link-accent" onClick={loginAsGuest}>Browse the library, no account needed</button> ·{' '}
+          </div>
+
+          <div className="hero-text hero-enter delay-2">
+            <p className="hero-description">
+              Somewhere between the first thought and the final full stop, a story becomes yours.
+              <br />
+              This is your space to write it.
+            </p>
+            <p className="hero-footnote">
+              A writing space. Not another distraction.
+              <br />
+              <button className="link-accent" onClick={() => loginAsGuest()}>Browse the library, no account needed</button> ·{' '}
               <button className="link-accent" onClick={() => navigate('/login')}>Sign in</button>
             </p>
           </div>
 
-          <div ref={heroArt} className="hero-art hero-enter delay-2" aria-label="An illustrated book and a manuscript page, a visual tribute to the craft of writing">
-            <div className="art-orbit" aria-hidden="true" />
-            <span className="art-registration reg-top" aria-hidden="true">+</span>
-            <span className="art-registration reg-bottom" aria-hidden="true">+</span>
-            <div className="manuscript-sheet" aria-hidden="true">
-              <div className="sheet-running-head">
-                THE ATLAS OF QUIET PLACES <span>01</span>
-              </div>
-              <p className="sheet-chapter">Chapter one</p>
+          <div ref={heroArt} className="hero-sheets hero-enter delay-2" aria-hidden="true">
+            <div className="loose-sheet sheet-manuscript">
+              <p className="sheet-label">MANUSCRIPT</p>
               <h2>
                 The things
                 <br />
                 we leave behind.
               </h2>
               <p>On the morning the sea disappeared, Ada was making tea. She had always thought the end of something would announce itself.</p>
-              <p>Instead, there was only the kettle, the open window, and a silence where the waves should have been.</p>
               <span className="manuscript-edit">let the silence stay.</span>
             </div>
-            <div className="book-object" aria-hidden="true">
-              <div className="book-spine" />
-              <div className="book-cover">
-                <span className="cover-category">A NOVEL IN THE MAKING</span>
-                <h2>
-                  The Atlas of
-                  <br />
-                  <em>Quiet Places</em>
-                </h2>
-                <div className="cover-art">
-                  <img src={landscape} alt="" width="600" height="680" />
-                </div>
-                <span className="cover-author">YOUR NEXT CHAPTER AWAITS</span>
-                <span className="cover-corner" aria-hidden="true">N.</span>
-              </div>
+            <div className="loose-sheet sheet-notebook">
+              <p className="sheet-label">WORLD NOTEBOOK</p>
+              <h3>Ada Marlowe</h3>
+              <p>Keeper of the last lighthouse. Keeps the kettle on, and the door unlocked.</p>
+              <i /><i /><i />
             </div>
-            <div className="art-annotation" aria-hidden="true">
-              <svg viewBox="0 0 100 50"><path d="M90 7C72 49 38 40 9 25m0 0 7 17M9 25l19-2" /></svg>
-              <span>
-                It starts with
-                <br />a single line.
-              </span>
+            <div className="loose-sheet sheet-outline">
+              <p className="sheet-label">STORY OUTLINE</p>
+              <ol>
+                <li>The sea disappears</li>
+                <li>A visitor with no boat</li>
+                <li>What the tide left</li>
+              </ol>
             </div>
-            <p className="art-caption"><span>FIG. 01</span> A PLACE FOR POSSIBILITY</p>
           </div>
+        </section>
+
+        <section className="book-section wrap" aria-labelledby="book-h">
+          <h2 id="book-h" className="sr-only">An open book: the opening pages of a novel from the library</h2>
+          <OpenBook />
         </section>
 
         <div className="chapter-divider wrap">
@@ -229,7 +222,7 @@ export const LandingView: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button className="text-link" onClick={loginAsGuest}>
+            <button className="text-link" onClick={() => loginAsGuest()}>
               Try it as a guest <span aria-hidden="true">↗</span>
             </button>
           </div>
@@ -359,7 +352,7 @@ export const LandingView: React.FC = () => {
                 <div>
                   <h3>Find your flow. Stay there.</h3>
                   <p>A considered writing canvas, readable type, and a focus mode that lets the interface step aside.</p>
-                  <button className="text-link" onClick={loginAsGuest}>Enter a quieter space <span aria-hidden="true">↗</span></button>
+                  <button className="text-link" onClick={() => loginAsGuest()}>Enter a quieter space <span aria-hidden="true">↗</span></button>
                 </div>
                 <span className="principle-symbol" aria-hidden="true">◌</span>
               </article>

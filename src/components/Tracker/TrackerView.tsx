@@ -8,6 +8,7 @@ import { localDate } from '../../lib/dates';
 import { countWords } from '../../lib/text';
 import { planGoal } from '../../lib/projectGoal';
 import { useToast } from '../ui/toastContext';
+import { SprintStats } from './SprintStats';
 
 export const TrackerView: React.FC = () => {
   const { wordCountLogs, logWordCount, profile, chapters, projectGoal, setProjectGoal } = useApp();
@@ -229,6 +230,8 @@ export const TrackerView: React.FC = () => {
             )}
           </section>
         </div>
+
+        <SprintStats />
       </div>
 
       <Dialog open={showGoal} onClose={() => setShowGoal(false)} labelledBy="gl-h">

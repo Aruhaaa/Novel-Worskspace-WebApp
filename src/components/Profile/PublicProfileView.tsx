@@ -5,11 +5,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { databaseService } from '../../services/database';
 import type { UserProfile, Project } from '../../services/types';
-import { MessageSquare, ArrowLeft } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Ban } from 'lucide-react';
+import { ReportButton } from '../Safety/ReportDialog';
+import { useToast } from '../ui/toastContext';
+import { isBundledAuthor } from '../../lib/bundledLibrary';
 
 export const PublicProfileView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user, profile, toggleFollow, setActivePublicProject } = useApp();
+  const { user, isGuest, profile, toggleFollow, setActivePublicProject, blockedIds, blockUser, unblockUser } = useApp();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const [authorProfile, setAuthorProfile] = useState<UserProfile | null>(null);
@@ -57,6 +61,8 @@ export const PublicProfileView: React.FC = () => {
   }
 
   const isMe = user?.id === authorProfile.id;
+  const sampleAuthor = isBundledAuthor(authorProfile.id);
+  const isBlocked = blockedIds.includes(authorProfile.id);
   const isFollowing = profile?.following?.includes(authorProfile.id);
 
   const handleFollow = async () => {
@@ -92,6 +98,17 @@ export const PublicProfileView: React.FC = () => {
 
   const name = authorProfile.display_name || 'Anonymous author';
 
+  const handleBlock = async () => {
+    if (!window.confirm(`Block ${name}? You will not see what they write or publish, and neither of you can message the other. You can unblock them in Preferences.`)) return;
+    const { saved } = await blockUser(authorProfile.id);
+    toast({ message: saved === 'saved' ? `${name} is blocked.` : `${name} is blocked on this device. It could not be saved to your account right now.` });
+  };
+
+  const handleUnblock = async () => {
+    await unblockUser(authorProfile.id);
+    toast({ message: `${name} is unblocked.` });
+  };
+
   return (
     <div className="studio-view">
       <div className="page">
@@ -104,20 +121,43 @@ export const PublicProfileView: React.FC = () => {
           <div style={{ flex: 1, minWidth: 260 }}>
             <h1>{name}</h1>
             {authorProfile.bio && <p className="bio">{authorProfile.bio}</p>}
+            {sampleAuthor && <p className="meta">A pen name from the sample library that comes with the site. There is no one to follow or message.</p>}
             <div className="profile-stats">
               <div><strong>{authorProjects.length}</strong>Published works</div>
               <div><strong>{authorProfile.followers?.length || 0}</strong>Followers</div>
               <div><strong>{authorProfile.following?.length || 0}</strong>Following</div>
             </div>
           </div>
-          {!isMe && (
+          {!isMe && !sampleAuthor && (
             <div className="page-actions">
-              <button className={`small-btn${isFollowing ? '' : ' is-primary'}`} onClick={handleFollow} aria-pressed={!!isFollowing}>
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
-              <button className="small-btn" onClick={handleMessage}>
-                <MessageSquare /> Message
-              </button>
+              {isBlocked ? (
+                <button className="small-btn" onClick={handleUnblock}>
+                  <Ban /> Blocked · Unblock
+                </button>
+              ) : (
+                <>
+                  <button className={`small-btn${isFollowing ? '' : ' is-primary'}`} onClick={handleFollow} aria-pressed={!!isFollowing}>
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  <button className="small-btn" onClick={handleMessage}>
+                    <MessageSquare /> Message
+                  </button>
+                </>
+              )}
+              {user && !isGuest && (
+                <>
+                  {!isBlocked && (
+                    <button className="small-btn" onClick={handleBlock}>
+                      <Ban /> Block
+                    </button>
+                  )}
+                  <ReportButton
+                    className="small-btn"
+                    label="Report"
+                    subject={{ type: 'author', targetId: authorProfile.id, authorId: authorProfile.id, authorName: name, excerpt: `${authorProfile.display_name || ''} - ${authorProfile.bio || ''}` }}
+                  />
+                </>
+              )}
             </div>
           )}
         </section>

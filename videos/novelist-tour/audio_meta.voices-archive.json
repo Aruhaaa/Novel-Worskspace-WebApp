@@ -1,0 +1,770 @@
+{
+  "note": "Narration kept for the record. Not mounted in the film (the user chose music and effects only).",
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 3.332,
+      "lead_s": 0.9,
+      "text": "A little room. A whole world.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "A",
+          "start": 0.9,
+          "end": 1.156
+        },
+        {
+          "id": "w2",
+          "text": "little",
+          "start": 1.156,
+          "end": 1.778
+        },
+        {
+          "id": "w3",
+          "text": "room",
+          "start": 1.778,
+          "end": 2.116
+        },
+        {
+          "id": "w4",
+          "text": "A",
+          "start": 2.116,
+          "end": 2.372
+        },
+        {
+          "id": "w5",
+          "text": "whole",
+          "start": 2.372,
+          "end": 2.966
+        },
+        {
+          "id": "w6",
+          "text": "world",
+          "start": 2.966,
+          "end": 3.332
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 5.641,
+      "lead_s": 0.5,
+      "text": "Novelist Workspace. A quiet place to write a novel, and to read one.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Novelist",
+          "start": 0.5,
+          "end": 1.153
+        },
+        {
+          "id": "w2",
+          "text": "Workspace",
+          "start": 1.153,
+          "end": 1.827
+        },
+        {
+          "id": "w3",
+          "text": "A",
+          "start": 2.337,
+          "end": 2.521
+        },
+        {
+          "id": "w4",
+          "text": "quiet",
+          "start": 2.521,
+          "end": 2.785
+        },
+        {
+          "id": "w5",
+          "text": "place",
+          "start": 2.785,
+          "end": 3.214
+        },
+        {
+          "id": "w6",
+          "text": "to",
+          "start": 3.214,
+          "end": 3.419
+        },
+        {
+          "id": "w7",
+          "text": "write",
+          "start": 3.419,
+          "end": 3.848
+        },
+        {
+          "id": "w8",
+          "text": "a",
+          "start": 3.848,
+          "end": 4.033
+        },
+        {
+          "id": "w9",
+          "text": "novel",
+          "start": 4.033,
+          "end": 4.462
+        },
+        {
+          "id": "w10",
+          "text": "and",
+          "start": 4.462,
+          "end": 4.686
+        },
+        {
+          "id": "w11",
+          "text": "to",
+          "start": 4.686,
+          "end": 4.891
+        },
+        {
+          "id": "w12",
+          "text": "read",
+          "start": 4.891,
+          "end": 5.135
+        },
+        {
+          "id": "w13",
+          "text": "one",
+          "start": 5.135,
+          "end": 5.524
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 6.588,
+      "lead_s": 0.7,
+      "text": "Write on a clean page, with your chapters beside you and your private notes in the margin.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Write",
+          "start": 0.7,
+          "end": 1.108
+        },
+        {
+          "id": "w2",
+          "text": "on",
+          "start": 1.108,
+          "end": 1.303
+        },
+        {
+          "id": "w3",
+          "text": "a",
+          "start": 1.303,
+          "end": 1.479
+        },
+        {
+          "id": "w4",
+          "text": "clean",
+          "start": 1.479,
+          "end": 1.73
+        },
+        {
+          "id": "w5",
+          "text": "page",
+          "start": 1.73,
+          "end": 2.119
+        },
+        {
+          "id": "w6",
+          "text": "with",
+          "start": 2.569,
+          "end": 2.801
+        },
+        {
+          "id": "w7",
+          "text": "your",
+          "start": 2.801,
+          "end": 3.034
+        },
+        {
+          "id": "w8",
+          "text": "chapters",
+          "start": 3.034,
+          "end": 3.498
+        },
+        {
+          "id": "w9",
+          "text": "beside",
+          "start": 3.498,
+          "end": 4.082
+        },
+        {
+          "id": "w10",
+          "text": "you",
+          "start": 4.082,
+          "end": 4.296
+        },
+        {
+          "id": "w11",
+          "text": "and",
+          "start": 4.296,
+          "end": 4.509
+        },
+        {
+          "id": "w12",
+          "text": "your",
+          "start": 4.509,
+          "end": 4.742
+        },
+        {
+          "id": "w13",
+          "text": "private",
+          "start": 4.742,
+          "end": 5.345
+        },
+        {
+          "id": "w14",
+          "text": "notes",
+          "start": 5.345,
+          "end": 5.753
+        },
+        {
+          "id": "w15",
+          "text": "in",
+          "start": 5.753,
+          "end": 5.947
+        },
+        {
+          "id": "w16",
+          "text": "the",
+          "start": 5.947,
+          "end": 6.161
+        },
+        {
+          "id": "w17",
+          "text": "margin",
+          "start": 6.161,
+          "end": 6.588
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 6.025,
+      "lead_s": 0.5,
+      "text": "Plan it as chapters, as a board of scenes, or as a notebook of people and places.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Plan",
+          "start": 0.5,
+          "end": 0.748
+        },
+        {
+          "id": "w2",
+          "text": "it",
+          "start": 0.748,
+          "end": 0.956
+        },
+        {
+          "id": "w3",
+          "text": "as",
+          "start": 0.956,
+          "end": 1.164
+        },
+        {
+          "id": "w4",
+          "text": "chapters",
+          "start": 1.164,
+          "end": 1.661
+        },
+        {
+          "id": "w5",
+          "text": "as",
+          "start": 1.794,
+          "end": 2.002
+        },
+        {
+          "id": "w6",
+          "text": "a",
+          "start": 2.002,
+          "end": 2.19
+        },
+        {
+          "id": "w7",
+          "text": "board",
+          "start": 2.19,
+          "end": 2.459
+        },
+        {
+          "id": "w8",
+          "text": "of",
+          "start": 2.459,
+          "end": 2.667
+        },
+        {
+          "id": "w9",
+          "text": "scenes",
+          "start": 2.667,
+          "end": 3.123
+        },
+        {
+          "id": "w10",
+          "text": "or",
+          "start": 3.408,
+          "end": 3.616
+        },
+        {
+          "id": "w11",
+          "text": "as",
+          "start": 3.616,
+          "end": 3.824
+        },
+        {
+          "id": "w12",
+          "text": "a",
+          "start": 3.824,
+          "end": 4.012
+        },
+        {
+          "id": "w13",
+          "text": "notebook",
+          "start": 4.012,
+          "end": 4.676
+        },
+        {
+          "id": "w14",
+          "text": "of",
+          "start": 4.676,
+          "end": 4.884
+        },
+        {
+          "id": "w15",
+          "text": "people",
+          "start": 4.884,
+          "end": 5.341
+        },
+        {
+          "id": "w16",
+          "text": "and",
+          "start": 5.341,
+          "end": 5.569
+        },
+        {
+          "id": "w17",
+          "text": "places",
+          "start": 5.569,
+          "end": 6.025
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 5.001,
+      "lead_s": 0.5,
+      "text": "Keep a streak. Race the clock in a sprint, and watch the words add up.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Keep",
+          "start": 0.5,
+          "end": 0.784
+        },
+        {
+          "id": "w2",
+          "text": "a",
+          "start": 0.784,
+          "end": 0.999
+        },
+        {
+          "id": "w3",
+          "text": "streak",
+          "start": 0.999,
+          "end": 1.328
+        },
+        {
+          "id": "w4",
+          "text": "Race",
+          "start": 1.542,
+          "end": 2.017
+        },
+        {
+          "id": "w5",
+          "text": "the",
+          "start": 2.017,
+          "end": 2.278
+        },
+        {
+          "id": "w6",
+          "text": "clock",
+          "start": 2.278,
+          "end": 2.585
+        },
+        {
+          "id": "w7",
+          "text": "in",
+          "start": 2.585,
+          "end": 2.823
+        },
+        {
+          "id": "w8",
+          "text": "a",
+          "start": 2.823,
+          "end": 3.038
+        },
+        {
+          "id": "w9",
+          "text": "sprint",
+          "start": 3.038,
+          "end": 3.367
+        },
+        {
+          "id": "w10",
+          "text": "and",
+          "start": 3.367,
+          "end": 3.628
+        },
+        {
+          "id": "w11",
+          "text": "watch",
+          "start": 3.628,
+          "end": 3.935
+        },
+        {
+          "id": "w12",
+          "text": "the",
+          "start": 3.935,
+          "end": 4.196
+        },
+        {
+          "id": "w13",
+          "text": "words",
+          "start": 4.196,
+          "end": 4.503
+        },
+        {
+          "id": "w14",
+          "text": "add",
+          "start": 4.503,
+          "end": 4.764
+        },
+        {
+          "id": "w15",
+          "text": "up",
+          "start": 4.764,
+          "end": 5.001
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "path": "assets/voice/06.wav",
+      "duration_s": 4.852,
+      "lead_s": 0.5,
+      "text": "Bring a manuscript in from Word. Send it out the same way.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Bring",
+          "start": 0.5,
+          "end": 0.803
+        },
+        {
+          "id": "w2",
+          "text": "a",
+          "start": 0.803,
+          "end": 1.015
+        },
+        {
+          "id": "w3",
+          "text": "manuscript",
+          "start": 1.015,
+          "end": 1.809
+        },
+        {
+          "id": "w4",
+          "text": "in",
+          "start": 1.809,
+          "end": 2.044
+        },
+        {
+          "id": "w5",
+          "text": "from",
+          "start": 2.044,
+          "end": 2.324
+        },
+        {
+          "id": "w6",
+          "text": "Word",
+          "start": 2.324,
+          "end": 2.604
+        },
+        {
+          "id": "w7",
+          "text": "Send",
+          "start": 2.987,
+          "end": 3.267
+        },
+        {
+          "id": "w8",
+          "text": "it",
+          "start": 3.267,
+          "end": 3.501
+        },
+        {
+          "id": "w9",
+          "text": "out",
+          "start": 3.501,
+          "end": 3.759
+        },
+        {
+          "id": "w10",
+          "text": "the",
+          "start": 3.759,
+          "end": 4.016
+        },
+        {
+          "id": "w11",
+          "text": "same",
+          "start": 4.016,
+          "end": 4.485
+        },
+        {
+          "id": "w12",
+          "text": "way",
+          "start": 4.485,
+          "end": 4.743
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "path": "assets/voice/07.wav",
+      "duration_s": 6.196,
+      "lead_s": 0.5,
+      "text": "Then read. Other writers' novels, in the light or the dark, opening where you left off.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "Then",
+          "start": 0.5,
+          "end": 0.761
+        },
+        {
+          "id": "w2",
+          "text": "read",
+          "start": 0.761,
+          "end": 1.022
+        },
+        {
+          "id": "w3",
+          "text": "Other",
+          "start": 1.301,
+          "end": 1.759
+        },
+        {
+          "id": "w4",
+          "text": "writers'",
+          "start": 1.759,
+          "end": 2.259
+        },
+        {
+          "id": "w5",
+          "text": "novels",
+          "start": 2.259,
+          "end": 2.739
+        },
+        {
+          "id": "w6",
+          "text": "in",
+          "start": 2.739,
+          "end": 2.957
+        },
+        {
+          "id": "w7",
+          "text": "the",
+          "start": 2.957,
+          "end": 3.197
+        },
+        {
+          "id": "w8",
+          "text": "light",
+          "start": 3.197,
+          "end": 3.479
+        },
+        {
+          "id": "w9",
+          "text": "or",
+          "start": 3.479,
+          "end": 3.697
+        },
+        {
+          "id": "w10",
+          "text": "the",
+          "start": 3.697,
+          "end": 3.937
+        },
+        {
+          "id": "w11",
+          "text": "dark",
+          "start": 3.937,
+          "end": 4.198
+        },
+        {
+          "id": "w12",
+          "text": "opening",
+          "start": 4.321,
+          "end": 4.998
+        },
+        {
+          "id": "w13",
+          "text": "where",
+          "start": 4.998,
+          "end": 5.456
+        },
+        {
+          "id": "w14",
+          "text": "you",
+          "start": 5.456,
+          "end": 5.695
+        },
+        {
+          "id": "w15",
+          "text": "left",
+          "start": 5.695,
+          "end": 5.956
+        },
+        {
+          "id": "w16",
+          "text": "off",
+          "start": 5.956,
+          "end": 6.196
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "path": "assets/voice/08.wav",
+      "duration_s": 4.519,
+      "lead_s": 0.7,
+      "text": "And it all comes with you. The same novels, on your phone.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "And",
+          "start": 0.7,
+          "end": 0.921
+        },
+        {
+          "id": "w2",
+          "text": "it",
+          "start": 0.921,
+          "end": 1.123
+        },
+        {
+          "id": "w3",
+          "text": "all",
+          "start": 1.123,
+          "end": 1.345
+        },
+        {
+          "id": "w4",
+          "text": "comes",
+          "start": 1.345,
+          "end": 1.768
+        },
+        {
+          "id": "w5",
+          "text": "with",
+          "start": 1.768,
+          "end": 2.009
+        },
+        {
+          "id": "w6",
+          "text": "you",
+          "start": 2.009,
+          "end": 2.231
+        },
+        {
+          "id": "w7",
+          "text": "The",
+          "start": 2.584,
+          "end": 2.805
+        },
+        {
+          "id": "w8",
+          "text": "same",
+          "start": 2.805,
+          "end": 3.209
+        },
+        {
+          "id": "w9",
+          "text": "novels",
+          "start": 3.209,
+          "end": 3.652
+        },
+        {
+          "id": "w10",
+          "text": "on",
+          "start": 3.652,
+          "end": 3.854
+        },
+        {
+          "id": "w11",
+          "text": "your",
+          "start": 3.854,
+          "end": 4.095
+        },
+        {
+          "id": "w12",
+          "text": "phone",
+          "start": 4.095,
+          "end": 4.519
+        }
+      ]
+    },
+    {
+      "frame": 9,
+      "path": "assets/voice/09.wav",
+      "duration_s": 3.032,
+      "lead_s": 0.6,
+      "text": "A little room. A whole world.",
+      "words": [
+        {
+          "id": "w1",
+          "text": "A",
+          "start": 0.6,
+          "end": 0.856
+        },
+        {
+          "id": "w2",
+          "text": "little",
+          "start": 0.856,
+          "end": 1.478
+        },
+        {
+          "id": "w3",
+          "text": "room",
+          "start": 1.478,
+          "end": 1.816
+        },
+        {
+          "id": "w4",
+          "text": "A",
+          "start": 1.816,
+          "end": 2.072
+        },
+        {
+          "id": "w5",
+          "text": "whole",
+          "start": 2.072,
+          "end": 2.666
+        },
+        {
+          "id": "w6",
+          "text": "world",
+          "start": 2.666,
+          "end": 3.032
+        }
+      ]
+    }
+  ]
+}

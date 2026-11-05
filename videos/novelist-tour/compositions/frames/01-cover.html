@@ -1,0 +1,95 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f01-l1{position:absolute;left:134px;top:372px;font-size:154px}
+#f01-l2{position:absolute;left:134px;top:532px;font-size:154px}
+#f01-land{position:absolute;left:1216px;top:268px;width:448px;height:507px;display:block}
+#f01-r1{left:1110px;top:190px;width:660px;height:660px}
+#f01-drawn{position:absolute;left:1140px;top:220px;width:600px;height:600px}
+#f01-ink{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#262722;--r:0px;-webkit-mask-image:radial-gradient(circle at 50% 50%,transparent var(--r),#000 calc(var(--r) + 3px));mask-image:radial-gradient(circle at 50% 50%,transparent var(--r),#000 calc(var(--r) + 3px))}
+#f01-mk{position:absolute;left:885px;top:465px;width:150px;height:150px;display:block}
+#f01-mrg{position:absolute;left:795px;top:375px;width:330px;height:330px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-gmvt" id="root" data-composition-id="01-cover" data-start="0" data-duration="5.4" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-37vn" id="f01-bg" class="clip bg" data-start="0" data-duration="5.4" data-track-index="0"></div>
+    <div data-hf-id="hf-2ojc" id="f01-cam" class="cam">
+    <div data-hf-id="hf-1qeb" class="ring" id="f01-r1"></div>
+    <svg data-hf-id="hf-49dz" id="f01-drawn" viewBox="0 0 600 600"><circle data-hf-id="hf-upmm" id="f01-dr" cx="300" cy="300" r="299" fill="none" stroke="#E7CF93" stroke-width="1.5" stroke-dasharray="6 7" pathLength="1000"/></svg>
+    <img data-hf-id="hf-kpcn" id="f01-land" src="assets/quiet-landscape.svg" alt="">
+    <div data-hf-id="hf-s67r" class="eyebrow" id="f01-eyebrow">Novelist Workspace</div>
+    <div data-hf-id="hf-a7dj" class="h" id="f01-l1"><span data-hf-id="hf-2nk7" class="l " id="f01-l1w"><span data-hf-id="hf-ufi3" class="w">A</span> <span data-hf-id="hf-09kk" class="w">little</span> <span data-hf-id="hf-iim7" class="w">room.</span></span></div>
+    <div data-hf-id="hf-1jho" class="h" id="f01-l2"><span data-hf-id="hf-gnry" class="l" id="f01-l2w"><em data-hf-id="hf-2lav"><span data-hf-id="hf-jjqz" class="w">A</span> <span data-hf-id="hf-fvw3" class="w">whole</span> <span data-hf-id="hf-spza" class="w">world.</span></em></span></div>
+    <div data-hf-id="hf-ry0u" class="wm" id="f01-wm" style="left:134px;top:836px"><span data-hf-id="hf-ic85" class="mk"></span><div data-hf-id="hf-yeow"><span data-hf-id="hf-hwlb" class="n">novelist</span><span data-hf-id="hf-b2mx" class="s">Workspace</span></div></div>
+    </div>
+    <div data-hf-id="hf-kw0f" id="f01-ink"></div>
+    <svg data-hf-id="hf-wv57" id="f01-mrg" viewBox="0 0 330 330"><circle data-hf-id="hf-exgn" id="f01-mdr" cx="165" cy="165" r="163" fill="none" stroke="#E7CF93" stroke-width="1.5" pathLength="1000" stroke-dasharray="1000" stroke-dashoffset="1000"/></svg>
+    <img data-hf-id="hf-vf0f" id="f01-mk" src="assets/logo-mark.svg" alt="">
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f01-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    tl.fromTo("#f01-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 2.6);
+    // the dark: the n mark gathers, a ring draws around it, a held breath before the hit
+    tl.fromTo("#f01-mk", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0);
+    tl.fromTo("#f01-mk", { scale: 1 }, { scale: 1.18, duration: 2.2, ease: "sine.in" }, 0.3);
+    tl.fromTo("#f01-mdr", { strokeDashoffset: 1000 }, { strokeDashoffset: 0, duration: 2.0, ease: "power2.inOut" }, 0.3);
+    // the break on the downbeat: paper floods out of the mark
+    tl.fromTo("#f01-ink", { "--r": "0px" }, { "--r": "1500px", duration: 0.95, ease: "power4.out" }, 2.5);
+    tl.to("#f01-mk, #f01-mrg", { opacity: 0, scale: 0.5, duration: 0.45, ease: "power3.in" }, 2.5);
+    shake(2.5, 3);
+    tl.fromTo("#f01-r1", { opacity: 0 }, { opacity: 0.55, duration: 0.5, ease: "power2.out" }, 2.6);
+    slamLine("#f01-l1", 2.6, 0.13, 0.85, 16, 1.35);
+    slamLine("#f01-l2", 3.125, 0.12, 0.85, 16, 1.35);
+    tl.fromTo("#f01-land", { opacity: 0, y: 48 }, { opacity: 1, y: 0, duration: 1.2, ease: E }, 3.2);
+    tl.fromTo("#f01-dr", { strokeDashoffset: 1000 }, { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }, 3.2);
+    tl.fromTo("#f01-wm", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: E }, 3.9);
+    push(1.04, 2.5, 2.5);
+    window.__timelines["01-cover"] = tl;
+  </script>
+</template>

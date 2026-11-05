@@ -1,0 +1,87 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f07-h{top:166px;font-size:92px}
+#f07-l{left:134px;top:410px;width:594px;height:475px}
+#f07-d{left:760px;top:410px;width:594px;height:475px;--p:-16%;-webkit-mask-image:linear-gradient(to right,#000 var(--p),transparent calc(var(--p) + 16%));mask-image:linear-gradient(to right,#000 var(--p),transparent calc(var(--p) + 16%))}
+#f07-lib{left:1390px;top:150px;width:396px;height:269px}
+#f07-set{left:1390px;top:447px;width:300px;height:267px}
+#f07-con{left:1390px;top:742px;width:396px;height:98px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-q8k3" id="root" data-composition-id="07-read" data-start="0" data-duration="7.9" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-4czq" id="f07-bg" class="clip bg" data-start="0" data-duration="7.9" data-track-index="0"></div>
+    <div data-hf-id="hf-erfq" id="f07-cam" class="cam">
+    <div data-hf-id="hf-cwpo" class="eyebrow" id="f07-eyebrow">05 · Read</div>
+    <div data-hf-id="hf-d2ws" class="h" id="f07-h"><span data-hf-id="hf-oq3i" class="l " id="f07-h1"><span data-hf-id="hf-i81s" class="w">Light,</span> <span data-hf-id="hf-uvb9" class="w">or</span></span><span data-hf-id="hf-krzh" class="l" id="f07-h2"><em data-hf-id="hf-2lav"><span data-hf-id="hf-9o0j" class="w">the</span> <span data-hf-id="hf-v5j2" class="w">dark.</span></em></span></div>
+    <div data-hf-id="hf-kd2u" class="card" id="f07-l"><img data-hf-id="hf-soxt" src="assets/crops/f07-light.png" alt=""></div>
+    <div data-hf-id="hf-sxha" class="card" id="f07-d"><img data-hf-id="hf-5gkp" src="assets/crops/f07-dark.png" alt=""></div>
+    <div data-hf-id="hf-pat7" class="card" id="f07-lib"><img data-hf-id="hf-xuak" src="assets/crops/f07-library.png" alt=""></div>
+    <div data-hf-id="hf-1riu" class="card" id="f07-set"><img data-hf-id="hf-6xry" src="assets/crops/f07-settings.png" alt=""></div>
+    <div data-hf-id="hf-nz6q" class="card" id="f07-con"><img data-hf-id="hf-bw8a" src="assets/crops/f07-continue.png" alt=""></div>
+    </div>
+
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f07-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    tl.fromTo("#f07-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.15);
+    whip("#f07-l", 0.3, { x: 0, y: 160 }, 1.1);
+    whip("#f07-lib", 1.2, { x: 160, y: 0 }, 0.9);
+    slamLine("#f07-h1", 1.9, 0.1);
+    slamLine("#f07-h2", 2.5, 0.1);
+    // on "the dark": the same chapter opens beside it through a slow, soft wipe, then its reading settings
+    gsap.set("#f07-d", { opacity: 0 });
+    tl.set("#f07-d", { opacity: 1 }, 2.5);
+    tl.fromTo("#f07-d", { "--p": "-16%" }, { "--p": "100%", duration: 1.6, ease: "power2.inOut" }, 2.5);
+    whip("#f07-set", 4.2, { x: 0, y: 30 }, 0.8);
+    whip("#f07-con", 4.6, { x: 0, y: 70 }, 0.9);
+    push(1.03, 0, 7.5);
+    window.__timelines["07-read"] = tl;
+  </script>
+</template>

@@ -109,7 +109,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
               );
             }
-            final all = snap.data!;
+            // Novels by people this reader has blocked are not shown, here or under Saved
+            final all = snap.data!
+                .where((p) => !state.isBlocked(p.userId))
+                .toList();
             return TabBarView(
               children: [
                 _discover(context, state, all),

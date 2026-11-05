@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "youtube",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T05:17:34.050Z"
+    },
+    "aspect": {
+      "value": "1920x1080",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T05:17:34.289Z"
+    },
+    "language": {
+      "value": "en",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T05:17:34.528Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T05:17:34.760Z"
+    },
+    "storyboard": {
+      "value": "yes",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T05:17:34.992Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "cartesian",
+      "confirmed_in": [
+        "novelist-tour"
+      ],
+      "updated_at": "2026-10-14T06:08:51.135Z"
+    }
+  },
+  "sightings": {}
+}

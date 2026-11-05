@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 export const PrintView: React.FC = () => {
   const { activeProject, chapters } = useApp();
@@ -32,7 +33,7 @@ export const PrintView: React.FC = () => {
               <h2>
                 Chapter {index + 1}: {chapter.title || 'Untitled'}
               </h2>
-              <div dangerouslySetInnerHTML={{ __html: chapter.content }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(chapter.content) }} />
             </section>
           ))}
         </article>

@@ -27,7 +27,7 @@ export const openingSpace = (mode: UseMode | null): Space => (mode === 'write' ?
 export const openingPath = (mode: UseMode | null) => (openingSpace(mode) === 'read' ? '/read' : '/write');
 
 const READ_VIEWS = ['read_home', 'library', 'saved_library', 'reader'];
-const NEUTRAL_VIEWS = ['profile', 'messages', 'preferences', 'admin'];
+const NEUTRAL_VIEWS = ['profile', 'messages', 'notifications', 'preferences', 'admin'];
 
 /** Which space a screen belongs to. Account screens belong to neither, so they keep whichever space you came from. */
 export const spaceOfView = (view: string): Space | null => {
