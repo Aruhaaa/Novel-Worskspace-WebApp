@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { countWords } from '../../lib/text';
 import { clearDraft, getDraft, saveDraft } from '../../lib/drafts';
 import { enqueueSave } from '../../lib/saveQueue';
+import { t } from '../../i18n';
 
 export type SaveStatus = 'saved' | 'pending' | 'saving' | 'error';
 
@@ -32,7 +33,7 @@ export const useChapterAutosave = (onSaved?: (chapterId: string, title: string, 
   const [title, setTitleState] = useState(initial.title);
   const [content, setContentState] = useState(initial.content);
   const [status, setStatus] = useState<SaveStatus>(initial.recovered ? 'pending' : 'saved');
-  const [notice, setNotice] = useState<string | null>(initial.recovered ? 'Recovered unsaved changes from this device.' : null);
+  const [notice, setNotice] = useState<string | null>(initial.recovered ? t('Recovered unsaved changes from this device.') : null);
 
   const latest = useRef({ title: initial.title, content: initial.content });
   const dirty = useRef(initial.recovered);

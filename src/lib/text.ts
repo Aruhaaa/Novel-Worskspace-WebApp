@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 /** Plain text from the editor's HTML. */
 export const htmlToText = (html: string): string =>
   (html || '')
@@ -14,6 +16,6 @@ export const countWords = (html: string): number => {
 };
 
 export const readMinutes = (words: number): string => {
-  if (words < 200) return 'Less than 1 min read';
-  return `${Math.max(1, Math.round(words / 200))} min read`;
+  if (words < 200) return t('Less than 1 min read');
+  return t('{n} min read', { n: Math.max(1, Math.round(words / 200)) });
 };

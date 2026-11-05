@@ -398,3 +398,123 @@ class DeletedChapter {
     'deleted_at': deletedAt.toIso8601String(),
   };
 }
+
+// ---------------------------------------------------------------------------------------------
+// Notifications: what happened while the person was away
+// ---------------------------------------------------------------------------------------------
+
+/// The kinds of thing a writer can be told about, as the database names them
+const notificationKinds = <String>[
+  'follow',
+  'comment',
+  'review',
+  'message',
+  'share_comment',
+  'collab',
+];
+
+/// What each kind is called where a person chooses what to hear about
+const notificationKindLabels = <String, String>{
+  'follow': 'Someone follows you',
+  'comment': 'Comments on your novels',
+  'review': 'Reviews of your novels',
+  'message': 'New messages',
+  'share_comment': 'Comments on your reading links',
+  'collab': 'Someone joins your project',
+};
+
+class AppNotification {
+  const AppNotification({
+    required this.id,
+    required this.kind,
+    required this.actorName,
+    required this.snippet,
+    required this.count,
+    required this.createdAt,
+    this.readAt,
+    this.projectTitle = '',
+    this.rating,
+    this.role = '',
+  });
+
+  final String id;
+  final String kind;
+  final String actorName;
+  final String snippet;
+
+  /// For messages: how many new ones this line stands for
+  final int count;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  final String projectTitle;
+  final int? rating;
+  final String role;
+
+  bool get unread => readAt == null;
+
+  factory AppNotification.fromRow(Map<String, dynamic> r) {
+    final meta = r['meta'] is Map ? Map<String, dynamic>.from(r['meta'] as Map) : <String, dynamic>{};
+    return AppNotification(
+      id: r['id'].toString(),
+      kind: (r['kind'] ?? '').toString(),
+      actorName: (r['actor_name'] ?? '').toString(),
+      snippet: (r['snippet'] ?? '').toString(),
+      count: (r['count'] as num?)?.toInt() ?? 1,
+      createdAt: DateTime.tryParse((r['created_at'] ?? '').toString()) ?? DateTime.now(),
+      readAt: r['read_at'] == null ? null : DateTime.tryParse(r['read_at'].toString()),
+      projectTitle: (meta['project_title'] ?? '').toString(),
+      rating: (meta['rating'] as num?)?.toInt(),
+      role: (meta['role'] ?? '').toString(),
+    );
+  }
+
+  /// What it says, in one line
+  String get title {
+    final who = actorName.trim().isEmpty ? 'Someone' : actorName.trim();
+    final novel = projectTitle.trim().isEmpty ? 'your novel' : projectTitle.trim();
+    switch (kind) {
+      case 'follow':
+        return '$who started following you';
+      case 'comment':
+        return '$who commented on $novel';
+      case 'review':
+        return '$who reviewed $novel';
+      case 'message':
+        return count > 1 ? '$who sent you $count new messages' : '$who sent you a message';
+      case 'share_comment':
+        return '$who commented on a reading link for $novel';
+      case 'collab':
+        final r = switch (role) {
+          'coauthor' => 'co-author',
+          'editor' => 'editor',
+          'viewer' => 'viewer',
+          _ => 'editor',
+        };
+        return '$who joined $novel as $r';
+      default:
+        return '$who did something';
+    }
+  }
+
+  /// The words that came with it (a comment, a review, a message), with stars for a review
+  String get detail {
+    if (kind == 'review' && rating != null && rating! > 0) {
+      final stars = '★' * rating!.clamp(0, 5) + '☆' * (5 - rating!.clamp(0, 5));
+      return '$stars $snippet'.trim();
+    }
+    return snippet;
+  }
+}
+
+/// Which kinds a person does not want to hear about at all, and which they also want by email
+class NotificationSettings {
+  const NotificationSettings({this.muted = const {}, this.email = const {}});
+  final Set<String> muted;
+  final Set<String> email;
+
+  NotificationSettings withMuted(String kind, bool muted) {
+    final next = {...this.muted};
+    muted ? next.add(kind) : next.remove(kind);
+    return NotificationSettings(muted: next, email: email);
+  }
+}

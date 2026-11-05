@@ -136,4 +136,19 @@ abstract class Backend {
     String readerKey,
     String commentId,
   );
+
+  // --- notifications. Null when there is nowhere to read them from: no cloud, or the site's setup step
+  // (supabase/setup_scripts/20261105_next_features.sql) has not been run yet.
+  Future<List<AppNotification>?> notifications(String userId);
+
+  /// Mark these read, or everything of this person's when [ids] is null
+  Future<void> markNotificationsRead(String userId, {List<String>? ids});
+  Future<NotificationSettings> notificationSettings(String userId);
+  Future<void> saveNotificationSettings(
+    String userId,
+    NotificationSettings settings,
+  );
+
+  // --- error monitoring. Sent to the admin's list when there is a cloud; never throws.
+  Future<void> reportError(Map<String, String> report);
 }

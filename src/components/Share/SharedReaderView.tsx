@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { addMyComment, deleteMyComment, getSharedManuscript, listMyComments, refusalMessage, type LinkComment, type SharedManuscript } from '../../lib/share';
 import { sanitizeHtml } from '../../lib/sanitize';
 import { Dialog } from '../ui/Dialog';
+import { tp, useT } from '../../i18n';
 
 /**
  * The page a beta reader opens from a private link. No account needed: the secret in the link is their key.
@@ -39,6 +40,7 @@ interface Pending {
 }
 
 export const SharedReaderView: React.FC = () => {
+  const t = useT();
   const { token = '' } = useParams();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [identity, setIdentity] = useState<Identity>(() => loadIdentity(token));
@@ -131,7 +133,7 @@ export const SharedReaderView: React.FC = () => {
     e.preventDefault();
     if (!pending) return;
     if (!identity.name.trim()) {
-      setError('Please add your name first, so the writer knows who the comment is from.');
+      setError(t('Please add your name first, so the writer knows who the comment is from.'));
       return;
     }
     if (!note.trim()) return;
@@ -144,12 +146,12 @@ export const SharedReaderView: React.FC = () => {
       setPending(null);
       window.getSelection()?.removeAllRanges();
     } else {
-      setError(res.reason === 'network' ? 'You seem to be offline. Your comment was not sent. Try again when you are back online.' : refusalMessage(res.error));
+      setError(res.reason === 'network' ? t('You seem to be offline. Your comment was not sent. Try again when you are back online.') : refusalMessage(res.error));
     }
   };
 
   const remove = async (c: LinkComment) => {
-    if (!window.confirm('Delete this comment?')) return;
+    if (!window.confirm(t('Delete this comment?'))) return;
     const res = await deleteMyComment(token, identity.key, c.id);
     if (res.ok) setMine((prev) => prev.filter((x) => x.id !== c.id));
   };
@@ -192,7 +194,7 @@ export const SharedReaderView: React.FC = () => {
   if (load.state === 'loading') {
     return (
       <div className="shared-reader">
-        <p className="meta" role="status" style={{ padding: 40 }}>Opening the manuscript…</p>
+        <p className="meta" role="status" style={{ padding: 40 }}>{t('Opening the manuscript…')}</p>
       </div>
     );
   }
@@ -200,15 +202,15 @@ export const SharedReaderView: React.FC = () => {
   if (load.state !== 'ready') {
     const text =
       load.state === 'offline'
-        ? 'Could not reach the server. Check your connection and try again.'
+        ? t('Could not reach the server. Check your connection and try again.')
         : load.state === 'setup'
-          ? 'Reading links are not switched on for this site yet.'
-          : 'This reading link is not active. It may have been turned off, or the address is incomplete. Ask the writer for a new one.';
+          ? t('Reading links are not switched on for this site yet.')
+          : t('This reading link is not active. It may have been turned off, or the address is incomplete. Ask the writer for a new one.');
     return (
       <div className="shared-reader">
         <div className="shared-card">
-          <p className="eyebrow">A READING COPY</p>
-          <h1>This link cannot be opened</h1>
+          <p className="eyebrow">{t('A READING COPY')}</p>
+          <h1>{t('This link cannot be opened')}</h1>
           <p>{text}</p>
         </div>
       </div>
@@ -219,15 +221,15 @@ export const SharedReaderView: React.FC = () => {
   return (
     <div className="shared-reader">
       <header className="shared-top">
-        <p className="eyebrow">A READING COPY</p>
+        <p className="eyebrow">{t('A READING COPY')}</p>
         <h1>{project.title}</h1>
-        {project.author_name && <p className="meta">by {project.author_name}</p>}
+        {project.author_name && <p className="meta">{t('by {name}', { name: project.author_name })}</p>}
         <p className="how">
-          Thank you for reading. Select any passage and choose <strong>Comment</strong>, or use “Comment on this chapter”. The writer will see what you write. You do not need an account.
+          {t('Thank you for reading. Select any passage and choose')} <strong>{t('Comment')}</strong>{t(', or use “Comment on this chapter”. The writer will see what you write. You do not need an account.')}
         </p>
         <label className="shared-name">
-          <span>Your name</span>
-          <input className="input" value={identity.name} onChange={(e) => changeName(e.target.value)} placeholder="e.g. Sam" autoComplete="name" maxLength={80} />
+          <span>{t('Your name')}</span>
+          <input className="input" value={identity.name} onChange={(e) => changeName(e.target.value)} placeholder={t('e.g. Sam')} autoComplete="name" maxLength={80} />
         </label>
       </header>
 
@@ -236,25 +238,25 @@ export const SharedReaderView: React.FC = () => {
           {chapters.map((c, i) => (
             <section className="shared-chapter" data-chapter={c.id} key={c.id}>
               <div className="shared-chapter-head">
-                <span className="num">CHAPTER {String(i + 1).padStart(2, '0')}</span>
-                <button className="small-btn" onClick={() => openComment({ chapterId: c.id, quote: '' })}>Comment on this chapter</button>
+                <span className="num">{t('CHAPTER {n}', { n: String(i + 1).padStart(2, '0') })}</span>
+                <button className="small-btn" onClick={() => openComment({ chapterId: c.id, quote: '' })}>{t('Comment on this chapter')}</button>
               </div>
-              <h2>{c.title || 'Untitled chapter'}</h2>
-              <div className="shared-prose" dangerouslySetInnerHTML={{ __html: c.html || '<p class="meta">This chapter is empty.</p>' }} />
+              <h2>{c.title || t('Untitled chapter')}</h2>
+              <div className="shared-prose" dangerouslySetInnerHTML={{ __html: c.html || `<p class="meta">${t('This chapter is empty.')}</p>` }} />
             </section>
           ))}
         </main>
 
-        <aside className="shared-panel" aria-label="Your comments">
-          <h2>Your comments</h2>
-          <p className="meta" role="status">{mine.length === 0 ? 'None yet.' : `${mine.length} ${mine.length === 1 ? 'comment' : 'comments'}`}</p>
+        <aside className="shared-panel" aria-label={t('Your comments')}>
+          <h2>{t('Your comments')}</h2>
+          <p className="meta" role="status">{mine.length === 0 ? t('None yet.') : tp(mine.length, '{n} comment', '{n} comments')}</p>
           {mine.map((c) => (
             <div className="shared-note" key={c.id}>
               <small>{titleOf(c.chapterId) || c.chapterTitle}</small>
               {c.quote && <q>{c.quote.length > 140 ? `${c.quote.slice(0, 137)}…` : c.quote}</q>}
               <p>{c.note}</p>
-              <button className="link-accent" onClick={() => show(c)}>Show</button>
-              <button className="link-accent" onClick={() => remove(c)}>Delete</button>
+              <button className="link-accent" onClick={() => show(c)}>{t('Show')}</button>
+              <button className="link-accent" onClick={() => remove(c)}>{t('Delete')}</button>
             </div>
           ))}
         </aside>
@@ -270,28 +272,28 @@ export const SharedReaderView: React.FC = () => {
             setPop(null);
           }}
         >
-          Comment
+          {t('Comment')}
         </button>
       )}
 
       <Dialog open={!!pending} onClose={() => setPending(null)} labelledBy="sr-h">
         {pending && (
           <form onSubmit={save}>
-            <p className="eyebrow">{pending.quote ? 'COMMENT ON THIS PASSAGE' : 'COMMENT ON THE CHAPTER'}</p>
-            <h2 id="sr-h">{titleOf(pending.chapterId) || 'Chapter'}</h2>
+            <p className="eyebrow">{pending.quote ? t('COMMENT ON THIS PASSAGE') : t('COMMENT ON THE CHAPTER')}</p>
+            <h2 id="sr-h">{titleOf(pending.chapterId) || t('Chapter')}</h2>
             {pending.quote && <blockquote className="shared-quote">{pending.quote}</blockquote>}
             {!identity.name.trim() && (
               <>
-                <label htmlFor="sr-name">Your name</label>
-                <input id="sr-name" value={identity.name} onChange={(e) => changeName(e.target.value)} placeholder="e.g. Sam" maxLength={80} />
+                <label htmlFor="sr-name">{t('Your name')}</label>
+                <input id="sr-name" value={identity.name} onChange={(e) => changeName(e.target.value)} placeholder={t('e.g. Sam')} maxLength={80} />
               </>
             )}
-            <label htmlFor="sr-note">Your comment</label>
-            <textarea id="sr-note" className="textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you think? What confused you, moved you, or pulled you out of the story?" maxLength={5000} required autoFocus />
+            <label htmlFor="sr-note">{t('Your comment')}</label>
+            <textarea id="sr-note" className="textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('What did you think? What confused you, moved you, or pulled you out of the story?')} maxLength={5000} required autoFocus />
             {error && <p className="meta" role="alert" style={{ color: 'var(--danger)', marginTop: 10 }}>{error}</p>}
             <div className="dialog-actions">
-              <button type="button" className="button button-outline button-small" onClick={() => setPending(null)}>Cancel</button>
-              <button className="button button-primary button-small" disabled={busy}>{busy ? 'Sending…' : 'Send comment'}</button>
+              <button type="button" className="button button-outline button-small" onClick={() => setPending(null)}>{t('Cancel')}</button>
+              <button className="button button-primary button-small" disabled={busy}>{busy ? t('Sending…') : t('Send comment')}</button>
             </div>
           </form>
         )}

@@ -4,7 +4,8 @@ A quiet place for novelists to write, plan and share, and for readers to find wh
 
 - **Write**: manuscript editor with autosave and version history, chapter index, story outline, world notebook, daily tracker, writing sprints, goals, import from Word, text or Markdown, and export to Word, e-book, text, HTML and a full backup.
 - **Read**: public library, saved novels, reviews and comments, reading place, private reading links for beta readers, messages between authors.
-- **Everywhere**: this website, a desktop app (Electron), an Android wrapper (Capacitor) and a phone app (Flutter, in `mobile/`).
+- **Together**: share a project with co-authors, editors and viewers by invitation link and write the same chapter at the same time; a bell for follows, comments, reviews and messages; messages that arrive as they are sent; sign in with Google or Apple when set up.
+- **Everywhere**: this website (in English and Bahasa Melayu), a desktop app (Electron) that updates itself, an Android wrapper (Capacitor) and a phone app (Flutter, in `mobile/`).
 
 Built with React 19, TypeScript, Vite, Tailwind 4, TipTap and Supabase. It also runs with no cloud database at all: with no keys set, everything is kept in the browser.
 

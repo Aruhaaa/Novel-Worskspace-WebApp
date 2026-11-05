@@ -1,5 +1,6 @@
 import React from 'react';
-import { GENRES, GENRE_PALETTES } from '../../lib/genres';
+import { GENRES, GENRE_PALETTES, genreLabel } from '../../lib/genres';
+import { t } from '../../i18n';
 
 interface GenreFilterProps {
   value: string;
@@ -8,9 +9,9 @@ interface GenreFilterProps {
 
 /** Genre chips with each genre's colour family, as in the studio library mockup. */
 export const GenreFilter: React.FC<GenreFilterProps> = ({ value, onChange }) => (
-  <div className="chips" role="group" aria-label="Filter by genre">
+  <div className="chips" role="group" aria-label={t('Filter by genre')}>
     <button className="chip plain" aria-pressed={value === 'All'} onClick={() => onChange('All')}>
-      All genres
+      {t('All genres')}
     </button>
     {GENRES.map((genre) => (
       <button key={genre} className="chip" aria-pressed={value === genre} onClick={() => onChange(genre)}>
@@ -19,10 +20,10 @@ export const GenreFilter: React.FC<GenreFilterProps> = ({ value, onChange }) => 
             <i key={color} style={{ background: color }} />
           ))}
         </span>
-        {genre}
+        {genreLabel(genre)}
       </button>
     ))}
   </div>
 );
 
-export const GenreTag: React.FC<{ genre: string }> = ({ genre }) => <span className="badge">{genre}</span>;
+export const GenreTag: React.FC<{ genre: string }> = ({ genre }) => <span className="badge">{genreLabel(genre)}</span>;

@@ -911,4 +911,93 @@ class SupabaseBackend implements Backend {
     );
     return res == true;
   });
+
+  // ---------------------------------------------------------------------------------------------
+  // Notifications and error monitoring
+  // ---------------------------------------------------------------------------------------------
+
+  @override
+  Future<List<AppNotification>?> notifications(String userId) => _run(() async {
+    try {
+      final rows = await _c
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(60);
+      return [for (final r in rows) AppNotification.fromRow(r)];
+    } on PostgrestException catch (e) {
+      // The site's setup step has not been run yet
+      if (isMissingSchema(e)) return null;
+      rethrow;
+    }
+  });
+
+  @override
+  Future<void> markNotificationsRead(String userId, {List<String>? ids}) =>
+      _run(() async {
+        if (ids != null && ids.isEmpty) return;
+        var q = _c
+            .from('notifications')
+            .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+            .eq('user_id', userId)
+            .filter('read_at', 'is', null);
+        if (ids != null) q = q.inFilter('id', ids);
+        await q;
+      });
+
+  @override
+  Future<NotificationSettings> notificationSettings(String userId) async {
+    try {
+      final row = await _c
+          .from('notification_settings')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (row == null) return const NotificationSettings();
+      Set<String> kinds(Object? v) =>
+          v is List ? v.map((e) => e.toString()).toSet() : <String>{};
+      return NotificationSettings(
+        muted: kinds(row['muted_kinds']),
+        email: kinds(row['email_kinds']),
+      );
+    } catch (_) {
+      // Not set up yet, or no signal: nothing is muted
+      return const NotificationSettings();
+    }
+  }
+
+  @override
+  Future<void> saveNotificationSettings(
+    String userId,
+    NotificationSettings settings,
+  ) => _run(() async {
+    await _c.from('notification_settings').upsert({
+      'user_id': userId,
+      'muted_kinds': settings.muted.toList(),
+      'email_kinds': settings.email.toList(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  });
+
+  @override
+  Future<void> reportError(Map<String, String> report) async {
+    try {
+      await _c.rpc(
+        'report_client_error',
+        params: {
+          'p_fingerprint': report['fingerprint'] ?? '',
+          'p_message': report['message'] ?? '',
+          'p_stack': report['stack'] ?? '',
+          'p_source': 'phone',
+          'p_version': report['version'] ?? '',
+          'p_url': report['where'] ?? '',
+          'p_ua': report['device'] ?? '',
+          'p_extra': {'where': report['where'] ?? ''},
+        },
+      );
+    } catch (_) {
+      // Reporting must never be the thing that breaks
+    }
+  }
 }

@@ -76,12 +76,12 @@ Things that are not done or not verified yet. Remove a line when it is fixed.
 
 Read this first
 - Everything below that talks to Supabase was tested only against the stand-in server in `scripts/dev-supabase` (a real PostgreSQL engine with row level security, triggers and Realtime), never against a real Supabase project. Run `supabase/setup_scripts/20261105_next_features.sql` first (steps in `supabase/README.md`). Until it is run, each feature quietly falls back to this device.
-- The checks were run in pieces, not all together at the end: `npm run test:sql`, `npm run test:unit`, `npm run test:e2e`, `npm run test:e2e:cloud` and `node scripts/dev-supabase/smoke.mjs`. The whole local and the whole cloud browser suites were NOT re-run after the last edits (collaboration, and the partly finished Malay wrapping). Run all of them before merging.
+- The checks: `npm run test:sql`, `npm run test:unit`, `npm run test:e2e`, `npm run test:e2e:cloud`, `node scripts/dev-supabase/smoke.mjs`, and in `mobile/` `flutter analyze` and `flutter test`. See the end of this section for when each was last run. The browser tests type and wait on timers, so on a busy computer a few can time out; they are set to run four at a time for that reason, and any that fail should be re-run alone before being called broken.
 - The database access rules and the hard-coded admin email are still deferred, as asked (see the section above).
 
 Notifications and live messages
 - Email delivery needs an account with an email service, the deployed `notify-email` function and a database webhook (`supabase/README.md`). The rules and wording are tested; sending through a real email service is not. Emails are in English only.
-- Phone and browser push messages are NOT built (they need a Firebase project and Apple/Google push keys). The phone app has no notifications screen or unread counts yet.
+- Phone and browser push messages are NOT built (they need a Firebase project and Apple/Google push keys). The phone app has a notifications screen and a count on the Me tab (cloud only), but they are checked when the app signs in, when the screen opens and when you pull to refresh, not the moment they happen.
 
 Collaboration (co-authors, editors, viewers, live writing)
 - Roles are enforced by the screens only. The old "Allow public" policies on projects and chapters still let anyone with the website's public key change them. The invitations, memberships and live channels themselves are protected by the database.
@@ -98,10 +98,17 @@ Writing tools
 - Typewriter scrolling, read aloud, word lookup and the relationship map are in. Read aloud uses the browser's own voices, so Malay depends on the device. Lookup asks dictionaryapi.dev and Datamuse and knows English words only.
 
 Error monitoring
-- Needs the setup script to reach the admin; without it errors stay on the device that had them. Errors that happen offline are not queued. The phone app does not report yet. Reading the list is limited by the hard-coded admin email.
+- Needs the setup script to reach the admin; without it errors stay on the device that had them (on the phone alone they are dropped). Errors that happen offline are not queued. The phone app reports too (Me > Help fix problems). Reading the list is limited by the hard-coded admin email.
 
 Desktop app updates
 - Not tested with a real release. Only a Windows installer is built and it is not code-signed. Each release needs a higher `version` in `package.json`. See `README.md`.
 
 Language (Bahasa Melayu)
-- The system is in (language choice in Preferences, `t()`, `src/i18n`, `npm run i18n:check`) and about 300 sentences are marked, but the Malay catalog `src/i18n/ms.ts` is still EMPTY, so every screen shows English for now. The landing page, most of the sign-in form, the genre names and some screens still have unmarked English. Run `npm run i18n:check` to see what is left.
+- The website is in Malay on its main screens and in the Write space (about 1,340 sentences in `src/i18n/ms-1.ts` to `ms-10.ts`): the landing page, sign-in, the Read space, messages, notifications, preferences and the account section, sharing a project, the top bar and side panel, Home, Manuscripts, chapter index, the editor (toolbar, rail, version history, writing sprints), outline, notebook, tracker, profile, export, import, reader feedback and reading links, Ctrl K search, the first-visit tours, reporting, and the page a reading link opens. I wrote the translations myself and had them checked by no one: have a Malay speaker read them before they are relied on.
+- Still in English: the admin pages, the writing-sprint announcements read to screen readers, the beta-reader web page that Export writes, error messages that come back from the database or the sign-in service, the browser's own "Choose File" button, the sample project and the sample library's novels (English on purpose), and the whole phone app.
+- A browser or computer set to Malay opens the site in Malay on its own; the choice in Preferences overrides that. `npm run i18n:check` lists what is marked and what is missing, but it cannot see text that was never wrapped, so a new screen still needs a look in Malay. Dates and numbers follow the language; the number of words, chapters and so on uses the plural rule of the language.
+
+Last run (2026-11-05, this computer)
+- After the very last edit to the website: `npx tsc -b` clean, `npx eslint .` no errors (one old warning in `AppContext.tsx`), `npm run build` passes, `npm run test:unit` 27 of 27, `npm run i18n:check` 1,341 of 1,341 sentences have Malay.
+- Browser tests, local (`npx playwright test`): all 68 passed with 2 workers (2.7 minutes). With 4 workers one to three tests timed out on each full run, a different set each time (the sign-in step, the reader's "Back where you left off" note); each passed when run alone or repeated, so the setting is now 2 workers, which takes about as long. Cloud (`npm run test:e2e:cloud`, against the stand-in server in `scripts/dev-supabase`): all 17 passed (1.1 minutes).
+- Run earlier in the round and not touched since: `npm run test:sql` 117 checks, `node scripts/dev-supabase/smoke.mjs` 25, `flutter test` 127 and `flutter analyze` clean. Nothing was tried against a real Supabase project, email service, Google or Apple.

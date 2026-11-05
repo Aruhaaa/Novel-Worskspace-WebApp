@@ -4,17 +4,17 @@ import { databaseService } from '../../services/database';
 import { useApp } from '../../context/AppContext';
 import type { Review, UserProfile } from '../../services/types';
 import { ReportButton } from '../Safety/ReportDialog';
-import { useT } from '../../i18n';
+import { fmtDate, t, tp, useT } from '../../i18n';
 
 interface Props {
   projectId: string;
 }
 
 const Stars: React.FC<{ value: number; onPick?: (n: number) => void }> = ({ value, onPick }) => (
-  <div className="stars" role={onPick ? 'radiogroup' : 'img'} aria-label={onPick ? 'Rating' : `${value} out of 5`}>
+  <div className="stars" role={onPick ? 'radiogroup' : 'img'} aria-label={onPick ? t('Rating') : t('{n} out of 5', { n: value })}>
     {[1, 2, 3, 4, 5].map((n) =>
       onPick ? (
-        <button key={n} type="button" className={n <= value ? 'on' : ''} role="radio" aria-checked={n === value} aria-label={`${n} star${n > 1 ? 's' : ''}`} onClick={() => onPick(n)}>
+        <button key={n} type="button" className={n <= value ? 'on' : ''} role="radio" aria-checked={n === value} aria-label={tp(n, '{n} star', '{n} stars')} onClick={() => onPick(n)}>
           <Star />
         </button>
       ) : (
@@ -84,7 +84,7 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
           </div>
           <textarea className="textarea" style={{ minHeight: 84 }} value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={t('What did you think of this novel?')} />
           <button className="small-btn is-primary" style={{ marginTop: 12 }} disabled={!newContent.trim()}>
-            Post review
+            {t('Post review')}
           </button>
         </form>
       ) : (
@@ -100,8 +100,8 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
           <div className="review" key={r.id}>
             <span className="avatar">{(r.profile?.display_name || 'A')[0].toUpperCase()}</span>
             <div>
-              <strong>{r.profile?.display_name || 'Anonymous reader'}</strong>
-              <small>{new Date(r.created_at).toLocaleDateString()}</small>
+              <strong>{r.profile?.display_name || t('Anonymous reader')}</strong>
+              <small>{fmtDate(r.created_at)}</small>
               <Stars value={r.rating} />
               <p>{r.content}</p>
               <ReportButton subject={{ type: 'review', targetId: r.id, authorId: r.user_id, authorName: r.profile?.display_name, projectId, excerpt: r.content }} />

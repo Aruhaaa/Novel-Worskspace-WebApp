@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Dialog } from '../ui/Dialog';
+import { useT } from '../../i18n';
 
 interface QuickCaptureProps {
   open: boolean;
@@ -9,6 +10,7 @@ interface QuickCaptureProps {
 }
 
 const CaptureForm: React.FC<{ initial: string; onClose: () => void }> = ({ initial, onClose }) => {
+  const t = useT();
   const { createEntity, activeProject } = useApp();
   const [text, setText] = useState(initial);
   const [saved, setSaved] = useState(0);
@@ -31,10 +33,10 @@ const CaptureForm: React.FC<{ initial: string; onClose: () => void }> = ({ initi
 
   return (
     <form onSubmit={save}>
-      <p className="eyebrow">JOT AN IDEA</p>
-      <h2 id="qc-h">Catch it before it goes</h2>
-      <p>It lands in the Ideas column of your Story outline, ready to be sorted later.</p>
-      <label htmlFor="qc-text">Idea</label>
+      <p className="eyebrow">{t('JOT AN IDEA')}</p>
+      <h2 id="qc-h">{t('Catch it before it goes')}</h2>
+      <p>{t('It lands in the Ideas column of your Story outline, ready to be sorted later.')}</p>
+      <label htmlFor="qc-text">{t('Idea')}</label>
       <textarea
         id="qc-text"
         className="textarea"
@@ -43,21 +45,21 @@ const CaptureForm: React.FC<{ initial: string; onClose: () => void }> = ({ initi
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') save(e);
         }}
-        placeholder="What if the lighthouse keeper was never alone?"
+        placeholder={t('What if the lighthouse keeper was never alone?')}
         autoFocus
         style={{ minHeight: 120 }}
       />
       {saved > 0 && (
         <p className="mock-note" role="status" style={{ marginTop: 12 }}>
-          {saved === 1 ? 'Saved to your Ideas.' : `Saved. ${saved} ideas caught this time.`} Add another, or close.
+          {saved === 1 ? t('Saved to your Ideas.') : t('Saved. {n} ideas caught this time.', { n: saved })} {t('Add another, or close.')}
         </p>
       )}
       <div className="dialog-actions">
         <button type="button" className="button button-outline button-small" onClick={onClose}>
-          {saved > 0 ? 'Done' : 'Cancel'}
+          {saved > 0 ? t('Done') : t('Cancel')}
         </button>
         <button className="button button-primary button-small" disabled={!text.trim() || saving}>
-          {saving ? 'Saving…' : 'Save idea'}
+          {saving ? t('Saving…') : t('Save idea')}
         </button>
       </div>
     </form>

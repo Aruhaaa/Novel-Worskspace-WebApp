@@ -30,6 +30,15 @@ Future<void> main() async {
   }
 
   final state = AppState(backend: backend, prefs: prefs);
+  // Anything that goes wrong from here on is noted (without anything private), so it can be fixed. Switched off in Me.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    state.reporter.report(details.exception, details.stack, where: 'flutter');
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    state.reporter.report(error, stack, where: 'platform');
+    return true;
+  };
   await state.init();
   runApp(NovelistApp(state: state));
 }

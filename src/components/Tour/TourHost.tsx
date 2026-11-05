@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { isTourDone, markTourDone, onStartTour, type TourName } from '../../lib/tour';
 import { isSampleProject } from '../../lib/sample';
 import { Tour, type TourStep } from './Tour';
+import { mark } from '../../i18n';
 
 /** Decides when a tour should appear: once for a new writer, and again whenever they ask for it. */
 export const TourHost: React.FC = () => {
@@ -52,40 +53,40 @@ export const TourHost: React.FC = () => {
     if (running === 'welcome') {
       return [
         {
-          title: 'Welcome to Novelist Workspace',
-          body: 'A quiet place to plan, write and finish a novel. This is a two-minute look around. Skip it any time.',
+          title: mark('Welcome to Novelist Workspace'),
+          body: mark('A quiet place to plan, write and finish a novel. This is a two-minute look around. Skip it any time.'),
         },
         {
           target: '.studio-sidebar a[href="#/manuscripts"]',
           placement: 'right',
-          title: 'Your manuscripts',
-          body: 'Every project lives here. Open one and it gets its own workspace: the manuscript, a story outline and a world notebook.',
+          title: mark('Your manuscripts'),
+          body: mark('Every project lives here. Open one and it gets its own workspace: the manuscript, a story outline and a world notebook.'),
         },
         {
           target: '.studio-sidebar a[href="#/library"]',
           placement: 'right',
-          title: 'The public library',
-          body: "Read what other writers publish. When you're ready, publish your own. You choose when, and you can take it down again.",
+          title: mark('The public library'),
+          body: mark("Read what other writers publish. When you're ready, publish your own. You choose when, and you can take it down again."),
         },
         {
           target: '.search-button',
           placement: 'bottom',
-          title: 'Find anything',
-          body: 'Press Ctrl K to jump to a chapter, a character or a word in your text, or to jot down an idea.',
+          title: mark('Find anything'),
+          body: mark('Press Ctrl K to jump to a chapter, a character or a word in your text, or to jot down an idea.'),
         },
         {
           target: '[aria-label="Open profile menu"]',
           placement: 'bottom',
-          title: 'Your corner',
-          body: 'Themes and your writing font are in Preferences. Your progress, messages and the Windows and Android apps are here too.',
+          title: mark('Your corner'),
+          body: mark('Themes and your writing font are in Preferences. Your progress, messages and the Windows and Android apps are here too.'),
         },
         {
-          title: 'Want a look around first?',
-          body: 'We can set up a small sample project with chapters, a notebook and an outline already in it, so you can see how the pieces fit. Remove it whenever you like.',
+          title: mark('Want a look around first?'),
+          body: mark('We can set up a small sample project with chapters, a notebook and an outline already in it, so you can see how the pieces fit. Remove it whenever you like.'),
           action: isGuest || projects.some((p) => isSampleProject(p.id))
             ? undefined
             : {
-                label: 'Open the sample project',
+                label: mark('Open the sample project'),
                 run: async () => {
                   const sample = await createSampleProject();
                   if (sample) navigate('/editor');
@@ -99,38 +100,38 @@ export const TourHost: React.FC = () => {
         {
           target: '.studio-sidebar .studio-nav',
           placement: 'right',
-          title: 'Three rooms for one book',
-          body: 'Manuscript is where you write. Story outline plans your scenes, as a board or a timeline. World notebook keeps your characters, places and lore.',
+          title: mark('Three rooms for one book'),
+          body: mark('Manuscript is where you write. Story outline plans your scenes, as a board or a timeline. World notebook keeps your characters, places and lore.'),
         },
         {
           target: '.studio-sidebar .chapter-list',
           placement: 'right',
-          title: 'Your chapters',
-          body: 'Jump between chapters here. The Chapter index lets you drag them into a new order and mark each as drafting, revising or done.',
+          title: mark('Your chapters'),
+          body: mark('Jump between chapters here. The Chapter index lets you drag them into a new order and mark each as drafting, revising or done.'),
         },
         {
           target: '.tools',
           placement: 'bottom',
-          title: 'Write',
-          body: 'Format your text, change your writing font, and find and replace. Type @ to mention a character or place from your notebook.',
+          title: mark('Write'),
+          body: mark('Format your text, change your writing font, and find and replace. Type @ to mention a character or place from your notebook.'),
         },
         {
           target: '.studio-toolbar .toolbar-actions',
           placement: 'bottom',
-          title: 'History, export and publish',
-          body: 'History keeps older versions of this chapter. More has export and Jot an idea. Publish shares the novel only when you choose.',
+          title: mark('History, export and publish'),
+          body: mark('History keeps older versions of this chapter. More has export and Jot an idea. Publish shares the novel only when you choose.'),
         },
         {
           target: '.studio-context',
           placement: 'left',
-          title: 'In the margins',
-          body: "Set this chapter's status, write a synopsis and private notes, and see who is on the page. Click a name for a quick look.",
+          title: mark('In the margins'),
+          body: mark("Set this chapter's status, write a synopsis and private notes, and see who is on the page. Click a name for a quick look."),
         },
         {
           target: '.save-status',
           placement: 'top',
-          title: 'Saved as you go',
-          body: 'Your words save automatically, and a copy stays on this device until the save is confirmed. If a save ever fails, this says so.',
+          title: mark('Saved as you go'),
+          body: mark('Your words save automatically, and a copy stays on this device until the save is confirmed. If a save ever fails, this says so.'),
         },
       ];
     }

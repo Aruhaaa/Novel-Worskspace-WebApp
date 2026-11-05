@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { ToastContext, type ToastOptions } from './toastContext';
+import { t } from '../../i18n';
 
 interface ToastItem extends ToastOptions {
   id: number;
@@ -40,7 +41,7 @@ const ToastView: React.FC<{ item: ToastItem; onDone: (id: number) => void }> = (
           {item.actionLabel}
         </button>
       )}
-      <button className="snack-close" aria-label="Dismiss" onClick={() => onDone(item.id)}>
+      <button className="snack-close" aria-label={t('Dismiss')} onClick={() => onDone(item.id)}>
         <X />
       </button>
     </div>
@@ -63,7 +64,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="snack-region" aria-label="Notifications">
+      <div className="snack-region" aria-label={t('Notifications')}>
         {items.map((item) => (
           <ToastView key={item.id} item={item} onDone={dismiss} />
         ))}

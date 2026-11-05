@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { tp } from '../i18n';
 
 /**
  * Writing sprints: a timed burst with a running word count and a short history.
@@ -443,10 +444,10 @@ const NO_HISTORY: SprintResult[] = [];
 
 const minutesLabel = (ms: number) => {
   const m = Math.max(1, Math.round(ms / 60_000));
-  return `${m} ${m === 1 ? 'minute' : 'minutes'}`;
+  return tp(m, '{n} minute', '{n} minutes');
 };
 
-const wordsLabel = (n: number) => `${n.toLocaleString()} ${n === 1 ? 'word' : 'words'}`;
+const wordsLabel = (n: number) => tp(n, '{n} word', '{n} words');
 
 const noteFor = (projectId: string, text: string): Note => ({ seq: ++noteSeq, projectId, text });
 

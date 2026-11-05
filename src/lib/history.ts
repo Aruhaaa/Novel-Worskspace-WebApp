@@ -1,4 +1,5 @@
 import { countWords } from './text';
+import { mark } from '../i18n';
 import { tryCloud, unwrap } from './cloud';
 
 /**
@@ -256,9 +257,9 @@ export const maybeAutoSnapshot = async (projectId: string, chapterId: string, ti
 };
 
 export const REASON_LABEL: Record<SnapshotReason, string> = {
-  session: 'When you opened it',
-  auto: 'Automatic',
-  manual: 'Saved by you',
-  'before-restore': 'Before a restore',
-  deleted: 'Before it was deleted',
+  session: mark('When you opened it'),
+  auto: mark('Automatic'),
+  manual: mark('Saved by you'),
+  'before-restore': mark('Before a restore'),
+  deleted: mark('Before it was deleted'),
 };

@@ -15,7 +15,7 @@ import { PageHead } from '../ui/PageHead';
 import { ShareProjectDialog } from '../Collab/ShareProjectDialog';
 import { removeMember, type SharedProject } from '../../lib/collab';
 import { ROLE_LABEL } from '../../lib/notifications';
-import { useT } from '../../i18n';
+import { fmtDate, useT } from '../../i18n';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
 
@@ -69,30 +69,30 @@ export const ManuscriptsView: React.FC = () => {
     <div className="studio-view">
       <div className="page page-wide">
         <PageHead
-          eyebrow="YOUR MANUSCRIPTS"
+          eyebrow={t('YOUR MANUSCRIPTS')}
           title={
             <>
-              Which story <em>today?</em>
+              {t('Which story')} <em>{t('today?')}</em>
             </>
           }
-          lead="Choose a novel to open its workspace: manuscript, story outline and world notebook."
+          lead={t('Choose a novel to open its workspace: manuscript, story outline and world notebook.')}
           actions={
             <>
               <button className="small-btn" onClick={startImport}>
-                <Upload /> Import
+                <Upload /> {t('Import')}
               </button>
               <button className="small-btn is-primary" onClick={startNew}>
-                <Plus /> New project
+                <Plus /> {t('New project')}
               </button>
             </>
           }
         />
 
         {projects.length === 0 ? (
-          <EmptyState icon="book" title="No projects yet" text="Give your first novel a title and a few lines of description, and the rest can wait.">
+          <EmptyState icon="book" title={t('No projects yet')} text={t('Give your first novel a title and a few lines of description, and the rest can wait.')}>
             <div className="imp-empty-actions">
-              <button className="small-btn is-primary" onClick={startNew}>Create your first project</button>
-              <button className="small-btn" onClick={startImport}>Import a manuscript</button>
+              <button className="small-btn is-primary" onClick={startNew}>{t('Create your first project')}</button>
+              <button className="small-btn" onClick={startImport}>{t('Import a manuscript')}</button>
               <SampleButton onNeedAccount={() => setShowGate(true)} />
             </div>
           </EmptyState>
@@ -108,22 +108,22 @@ export const ManuscriptsView: React.FC = () => {
               )}
               <div>
                 <h3>{project.title}</h3>
-                <p>{project.description || 'No description yet.'}</p>
+                <p>{project.description || t('No description yet.')}</p>
                 <p className="meta" style={{ marginTop: 10 }}>
                   <span className={`badge${project.is_published ? ' is-accent' : ''}`}>
-                    <span className="small-dot" /> {project.is_published ? 'Published' : 'Draft'}
+                    <span className="small-dot" /> {project.is_published ? t('Published') : t('Draft')}
                   </span>
-                  {isSampleProject(project.id) && <span className="badge" style={{ marginLeft: 8 }}>Sample</span>}
+                  {isSampleProject(project.id) && <span className="badge" style={{ marginLeft: 8 }}>{t('Sample')}</span>}
                   {sharedProjectIds.includes(project.id) && <span className="badge" style={{ marginLeft: 8 }}>{t('Shared')}</span>}
                   {activeProject?.id === project.id && (
-                    <span className="badge" style={{ marginLeft: 8 }}>Last opened</span>
+                    <span className="badge" style={{ marginLeft: 8 }}>{t('Last opened')}</span>
                   )}{' '}
-                  &nbsp; Updated {new Date(project.updated_at).toLocaleDateString()}
+                  &nbsp; {t('Updated {date}', { date: fmtDate(project.updated_at) })}
                 </p>
               </div>
               <div className="project-actions">
                 {isSampleProject(project.id) && (
-                  <button className="small-btn" onClick={() => setRemoveSample(project)}>Remove sample</button>
+                  <button className="small-btn" onClick={() => setRemoveSample(project)}>{t('Remove sample')}</button>
                 )}
                 {!isGuest && !isSampleProject(project.id) && (
                   <button className="small-btn" onClick={() => setSharing(project)}>
@@ -131,13 +131,13 @@ export const ManuscriptsView: React.FC = () => {
                   </button>
                 )}
                 <button className="small-btn" onClick={() => setExportProject(project)}>
-                  <Download /> Export
+                  <Download /> {t('Export')}
                 </button>
                 <button className="small-btn" onClick={() => openSettings(project)}>
-                  <Settings /> Edit details
+                  <Settings /> {t('Edit details')}
                 </button>
                 <button className="small-btn is-primary" onClick={() => open(project)}>
-                  Open
+                  {t('Open')}
                 </button>
               </div>
             </article>
@@ -159,17 +159,17 @@ export const ManuscriptsView: React.FC = () => {
                 )}
                 <div>
                   <h3>{project.title}</h3>
-                  <p>{project.description || 'No description yet.'}</p>
+                  <p>{project.description || t('No description yet.')}</p>
                   <p className="meta" style={{ marginTop: 10 }}>
                     <span className="badge is-accent">{ROLE_LABEL[project.role]()}</span>
                     <span style={{ marginLeft: 8 }}>{t('by {owner}', { owner: project.ownerName })}</span>
-                    {activeProject?.id === project.id && <span className="badge" style={{ marginLeft: 8 }}>Last opened</span>}
+                    {activeProject?.id === project.id && <span className="badge" style={{ marginLeft: 8 }}>{t('Last opened')}</span>}
                   </p>
                 </div>
                 <div className="project-actions">
                   <button className="small-btn" onClick={() => void leave(project)}>{t('Leave')}</button>
                   <button className="small-btn is-primary" onClick={() => open(project)}>
-                    Open
+                    {t('Open')}
                   </button>
                 </div>
               </article>
@@ -191,15 +191,15 @@ export const ManuscriptsView: React.FC = () => {
             setShowNew(false);
           }}
         >
-          <p className="eyebrow">A NEW BOOK</p>
-          <h2 id="ms-np-h">Start a project</h2>
-          <label htmlFor="ms-np-title">Project title</label>
-          <input id="ms-np-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Whispers of the Starward" required autoFocus />
-          <label htmlFor="ms-np-desc">Description</label>
-          <input id="ms-np-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="A short summary of the theme, setting or plot" />
+          <p className="eyebrow">{t('A NEW BOOK')}</p>
+          <h2 id="ms-np-h">{t('Start a project')}</h2>
+          <label htmlFor="ms-np-title">{t('Project title')}</label>
+          <input id="ms-np-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Whispers of the Starward')} required autoFocus />
+          <label htmlFor="ms-np-desc">{t('Description')}</label>
+          <input id="ms-np-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('A short summary of the theme, setting or plot')} />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setShowNew(false)}>Cancel</button>
-            <button className="button button-primary button-small">Create project</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setShowNew(false)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Create project')}</button>
           </div>
         </form>
       </Dialog>
@@ -213,24 +213,24 @@ export const ManuscriptsView: React.FC = () => {
             setEditing(null);
           }}
         >
-          <p className="eyebrow">PROJECT DETAILS</p>
+          <p className="eyebrow">{t('PROJECT DETAILS')}</p>
           <h2 id="ps-h">{editing?.title}</h2>
-          <label htmlFor="ps-title">Novel title</label>
+          <label htmlFor="ps-title">{t('Novel title')}</label>
           <input id="ps-title" value={eTitle} onChange={(e) => setETitle(e.target.value)} required />
-          <label htmlFor="ps-syn">Synopsis</label>
+          <label htmlFor="ps-syn">{t('Synopsis')}</label>
           <input id="ps-syn" value={eDesc} onChange={(e) => setEDesc(e.target.value)} />
-          <label htmlFor="ps-genre">Genre</label>
+          <label htmlFor="ps-genre">{t('Genre')}</label>
           <select id="ps-genre" className="select" style={{ marginTop: 8 }} value={eGenre} onChange={(e) => setEGenre(e.target.value)}>
-            <option value="">Select a genre</option>
+            <option value="">{t('Select a genre')}</option>
             {GENRES.map((g) => (
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
-          <label htmlFor="ps-cover">Cover image URL</label>
-          <input id="ps-cover" type="url" value={eCover} onChange={(e) => setECover(e.target.value)} placeholder="https://…" />
+          <label htmlFor="ps-cover">{t('Cover image URL')}</label>
+          <input id="ps-cover" type="url" value={eCover} onChange={(e) => setECover(e.target.value)} placeholder={t('https://…')} />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setEditing(null)}>Cancel</button>
-            <button className="button button-primary button-small">Save changes</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setEditing(null)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Save changes')}</button>
           </div>
         </form>
       </Dialog>
@@ -242,7 +242,7 @@ export const ManuscriptsView: React.FC = () => {
       <GuestGateModal
         isOpen={showGate}
         onClose={() => setShowGate(false)}
-        message="You need a free account to start writing and saving your own novels. It takes about ten seconds. Guests can still browse and read everything in the Public Library."
+        message={t('You need a free account to start writing and saving your own novels. It takes about ten seconds. Guests can still browse and read everything in the Public Library.')}
       />
     </div>
   );

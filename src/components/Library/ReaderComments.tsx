@@ -4,7 +4,7 @@ import { databaseService } from '../../services/database';
 import { useApp } from '../../context/AppContext';
 import type { Comment, UserProfile } from '../../services/types';
 import { ReportButton } from '../Safety/ReportDialog';
-import { useT } from '../../i18n';
+import { fmtDate, useT } from '../../i18n';
 
 interface Props {
   projectId: string;
@@ -65,7 +65,7 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
             />
           </label>
           <button className="small-btn is-primary" disabled={!newContent.trim()}>
-            <Send /> Post comment
+            <Send /> {t('Post comment')}
           </button>
         </form>
       ) : (
@@ -82,8 +82,8 @@ export const ReaderComments: React.FC<Props> = ({ projectId, chapterId }) => {
             <div className="comment" key={c.id}>
               <span className="avatar">{(c.profile?.display_name || 'A')[0].toUpperCase()}</span>
               <div>
-                <strong>{c.profile?.display_name || 'Anonymous reader'}</strong>
-                <small>{new Date(c.created_at).toLocaleDateString()}</small>
+                <strong>{c.profile?.display_name || t('Anonymous reader')}</strong>
+                <small>{fmtDate(c.created_at)}</small>
                 <p>{c.content}</p>
                 <ReportButton subject={{ type: 'comment', targetId: c.id, authorId: c.user_id, authorName: c.profile?.display_name, projectId, excerpt: c.content }} />
               </div>

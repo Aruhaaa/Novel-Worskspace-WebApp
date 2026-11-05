@@ -50,7 +50,7 @@ export const AuthView: React.FC = () => {
       return;
     }
     // The same wording whether or not that address has an account
-    setMessage('If there is an account for that address, a link to choose a new password is on its way. It may take a minute, and it can land in spam.');
+    setMessage(t('If there is an account for that address, a link to choose a new password is on its way. It may take a minute, and it can land in spam.'));
   };
 
   const handleProvider = async (provider: AuthProvider) => {
@@ -105,29 +105,29 @@ export const AuthView: React.FC = () => {
       <section className="auth-art" aria-hidden="true">
         <Brand to="#/" />
         <h2>
-          A little room.
-          <br />A whole <em>world.</em>
+          {t('A little room.')}
+          <br />{t('A whole')} <em>{t('world.')}</em>
         </h2>
-        <p>Your manuscript, your notes and your world in one quiet place.</p>
+        <p>{t('Your manuscript, your notes and your world in one quiet place.')}</p>
         <img src={landscape} alt="" width="380" height="430" />
       </section>
 
       <section className="auth-form">
         <div className="auth-card">
-          <h1>{forgot ? 'Forgot it?' : isLogin ? 'Welcome back.' : 'Make a space.'}</h1>
+          <h1>{forgot ? t('Forgot it?') : isLogin ? t('Welcome back.') : t('Make a space.')}</h1>
           <p className="lead">
             {forgot
-              ? 'Enter the email you signed up with and we will send a link to choose a new password.'
+              ? t('Enter the email you signed up with and we will send a link to choose a new password.')
               : isLogin
-                ? 'Sign in to pick up where you left off.'
-                : 'Create a free account to read, keep a library, and write your own novels.'}
+                ? t('Sign in to pick up where you left off.')
+                : t('Create a free account to read, keep a library, and write your own novels.')}
           </p>
 
           {!isSupabase && (
             <div className="fallback-note" role="note">
               <Info />
               <span>
-                <strong>Running in local fallback mode.</strong> No cloud database is connected, so your work is saved in this browser only.
+                <strong>{t('Running in local fallback mode.')}</strong> {t('No cloud database is connected, so your work is saved in this browser only.')}
               </span>
             </div>
           )}
@@ -135,16 +135,16 @@ export const AuthView: React.FC = () => {
           {forgot ? (
             <form onSubmit={handleReset}>
               <label className="field">
-                <span>Email address</span>
-                <input className="input" type="email" placeholder="author@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+                <span>{t('Email address')}</span>
+                <input className="input" type="email" placeholder={t('author@example.com')} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
               </label>
               {error && <p className="mock-note" role="alert" style={{ marginBottom: 14, color: 'var(--danger)' }}>{error}</p>}
               {message && <p className="mock-note" role="status" style={{ marginBottom: 14 }}>{message}</p>}
               <button className="button button-primary" style={{ width: '100%' }} disabled={loading || !email.trim()}>
-                {loading ? 'One moment…' : 'Send reset link'}
+                {loading ? t('One moment…') : t('Send reset link')}
               </button>
               <p className="auth-switch">
-                <a href="#" onClick={leaveForgot}>Back to sign in</a>
+                <a href="#" onClick={leaveForgot}>{t('Back to sign in')}</a>
               </p>
             </form>
           ) : (
@@ -164,11 +164,11 @@ export const AuthView: React.FC = () => {
               )}
               <form onSubmit={handleSubmit}>
                 <label className="field">
-                  <span>Email address</span>
-                  <input className="input" type="email" placeholder="author@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <span>{t('Email address')}</span>
+                  <input className="input" type="email" placeholder={t('author@example.com')} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </label>
                 <label className="field">
-                  <span>Password</span>
+                  <span>{t('Password')}</span>
                   <input className="input" type="password" placeholder="••••••••" autoComplete={isLogin ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </label>
                 {isLogin && (
@@ -182,19 +182,19 @@ export const AuthView: React.FC = () => {
                         setMessage(null);
                       }}
                     >
-                      Forgot password?
+                      {t('Forgot password?')}
                     </a>
                   </p>
                 )}
                 {error && <p className="mock-note" role="alert" style={{ marginBottom: 14, color: 'var(--danger)' }}>{error}</p>}
                 {message && <p className="mock-note" role="status" style={{ marginBottom: 14 }}>{message}</p>}
                 <button className="button button-primary" style={{ width: '100%' }} disabled={loading}>
-                  {loading ? 'One moment…' : isLogin ? 'Sign in' : 'Create account'}
+                  {loading ? t('One moment…') : isLogin ? t('Sign in') : t('Create account')}
                 </button>
               </form>
 
               <p className="auth-switch">
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                {isLogin ? t("Don't have an account?") : t('Already have an account?')}{' '}
                 <a
                   href="#"
                   onClick={(e) => {
@@ -204,12 +204,12 @@ export const AuthView: React.FC = () => {
                     setMessage(null);
                   }}
                 >
-                  {isLogin ? 'Sign up' : 'Sign in'}
+                  {isLogin ? t('Sign up') : t('Sign in')}
                 </a>
               </p>
               <hr className="divider" />
               <button className="button button-outline" style={{ width: '100%' }} onClick={() => loginAsGuest()} type="button">
-                Just browse the library
+                {t('Just browse the library')}
               </button>
             </>
           )}

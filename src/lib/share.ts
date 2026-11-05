@@ -1,4 +1,5 @@
 import { tryCloud, unwrap, type CloudResult } from './cloud';
+import { t } from '../i18n';
 
 /**
  * Private reading links for beta readers. A link holds a secret token; anyone with the link can read the
@@ -7,7 +8,7 @@ import { tryCloud, unwrap, type CloudResult } from './cloud';
  */
 
 // Where a link should point. The desktop app has no web address of its own, so it uses the published site.
-const PUBLIC_APP_URL = 'https://novel-worskspace-web-app.vercel.app/';
+const PUBLIC_APP_URL = 'https://novelistworkspace.kakamond.com/';
 
 /** The address the app is served from, for links that must open it again (reading links, password-reset emails). */
 export const appBaseUrl = (): string =>
@@ -154,5 +155,5 @@ export const deleteMyComment = (token: string, readerKey: string, commentId: str
 /** The message from a refused request, such as "Please add your name first." */
 export const refusalMessage = (error: unknown): string => {
   const m = String((error as { message?: unknown } | null)?.message ?? '');
-  return m && m.length < 200 ? m : 'That did not work. Please try again.';
+  return m && m.length < 200 ? m : t('That did not work. Please try again.');
 };

@@ -19,12 +19,12 @@ import {
   type MemberRole,
 } from '../../lib/collab';
 import { ROLE_LABEL } from '../../lib/notifications';
-import { useT } from '../../i18n';
+import { t, useT } from '../../i18n';
 
 const ROLE_HINT: Record<MemberRole, () => string> = {
-  coauthor: () => 'Writes and arranges everything: chapters, outline and notebook.',
-  editor: () => 'Writes in the chapters. Cannot add, remove or reorder them.',
-  viewer: () => 'Reads, and sees changes as they are made.',
+  coauthor: () => t('Writes and arranges everything: chapters, outline and notebook.'),
+  editor: () => t('Writes in the chapters. Cannot add, remove or reorder them.'),
+  viewer: () => t('Reads, and sees changes as they are made.'),
 };
 
 const Body: React.FC<{ project: Project; onClose: () => void }> = ({ project, onClose }) => {

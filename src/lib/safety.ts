@@ -1,4 +1,5 @@
 import { tryCloud, unwrap } from './cloud';
+import { mark } from '../i18n';
 import type { Report, ReportReason, ReportTarget } from '../services/types';
 
 /**
@@ -8,20 +9,20 @@ import type { Report, ReportReason, ReportTarget } from '../services/types';
  */
 
 export const REPORT_REASONS: { id: ReportReason; label: string; hint: string }[] = [
-  { id: 'spam', label: 'Spam or advertising', hint: 'Repeated links, promotion, or posts that are not real writing.' },
-  { id: 'harassment', label: 'Harassment or hate', hint: 'Targets a person or group, threatens, or demeans.' },
-  { id: 'sexual', label: 'Sexual content', hint: 'Explicit material in a place that is not marked for it.' },
-  { id: 'violence', label: 'Graphic violence', hint: 'Extreme violence or self-harm shown without care.' },
-  { id: 'copyright', label: 'Copyright or plagiarism', hint: 'Someone else’s work posted as their own.' },
-  { id: 'other', label: 'Something else', hint: 'Tell us what is wrong in the details.' },
+  { id: 'spam', label: mark('Spam or advertising'), hint: mark('Repeated links, promotion, or posts that are not real writing.') },
+  { id: 'harassment', label: mark('Harassment or hate'), hint: mark('Targets a person or group, threatens, or demeans.') },
+  { id: 'sexual', label: mark('Sexual content'), hint: mark('Explicit material in a place that is not marked for it.') },
+  { id: 'violence', label: mark('Graphic violence'), hint: mark('Extreme violence or self-harm shown without care.') },
+  { id: 'copyright', label: mark('Copyright or plagiarism'), hint: mark('Someone else’s work posted as their own.') },
+  { id: 'other', label: mark('Something else'), hint: mark('Tell us what is wrong in the details.') },
 ];
 
 export const TARGET_NAMES: Record<ReportTarget, string> = {
-  novel: 'novel',
-  comment: 'comment',
-  review: 'review',
-  message: 'message',
-  author: 'author',
+  novel: mark('novel'),
+  comment: mark('comment'),
+  review: mark('review'),
+  message: mark('message'),
+  author: mark('author'),
 };
 
 const readJson = <T,>(key: string, fallback: T): T => {

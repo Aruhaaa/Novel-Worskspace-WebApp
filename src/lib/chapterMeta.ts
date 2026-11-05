@@ -2,6 +2,8 @@
  * Extra facts about each chapter: where it stands, a one-line synopsis and private notes.
  * Kept in this browser (per project). The chapters table has no columns for these yet.
  */
+import { mark } from '../i18n';
+
 export type ChapterStatus = 'draft' | 'revising' | 'done';
 
 export interface ChapterMeta {
@@ -16,9 +18,9 @@ export type ChapterMetaMap = Record<string, ChapterMeta>;
 
 export const STATUS_ORDER: ChapterStatus[] = ['draft', 'revising', 'done'];
 export const STATUS_LABEL: Record<ChapterStatus, string> = {
-  draft: 'Drafting',
-  revising: 'Revising',
-  done: 'Done',
+  draft: mark('Drafting'),
+  revising: mark('Revising'),
+  done: mark('Done'),
 };
 
 export const EMPTY_META: ChapterMeta = { status: 'draft', synopsis: '', notes: '' };

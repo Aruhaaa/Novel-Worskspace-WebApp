@@ -518,6 +518,29 @@ class LocalBackend implements Backend {
     String commentId,
   ) async => false;
 
+  // ---- notifications and error monitoring: nowhere to read or send them on the phone alone ----
+
+  @override
+  Future<List<AppNotification>?> notifications(String userId) async => null;
+
+  @override
+  Future<void> markNotificationsRead(String userId, {List<String>? ids}) async {}
+
+  @override
+  Future<NotificationSettings> notificationSettings(String userId) async {
+    final muted = _prefs.getStringList('notify_muted_$userId') ?? const <String>[];
+    return NotificationSettings(muted: muted.toSet());
+  }
+
+  @override
+  Future<void> saveNotificationSettings(
+    String userId,
+    NotificationSettings settings,
+  ) => _prefs.setStringList('notify_muted_$userId', settings.muted.toList());
+
+  @override
+  Future<void> reportError(Map<String, String> report) async {}
+
   // ---- sample novels ----
 
   static Map<String, dynamic> seed() => _seed();

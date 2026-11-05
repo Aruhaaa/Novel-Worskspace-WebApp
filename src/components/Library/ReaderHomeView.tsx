@@ -6,7 +6,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
 import { NovelCard } from './LibraryView';
 import { getReadingPlace } from '../../lib/readingPlace';
-import { useT } from '../../i18n';
+import { fmtDate, tp, useT } from '../../i18n';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
 
@@ -54,11 +54,11 @@ export const ReaderHomeView: React.FC = () => {
     <div className="studio-view">
       <div className="page page-wide">
         <PageHead
-          eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase()}
+          eyebrow={fmtDate(new Date(), { weekday: 'long' }).toUpperCase()}
           title={
             name ? (
               <>
-                Good to see you, <em>{name}.</em>
+                {t('Good to see you,')} <em>{name}.</em>
               </>
             ) : (
               <>
@@ -66,7 +66,7 @@ export const ReaderHomeView: React.FC = () => {
               </>
             )
           }
-          lead={`${publicProjects.length} ${publicProjects.length === 1 ? 'novel' : 'novels'} in the library, written by people here.`}
+          lead={tp(publicProjects.length, '{n} novel in the library, written by people here.', '{n} novels in the library, written by people here.')}
           actions={
             <>
               <Link className="small-btn" to="/library">{t('Browse the library')}</Link>

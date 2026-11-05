@@ -20,6 +20,7 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final userId = context.select<AppState, String?>((s) => s.user?.id);
+    final unread = context.select<AppState, int>((s) => s.unreadNotifications);
     return Scaffold(
       body: IndexedStack(
         index: _index,
@@ -32,7 +33,7 @@ class _ShellState extends State<Shell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.menu_book_outlined),
             selectedIcon: Icon(Icons.menu_book),
@@ -44,8 +45,16 @@ class _ShellState extends State<Shell> {
             label: 'Write',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.person_outline),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.person),
+            ),
             label: 'Me',
           ),
         ],

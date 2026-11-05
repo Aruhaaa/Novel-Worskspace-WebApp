@@ -6,6 +6,7 @@ import { NOTE_HANDOFF_KEY } from '../../lib/uiEvents';
 import { useOpenChapter } from '../../lib/useOpenChapter';
 import { Dialog } from '../ui/Dialog';
 import { EntityDetails } from './EntityDetails';
+import { useT } from '../../i18n';
 
 interface EntityPeekProps {
   entityId: string | null;
@@ -14,6 +15,7 @@ interface EntityPeekProps {
 
 /** A quick look at a character, place or note without leaving the page you are writing on. */
 export const EntityPeek: React.FC<EntityPeekProps> = ({ entityId, onChange }) => {
+  const t = useT();
   const { entities, chapters } = useApp();
   const navigate = useNavigate();
   const openChapter = useOpenChapter();
@@ -49,9 +51,9 @@ export const EntityPeek: React.FC<EntityPeekProps> = ({ entityId, onChange }) =>
                 navigate('/notebook');
               }}
             >
-              Open in notebook
+              {t('Open in notebook')}
             </button>
-            <button className="button button-primary button-small" onClick={() => onChange(null)}>Close</button>
+            <button className="button button-primary button-small" onClick={() => onChange(null)}>{t('Close')}</button>
           </div>
         </div>
       )}

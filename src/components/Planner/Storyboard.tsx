@@ -6,12 +6,13 @@ import { useApp } from '../../context/AppContext';
 import type { WikiEntity } from '../../services/types';
 import { sceneChapterId, sceneWhen } from '../../lib/notes';
 import { Dialog } from '../ui/Dialog';
+import { mark, useT } from '../../i18n';
 
 const COLUMNS = [
-  { id: 'idea', title: 'Ideas' },
-  { id: 'todo', title: 'To do' },
-  { id: 'drafting', title: 'Drafting' },
-  { id: 'finished', title: 'Finished' },
+  { id: 'idea', title: mark('Ideas') },
+  { id: 'todo', title: mark('To do') },
+  { id: 'drafting', title: mark('Drafting') },
+  { id: 'finished', title: mark('Finished') },
 ];
 
 interface StoryboardProps {
@@ -19,6 +20,7 @@ interface StoryboardProps {
 }
 
 export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
+  const t = useT();
   const { entities, chapters, createEntity, updateEntity, deleteEntity, activeProject } = useApp();
 
   const [showAdd, setShowAdd] = useState(false);
@@ -32,7 +34,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
   const chapterLabel = (scene: WikiEntity): string | null => {
     const id = sceneChapterId(scene);
     const at = id ? chapters.findIndex((ch) => ch.id === id) : -1;
-    return at === -1 ? null : `Ch. ${String(at + 1).padStart(2, '0')} · ${chapters[at].title || 'Untitled chapter'}`;
+    return at === -1 ? null : `${t('Ch. {n}', { n: String(at + 1).padStart(2, '0') })} · ${chapters[at].title || t('Untitled chapter')}`;
   };
 
   const getScenesByStatus = (statusId: string) =>
@@ -58,11 +60,11 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
     const current = COLUMNS.findIndex((c) => c.id === (scene.content.status || 'idea'));
     const next = COLUMNS[current + direction];
     if (!next) {
-      setAnnouncement('Already at the edge of the board');
+      setAnnouncement(t('Already at the edge of the board'));
       return;
     }
     await moveScene(scene, next.id, 999);
-    setAnnouncement(`"${scene.name}" moved to ${next.title}`);
+    setAnnouncement(t('“{scene}” moved to {column}', { scene: scene.name, column: t(next.title) }));
   };
 
   const submitAddScene = async (e: React.FormEvent) => {
@@ -81,7 +83,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
 
   return (
     <div>
-      <p className="section-note">Drag a scene, or use the arrow buttons to move it between columns. The move buttons work with a keyboard.</p>
+      <p className="section-note">{t('Drag a scene, or use the arrow buttons to move it between columns. The move buttons work with a keyboard.')}</p>
       <p className="sr-only" role="status">{announcement}</p>
 
       <DragDropContext onDragEnd={onDragEnd}>
@@ -91,7 +93,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
             return (
               <div key={column.id}>
                 <h3 className="board-column-label">
-                  {column.title.toUpperCase()} <span>{String(list.length).padStart(2, '0')}</span>
+                  {t(column.title).toUpperCase()} <span>{String(list.length).padStart(2, '0')}</span>
                 </h3>
                 <Droppable droppableId={column.id}>
                   {(provided, snapshot) => (
@@ -109,9 +111,9 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                               className="scene-card"
                               style={{ ...drag.draggableProps.style, boxShadow: dragSnapshot.isDragging ? '0 12px 24px -12px #3c332466' : undefined }}
                             >
-                              <span className="scene-status">{column.title.toUpperCase()}</span>
+                              <span className="scene-status">{t(column.title).toUpperCase()}</span>
                               <h4>{scene.name}</h4>
-                              <p>{scene.description || 'No description'}</p>
+                              <p>{scene.description || t('No description')}</p>
                               {(chapterLabel(scene) || sceneWhen(scene)) && (
                                 <div className="scene-meta">
                                   {chapterLabel(scene) && <span className="badge is-accent">{chapterLabel(scene)}</span>}
@@ -119,13 +121,13 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                                 </div>
                               )}
                               <div className="scene-tools">
-                                <span className="grip" {...drag.dragHandleProps} aria-label="Drag to move">
+                                <span className="grip" {...drag.dragHandleProps} aria-label={t('Drag to move')}>
                                   <GripVertical />
                                 </span>
-                                <button onClick={() => stepScene(scene, -1)} aria-label="Move to previous column"><ChevronLeft /></button>
-                                <button onClick={() => stepScene(scene, 1)} aria-label="Move to next column"><ChevronRight /></button>
-                                <button onClick={() => onEditEntity(scene)} aria-label="Edit scene"><Edit2 /></button>
-                                <button onClick={() => setSceneToDelete(scene.id)} aria-label="Delete scene"><Trash2 /></button>
+                                <button onClick={() => stepScene(scene, -1)} aria-label={t('Move to previous column')}><ChevronLeft /></button>
+                                <button onClick={() => stepScene(scene, 1)} aria-label={t('Move to next column')}><ChevronRight /></button>
+                                <button onClick={() => onEditEntity(scene)} aria-label={t('Edit scene')}><Edit2 /></button>
+                                <button onClick={() => setSceneToDelete(scene.id)} aria-label={t('Delete scene')}><Trash2 /></button>
                               </div>
                             </article>
                           )}
@@ -143,7 +145,7 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
                     setShowAdd(true);
                   }}
                 >
-                  + Add scene
+                  + {t('Add scene')}
                 </button>
               </div>
             );
@@ -153,24 +155,24 @@ export const Storyboard: React.FC<StoryboardProps> = ({ onEditEntity }) => {
 
       <Dialog open={showAdd} onClose={() => setShowAdd(false)} labelledBy="sc-h">
         <form onSubmit={submitAddScene}>
-          <p className="eyebrow">STORYBOARD</p>
-          <h2 id="sc-h">Add a scene</h2>
-          <label htmlFor="sc-name">Scene name</label>
-          <input id="sc-name" value={newSceneName} onChange={(e) => setNewSceneName(e.target.value)} placeholder="Scene name…" required autoFocus />
+          <p className="eyebrow">{t('STORYBOARD')}</p>
+          <h2 id="sc-h">{t('Add a scene')}</h2>
+          <label htmlFor="sc-name">{t('Scene name')}</label>
+          <input id="sc-name" value={newSceneName} onChange={(e) => setNewSceneName(e.target.value)} placeholder={t('Scene name…')} required autoFocus />
           <div className="dialog-actions">
-            <button type="button" className="button button-outline button-small" onClick={() => setShowAdd(false)}>Cancel</button>
-            <button className="button button-primary button-small">Create scene</button>
+            <button type="button" className="button button-outline button-small" onClick={() => setShowAdd(false)}>{t('Cancel')}</button>
+            <button className="button button-primary button-small">{t('Create scene')}</button>
           </div>
         </form>
       </Dialog>
 
       <Dialog open={sceneToDelete !== null} onClose={() => setSceneToDelete(null)} labelledBy="ds-h">
-        <p className="eyebrow">CAREFUL</p>
-        <h2 id="ds-h">Delete this scene?</h2>
-        <p>This can't be undone.</p>
+        <p className="eyebrow">{t('CAREFUL')}</p>
+        <h2 id="ds-h">{t('Delete this scene?')}</h2>
+        <p>{t('This can\'t be undone.')}</p>
         <div className="dialog-actions">
-          <button className="button button-outline button-small" onClick={() => setSceneToDelete(null)}>Keep it</button>
-          <button className="button button-primary button-small" onClick={confirmDelete}>Yes, delete</button>
+          <button className="button button-outline button-small" onClick={() => setSceneToDelete(null)}>{t('Keep it')}</button>
+          <button className="button button-primary button-small" onClick={confirmDelete}>{t('Yes, delete')}</button>
         </div>
       </Dialog>
     </div>

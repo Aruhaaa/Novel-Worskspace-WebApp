@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import { useT } from '../../i18n';
 
 export interface MoreMenuItem {
   label: string;
@@ -9,6 +10,7 @@ export interface MoreMenuItem {
 
 /** A small "More" dropdown for the less-used toolbar actions. */
 export const MoreMenu: React.FC<{ items: MoreMenuItem[] }> = ({ items }) => {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -36,7 +38,7 @@ export const MoreMenu: React.FC<{ items: MoreMenuItem[] }> = ({ items }) => {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <MoreHorizontal style={{ width: 16, height: 16 }} /> More
+        <MoreHorizontal style={{ width: 16, height: 16 }} /> {t('More')}
       </button>
       {open && (
         <div className="menu-pop" role="menu" style={{ width: 220 }}>

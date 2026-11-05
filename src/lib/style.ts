@@ -1,3 +1,4 @@
+import { mark } from '../i18n';
 /**
  * Gentle style notes. These are nudges, not rules: every flag is something a writer may well keep.
  * Pure text in, ranges out, so it is easy to reason about and test.
@@ -12,11 +13,11 @@ export interface StyleIssue {
 }
 
 export const STYLE_KINDS: { id: StyleKind; label: string; hint: string }[] = [
-  { id: 'repeat', label: 'Repeated words', hint: 'The same word twice in a row, like "the the". Sometimes it is meant.' },
-  { id: 'adverb', label: 'Adverbs', hint: 'Words ending in -ly. A strong verb can often do the work.' },
-  { id: 'filler', label: 'Filler words', hint: 'Words like very, really and just that often add little.' },
-  { id: 'long', label: 'Long sentences', hint: 'Sentences over 35 words. Fine if you want the reader out of breath.' },
-  { id: 'opener', label: 'Same openers', hint: 'Three sentences in a row that start with the same word.' },
+  { id: 'repeat', label: mark('Repeated words'), hint: mark('The same word twice in a row, like "the the". Sometimes it is meant.') },
+  { id: 'adverb', label: mark('Adverbs'), hint: mark('Words ending in -ly. A strong verb can often do the work.') },
+  { id: 'filler', label: mark('Filler words'), hint: mark('Words like very, really and just that often add little.') },
+  { id: 'long', label: mark('Long sentences'), hint: mark('Sentences over 35 words. Fine if you want the reader out of breath.') },
+  { id: 'opener', label: mark('Same openers'), hint: mark('Three sentences in a row that start with the same word.') },
 ];
 
 export const LONG_SENTENCE_WORDS = 35;

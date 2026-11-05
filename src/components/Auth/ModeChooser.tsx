@@ -26,9 +26,9 @@ export const ModeChooser: React.FC = () => {
       <section className="auth-art" aria-hidden="true">
         <Brand to="#/" />
         <h2>
-          Two rooms,
+          {t('Two rooms,')}
           <br />
-          one <em>{t('door.')}</em>
+          {t('one')} <em>{t('door.')}</em>
         </h2>
         <p>{t('Read what others have written. Write your own. Move between them whenever you like.')}</p>
         <img src={landscape} alt="" width="380" height="430" />
@@ -40,7 +40,7 @@ export const ModeChooser: React.FC = () => {
           <p className="lead">{t('This only decides what opens first. You can read and write either way, and change it any time in Preferences.')}</p>
           <ModeOptions value={choice} onChange={setChoice} labelledBy="mode-h" />
           <button className="button button-primary" style={{ width: '100%' }} disabled={!choice}>
-            Continue
+            {t('Continue')}
           </button>
         </form>
       </section>

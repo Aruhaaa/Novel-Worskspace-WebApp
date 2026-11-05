@@ -16,8 +16,8 @@ export const ResetPasswordView: React.FC = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) return setError('Use at least 6 characters.');
-    if (password !== again) return setError('The two passwords do not match.');
+    if (password.length < 6) return setError(t('Use at least 6 characters.'));
+    if (password !== again) return setError(t('The two passwords do not match.'));
     setSaving(true);
     const { error: saveError } = await changePassword(password);
     setSaving(false);
@@ -30,7 +30,7 @@ export const ResetPasswordView: React.FC = () => {
       <section className="auth-art" aria-hidden="true">
         <Brand to="#/" />
         <h2>
-          A fresh <em>{t('key.')}</em>
+          {t('A fresh')} <em>{t('key.')}</em>
         </h2>
         <p>{t('Choose a new password and you are straight back to your work.')}</p>
         <img src={landscape} alt="" width="380" height="430" />
@@ -51,7 +51,7 @@ export const ResetPasswordView: React.FC = () => {
             </label>
             {error && <p className="mock-note" role="alert" style={{ marginBottom: 14, color: 'var(--danger)' }}>{error}</p>}
             <button className="button button-primary" style={{ width: '100%' }} disabled={saving}>
-              {saving ? 'Saving…' : 'Save new password'}
+              {saving ? t('Saving…') : t('Save new password')}
             </button>
           </form>
           <p className="auth-switch">
@@ -62,7 +62,7 @@ export const ResetPasswordView: React.FC = () => {
                 void logout();
               }}
             >
-              Cancel and sign out
+              {t('Cancel and sign out')}
             </a>
           </p>
         </div>

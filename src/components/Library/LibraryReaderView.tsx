@@ -15,7 +15,7 @@ import { getReadingPlace, setReadingPlace } from '../../lib/readingPlace';
 import { isBundledNovel } from '../../lib/bundledLibrary';
 import { useDomReadAloud } from '../Speech/useDomReadAloud';
 import { ReadAloudBar } from '../Speech/ReadAloudBar';
-import { useT } from '../../i18n';
+import { tp, useT } from '../../i18n';
 
 export const LibraryReaderView: React.FC = () => {
   const t = useT();
@@ -96,12 +96,12 @@ export const LibraryReaderView: React.FC = () => {
     if (at > 0) {
       document.getElementById(`reader-ch-${chapters[at].id}`)?.scrollIntoView({ block: 'start' });
       toast({
-        message: `Back where you left off: ${chapters[at].title || `chapter ${at + 1}`}.`,
-        actionLabel: 'Start from the beginning',
+        message: t('Back where you left off: {title}.', { title: chapters[at].title || t('chapter {n}', { n: at + 1 }) }),
+        actionLabel: t('Start from the beginning'),
         onAction: () => document.querySelector('.reader-title')?.scrollIntoView({ block: 'start' }),
       });
     }
-  }, [loading, chapters, userId, projectId, savedPlace, toast]);
+  }, [loading, chapters, userId, projectId, savedPlace, toast, t]);
 
   // The chapter whose top has passed about a third of the way down the screen is the one being read
   useEffect(() => {
@@ -204,19 +204,19 @@ export const LibraryReaderView: React.FC = () => {
           <div className="reader-body">
             <div className="reader-text">
               <button className="small-btn back" onClick={handleBack}>
-                <ArrowLeft /> Back to Library
+                <ArrowLeft /> {t('Back to Library')}
               </button>
 
               <div className="reader-title">
                 <h1>{activePublicProject.title}</h1>
                 <p>
-                  by{' '}
+                  {t('by')}{' '}
                   <Link className="link-accent" to={`/library/author/${activePublicProject.user_id}`}>
-                    {activePublicProject.author_name || 'Anonymous'}
+                    {activePublicProject.author_name || t('Anonymous')}
                   </Link>
-                  {activePublicProject.genre ? ` · ${activePublicProject.genre}` : ''} · {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'}
+                  {activePublicProject.genre ? ` · ${activePublicProject.genre}` : ''} · {tp(chapters.length, '{n} chapter', '{n} chapters')}
                   {sample ? (
-                    ' · Sample novel'
+                    ` · ${t('Sample novel')}`
                   ) : (
                     <>
                       {' · '}
@@ -291,7 +291,7 @@ export const LibraryReaderView: React.FC = () => {
               </div>
             )}
             <p className="meta" style={{ lineHeight: 1.7 }}>
-              Reading settings are separate from your app theme and your writing font.
+              {t('Reading settings are separate from your app theme and your writing font.')}
             </p>
           </aside>
         </div>

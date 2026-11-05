@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useT } from '../../i18n';
 
 export interface TourStep {
   /** CSS selector of the thing to point at. Without one (or if it is not on screen) the step is shown in the middle. */
@@ -52,6 +53,7 @@ const place = (box: Box | null, placement: TourStep['placement'] = 'bottom'): Re
 
 /** A guided look around: dims the page, lights up one thing at a time and says what it is for. */
 export const Tour: React.FC<TourProps> = ({ steps, onClose }) => {
+  const t = useT();
   const [index, setIndex] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -147,18 +149,18 @@ export const Tour: React.FC<TourProps> = ({ steps, onClose }) => {
         style={place(box, step.placement)}
       >
         <p className="eyebrow">
-          {index + 1} OF {steps.length}
+          {t('{n} OF {total}', { n: index + 1, total: steps.length })}
         </p>
-        <h2 id="tour-h">{step.title}</h2>
-        <p id="tour-b">{step.body}</p>
+        <h2 id="tour-h">{t(step.title)}</h2>
+        <p id="tour-b">{t(step.body)}</p>
         <div className="tour-actions">
           <button className="link-accent" onClick={() => finish(false)}>
-            Skip tour
+            {t('Skip tour')}
           </button>
           <span style={{ flex: 1 }} />
           {index > 0 && (
             <button className="small-btn" onClick={back}>
-              Back
+              {t('Back')}
             </button>
           )}
           {step.action && (
@@ -169,11 +171,11 @@ export const Tour: React.FC<TourProps> = ({ steps, onClose }) => {
                 finish(true);
               }}
             >
-              {step.action.label}
+              {t(step.action.label)}
             </button>
           )}
           <button className={`small-btn${step.action ? '' : ' is-primary'}`} onClick={next}>
-            {last ? (step.action ? 'No thanks' : 'Done') : 'Next'}
+            {last ? (step.action ? t('No thanks') : t('Done')) : t('Next')}
           </button>
         </div>
       </div>
