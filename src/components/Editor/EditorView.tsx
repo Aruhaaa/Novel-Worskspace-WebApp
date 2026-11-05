@@ -8,11 +8,22 @@ import { useDailyGoal } from '../../lib/dailyGoal';
 import { metaFor, STATUS_LABEL, STATUS_ORDER, type ChapterStatus } from '../../lib/chapterMeta';
 import { openCapture } from '../../lib/uiEvents';
 import { RichTextEditor } from './RichTextEditor';
+import { RoleBanner } from '../Collab/RoleBanner';
+import { PresenceBar } from '../Collab/PresenceBar';
+import { can } from '../../lib/collab';
+import { colorFor } from '../../lib/liveEditing';
+import { useLiveSession } from '../../lib/useLiveSession';
+import { loadLiveEditing } from '../../lib/writingTools';
+import { onLocalChange, watchTable } from '../../lib/live';
+import { databaseService } from '../../services/database';
+import type { Chapter } from '../../services/types';
 import { useChapterAutosave } from './useChapterAutosave';
+import { SprintHint, SprintTimer } from './SprintTimer';
+import { rebaseSprint } from '../../lib/sprint';
 import { VersionHistory } from './VersionHistory';
 import { addSnapshot, maybeAutoSnapshot } from '../../lib/history';
 import { MoreMenu } from '../ui/MoreMenu';
-import { ExportDialog } from '../Export/ExportDialog';
+import { ExportDialog } from '../Export/ExportDialogLazy';
 import { ChapterIndexView } from './ChapterIndexView';
 import { MarginsRail, RailBlock } from '../ui/MarginsRail';
 import { EntityPeek } from '../Notebook/EntityPeek';
@@ -23,7 +34,9 @@ import { quoteTerm, setFeedbackStatus, useFeedback } from '../../lib/feedback';
 import { mentionCount, sceneChapterId, sceneWhen, withSceneLinks } from '../../lib/notes';
 
 export const EditorView: React.FC = () => {
-  const { activeProject, chapters, activeChapter, entities, chapterMeta, updateChapterMeta, updateEntity, isSupabase, zenMode, setZenMode } = useApp();
+  const { activeProject, chapters, activeChapter, entities, chapterMeta, updateChapterMeta, updateEntity, isSupabase, zenMode, setZenMode, projectRole, projectIsShared, user, profile, applyRemoteChapter } = useApp();
+  const canText = can.editText(projectRole);
+  const canManage = can.manage(projectRole);
   const daily = useDailyGoal();
   const navigate = useNavigate();
   const autosave = useChapterAutosave((id, title, content) => {
@@ -33,7 +46,48 @@ export const EditorView: React.FC = () => {
   const [showExport, setShowExport] = useState(false);
   const [peekId, setPeekId] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [restored, setRestored] = useState<{ html: string; nonce: number } | null>(null);
   const feedback = useFeedback(activeProject?.id);
+
+  // Writing together: when the project has other people on it and this person may write, the open chapter is shared live
+  const projectId = activeProject?.id;
+  const chapterId = activeChapter?.id;
+  const liveWanted = !!user && !!projectId && !!chapterId && projectIsShared && canText && loadLiveEditing();
+  const live = useLiveSession(
+    liveWanted && user && projectId && chapterId
+      ? { projectId, chapterId, user: { name: profile?.display_name || user.email.split('@')[0], color: colorFor(user.id) }, canWrite: true }
+      : null
+  );
+
+  // Someone who may only read sees the chapter change as the others save it
+  useEffect(() => {
+    if (canText || !projectId || !chapterId) return;
+    const refetch = () => {
+      void databaseService.getChapters(projectId).then((all) => {
+        const fresh = all.find((c) => c.id === chapterId);
+        if (fresh) applyRemoteChapter(fresh);
+      });
+    };
+    const off = watchTable<Chapter>({
+      name: `chapter-view:${chapterId}`,
+      table: 'chapters',
+      filter: `id=eq.${chapterId}`,
+      onEvent: (e) => {
+        if (e.event !== 'UPDATE') return;
+        if (typeof e.row?.content === 'string') applyRemoteChapter(e.row);
+        else refetch();
+      },
+    });
+    const offLocal = onLocalChange(['novel_chapters'], refetch);
+    // The live line is not needed for correctness: looking again now and then catches anything it missed
+    const poll = window.setInterval(refetch, 15000);
+    return () => {
+      off();
+      offLocal();
+      window.clearInterval(poll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canText, projectId, chapterId]);
   const online = useOnline();
 
   // A restore point of how the chapter looked when it was opened
@@ -43,7 +97,9 @@ export const EditorView: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChapter?.id]);
-  const { title: localTitle, content: localContent, status: saveStatus } = autosave;
+  const { title: localTitle, status: saveStatus } = autosave;
+  // Someone who cannot write shows what is saved; everyone else shows what they are writing
+  const localContent = canText ? autosave.content : (activeChapter?.content ?? '');
   const togglePublish = usePublishProject();
 
   // Escape leaves Zen mode
@@ -96,6 +152,26 @@ export const EditorView: React.FC = () => {
           : 'Changes pending';
 
   const meta = metaFor(chapterMeta, activeChapter.id);
+
+  const paperHeader = (
+    <>
+      <div className="paper-running-head">
+        <span>{(activeProject?.title || '').toUpperCase()}</span>
+        <span>{activeProject?.is_published ? 'PUBLISHED' : 'DRAFT'}</span>
+      </div>
+      {live.status === 'ready' && <PresenceBar session={live.session} />}
+      <p className="chapter-kicker">CHAPTER {String(chapterNumber).padStart(2, '0')}</p>
+      <input
+        className="chapter-title"
+        value={localTitle}
+        onChange={handleTitleChange}
+        readOnly={!canText}
+        placeholder="Untitled chapter"
+        aria-label="Chapter title"
+        style={{ width: '100%', background: 'transparent', border: 0, outline: 'none', display: 'block' }}
+      />
+    </>
+  );
 
   const contextRail = (
     <MarginsRail>
@@ -217,9 +293,12 @@ export const EditorView: React.FC = () => {
           <Link className="button button-outline button-small" to="/chapters">
             Chapter index
           </Link>
-          <button className="button button-outline button-small" onClick={() => setShowHistory(true)}>
-            History
-          </button>
+          {canText && (
+            <button className="button button-outline button-small" onClick={() => setShowHistory(true)}>
+              History
+            </button>
+          )}
+          {activeProject && <SprintTimer projectId={activeProject.id} chapterId={activeChapter.id} chapterWords={wordCount} />}
           <MoreMenu
             items={[
               { label: 'Jot an idea', icon: <Lightbulb />, onSelect: () => openCapture() },
@@ -228,7 +307,7 @@ export const EditorView: React.FC = () => {
               { label: 'Print view', icon: <Printer />, onSelect: () => navigate('/print') },
             ]}
           />
-          {activeProject && (
+          {activeProject && canManage && (
             <button
               className={`button button-small ${activeProject.is_published ? 'button-outline' : 'button-primary'}`}
               onClick={() => togglePublish(activeProject)}
@@ -258,28 +337,26 @@ export const EditorView: React.FC = () => {
         </div>
       )}
 
-      <RichTextEditor
-        content={localContent}
-        onChange={handleContentChange}
-        onMentionClick={openMention}
-        header={
-          <>
-            <div className="paper-running-head">
-              <span>{(activeProject?.title || '').toUpperCase()}</span>
-              <span>{activeProject?.is_published ? 'PUBLISHED' : 'DRAFT'}</span>
-            </div>
-            <p className="chapter-kicker">CHAPTER {String(chapterNumber).padStart(2, '0')}</p>
-            <input
-              className="chapter-title"
-              value={localTitle}
-              onChange={handleTitleChange}
-              placeholder="Untitled chapter"
-              aria-label="Chapter title"
-              style={{ width: '100%', background: 'transparent', border: 0, outline: 'none', display: 'block' }}
-            />
-          </>
-        }
-      />
+      <RoleBanner />
+      {live.status === 'connecting' ? (
+        <div className="studio-view writing-view">
+          <article className="writing-paper">
+            {paperHeader}
+            <p className="meta" role="status">Joining the others who have this chapter open…</p>
+          </article>
+        </div>
+      ) : (
+        <RichTextEditor
+          key={live.status === 'ready' ? 'together' : 'alone'}
+          content={localContent}
+          onChange={handleContentChange}
+          onMentionClick={openMention}
+          live={live.status === 'ready' ? live.session : null}
+          editable={canText}
+          replaceWith={restored}
+          header={paperHeader}
+        />
+      )}
 
       <footer className="studio-statusbar">
         <div>
@@ -288,6 +365,7 @@ export const EditorView: React.FC = () => {
           <span>{readMinutes(wordCount)}</span>
         </div>
         <div>
+          {activeProject && <SprintHint projectId={activeProject.id} />}
           {zenMode && <span className="status-hint">Today {daily.written.toLocaleString()} / {daily.goal.toLocaleString()} · Escape to exit</span>}
           <span className="save-status" role="status" style={saveStatus === 'error' ? { color: 'var(--danger)' } : undefined}>
             {saveLabel}
@@ -308,7 +386,13 @@ export const EditorView: React.FC = () => {
         currentTitle={localTitle}
         currentContent={localContent}
         currentWords={wordCount}
-        onRestore={(t, c) => autosave.replaceAll(t, c)}
+        onRestore={(t, c) => {
+          // A restored version is not new writing, so a running sprint should not count the difference
+          if (activeProject) rebaseSprint(activeProject.id, activeChapter.id, countWords(c));
+          autosave.replaceAll(t, c);
+          // While writing together, the restored text is put in the shared document so the others see it too
+          setRestored({ html: c, nonce: Date.now() });
+        }}
       />
 
       <EntityPeek entityId={peekId} onChange={setPeekId} />

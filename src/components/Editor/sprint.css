@@ -1,0 +1,86 @@
+/* Writing sprints: the toolbar button and pill, the start panel, the summary card and the tracker figures.
+   Every class starts with sprint-. Colours come from the theme variables, and nothing here animates.
+   Loaded outside the stylesheet layers, so these rules win over studio.css where they meet. */
+
+.sprint-wrap { position: relative; display: flex; align-items: center; }
+.sprint-trigger { gap: 9px; }
+.sprint-trigger svg { width: 16px; height: 16px; flex: none; }
+/* .button span in studio.css makes spans 20px; the label should match the other toolbar buttons */
+.sprint-trigger .sprint-label { font-size: inherit; line-height: inherit; }
+
+/* Running: a compact pill with the time left, the words so far and the controls */
+.sprint-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 3px 4px 3px 12px; border: 1px solid var(--accent); border-radius: 3px; background: var(--sheet); color: var(--ink); font-size: 12px; white-space: nowrap; }
+/* A dashed edge and the word "Paused" say so without leaning on colour */
+.sprint-pill.is-paused { border-style: dashed; }
+.sprint-pill > svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+.sprint-clock { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.sprint-state { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.sprint-words { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sprint-words svg { width: 13px; height: 13px; flex: none; color: var(--accent); }
+.sprint-controls { display: inline-flex; gap: 1px; margin-left: 2px; padding-left: 4px; border-left: 1px solid var(--line); }
+.sprint-controls .icon-button { min-width: 32px; min-height: 32px; padding: 6px; }
+.sprint-controls .icon-button svg { width: 16px; height: 16px; }
+
+/* The start panel and the summary card hang from the button, like the More menu */
+.sprint-pop { position: absolute; right: 0; top: calc(100% + 10px); z-index: 80; width: min(320px, calc(100vw - 30px)); padding: 18px; background: var(--sheet); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 18px 40px -12px color-mix(in srgb, var(--ink) 28%, transparent); font-size: 13px; line-height: 1.6; text-align: left; white-space: normal; }
+.sprint-eyebrow { display: block; margin-bottom: 14px; color: var(--accent); }
+.sprint-fieldset { min-width: 0; margin: 0 0 14px; padding: 0; border: 0; }
+.sprint-fieldset legend { margin-bottom: 8px; padding: 0; font-size: 12px; font-weight: 500; }
+.sprint-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.sprint-chip { min-height: 38px; padding: 4px; border: 1px solid var(--field-line); border-radius: 3px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.sprint-chip:hover { background: var(--panel-2); }
+.sprint-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); font-weight: 600; }
+.sprint-pop .field { margin-bottom: 12px; }
+.sprint-pop .field .input { min-height: 40px; }
+.sprint-pop .check-row { margin-top: 4px; font-size: 13px; }
+.sprint-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.sprint-error { color: var(--danger); }
+.sprint-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+/* Finished: what the sprint came to */
+.sprint-card-title { font: 26px/1.15 var(--serif); }
+.sprint-card .sprint-note { margin-top: 6px; }
+.sprint-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.sprint-facts li { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.sprint-facts strong { display: block; margin-bottom: 2px; color: var(--ink); font: 24px/1.1 var(--serif); }
+.sprint-line { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 0; font-size: 12px; line-height: 1.5; }
+.sprint-line svg { width: 14px; height: 14px; margin-top: 2px; flex: none; color: var(--accent); }
+
+.sprint-hint { font-variant-numeric: tabular-nums; }
+
+/* Tracker figures */
+.sprint-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px 14px; margin: 4px 0 22px; }
+.sprint-figure .eyebrow { margin-bottom: 8px; }
+.sprint-figure strong { display: block; margin: 0 0 4px; font: 32px/1 var(--serif); }
+.sprint-figure .meta { display: block; }
+.sprint-tag { display: block; color: var(--muted); font-size: 11px; }
+
+/* The editor toolbar is already full on a laptop, and the pill is wider than a button: let its buttons wrap
+   onto a second row instead of running off the edge. */
+.studio-toolbar:has(.sprint-wrap) { position: relative; z-index: 5; }
+.studio-toolbar:has(.sprint-wrap) .toolbar-actions { min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+
+/* Focus mode dims the bars to a third. A running timer is the one thing in them worth keeping legible. */
+.studio-page.is-focused .studio-toolbar:has(.sprint-live) { opacity: .75; }
+.studio-page.is-focused .studio-toolbar:has(.sprint-live):hover,
+.studio-page.is-focused .studio-toolbar:has(.sprint-live):focus-within { opacity: 1; }
+.studio-page.is-focused .studio-statusbar:has(.sprint-hint) { opacity: .7; }
+.studio-page.is-focused .studio-statusbar:has(.sprint-hint):hover,
+.studio-page.is-focused .studio-statusbar:has(.sprint-hint):focus-within { opacity: 1; }
+
+@media (max-width: 960px) {
+  /* Hang the panel from the toolbar's edge: on a narrow screen the button can sit too far in for 320px to fit */
+  .sprint-wrap { position: static; }
+  .sprint-pop { right: 18px; }
+}
+
+@media (max-width: 740px) {
+  .sprint-trigger .sprint-label { display: none; }
+  .studio-statusbar:has(.sprint-hint) { flex-wrap: wrap; row-gap: 4px; }
+  .sprint-pop { left: 15px; right: 15px; width: auto; }
+}
+
+@media (max-width: 480px) {
+  /* The footer hint carries the word count on a narrow screen */
+  .sprint-pill .sprint-words { display: none; }
+}

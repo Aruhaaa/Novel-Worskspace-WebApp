@@ -68,7 +68,6 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
     openChapter(chapter, c.quote ? quoteTerm(c.quote) : undefined);
   };
 
-  let lastChapter = '';
   return (
     <div className="peek">
       <div className="peek-head">
@@ -107,12 +106,11 @@ const FeedbackBody: React.FC<{ project: Project; onClose: () => void }> = ({ pro
             <span>Show resolved ({doneCount})</span>
           </label>
           {visible.length === 0 && <p className="meta">Everything is resolved. Nice work.</p>}
-          {visible.map((c) => {
+          {visible.map((c, i) => {
             const chapterIndex = order.get(c.chapterId);
             const heading =
               chapterIndex === undefined ? `${c.chapterTitle || 'A chapter'} (no longer in the manuscript)` : `${String(chapterIndex + 1).padStart(2, '0')} · ${chapters[chapterIndex].title || 'Untitled chapter'}`;
-            const showHeading = c.chapterId !== lastChapter;
-            lastChapter = c.chapterId;
+            const showHeading = i === 0 || visible[i - 1].chapterId !== c.chapterId;
             return (
               <React.Fragment key={`${c.reader}-${c.id}`}>
                 {showHeading && <h3 className="feedback-chapter">{heading}</h3>}

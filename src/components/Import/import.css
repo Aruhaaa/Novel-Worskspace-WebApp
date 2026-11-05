@@ -1,0 +1,131 @@
+/* Import dialog and the Import buttons around it. Colours come from the studio's theme variables, so every theme works. */
+
+.dialog.imp-dialog {
+  --imp-pad: 30px;
+  width: min(680px, calc(100% - 24px));
+  padding: 28px var(--imp-pad) 0;
+}
+
+.dialog.imp-dialog h2 { overflow-wrap: anywhere; }
+.imp-dialog .imp-private { margin-top: 12px; }
+
+/* Drop zone: one big button, so the keyboard and a click work the same as a drop */
+.imp-drop {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 34px 20px;
+  border: 2px dashed var(--field-line);
+  border-radius: 4px;
+  background: var(--sheet);
+  color: var(--ink);
+  text-align: center;
+  transition: border-color .2s, background .2s;
+}
+.imp-drop:hover,
+.imp-drop.is-over { border-color: var(--accent); background: var(--tint); }
+.imp-drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-color: var(--accent); }
+.imp-drop svg { width: 28px; height: 28px; margin-bottom: 6px; color: var(--accent); stroke-width: 1.4; }
+.imp-drop strong { font: 26px/1.15 var(--serif); font-weight: 400; }
+.imp-drop span { font-size: 13px; color: var(--muted); }
+.imp-drop small { margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+/* The real file input stays in the page but out of sight; the drop zone opens it */
+.imp-file { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+
+.imp-dialog .imp-reading { margin-top: 24px; font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.imp-dialog .imp-from { margin-top: 8px; font-size: 13px; overflow-wrap: anywhere; }
+.imp-dialog .imp-where { margin-top: 18px; font-size: 13px; color: var(--ink); }
+
+.imp-dialog .imp-error {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 3px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--danger);
+}
+
+.imp-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.imp-fieldset:disabled { opacity: .7; }
+
+.imp-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.imp-field { display: grid; gap: 6px; min-width: 0; margin-top: 16px; }
+.imp-field.imp-wide { grid-column: 1 / -1; }
+.imp-dialog .imp-field label { margin-top: 0; font-size: 12px; }
+.imp-dialog .imp-field input { margin-top: 0; }
+.imp-dialog .imp-hint { margin-top: 0; font-size: 12px; line-height: 1.6; }
+
+/* The chapter list scrolls inside the dialog, so 300 chapters stay manageable */
+.imp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 20px; }
+.imp-total { font-size: 13px; color: var(--ink); }
+.imp-bulk { display: inline-flex; gap: 8px; }
+
+.imp-list {
+  list-style: none;
+  max-height: min(42vh, 380px);
+  margin: 10px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--sheet);
+}
+.imp-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.imp-row:last-child { border-bottom: 0; }
+.imp-dialog .imp-pick { display: flex; align-items: center; justify-content: center; width: 36px; height: 38px; margin: 0; cursor: pointer; }
+.imp-dialog .imp-row input[type="checkbox"] { width: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--accent); cursor: pointer; }
+.imp-dialog .imp-row .imp-name { min-width: 0; min-height: 38px; margin: 0; padding: 7px 10px; font-size: 14px; }
+.imp-row.is-off .imp-name { color: var(--muted); }
+.imp-words { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+.imp-dialog .imp-notice { margin-top: 12px; }
+
+.imp-warnings {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px dashed var(--field-line);
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.imp-warnings strong { font-weight: 600; color: var(--ink); }
+.imp-warnings ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* Buttons stay in reach while the dialog scrolls on a small screen */
+.imp-dialog .imp-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  flex-wrap: wrap;
+  margin: 18px calc(var(--imp-pad) * -1) 0;
+  padding: 14px var(--imp-pad) 18px;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+
+/* The toolbar on the chapter index gets a fourth button, which needs room to wrap on a phone */
+.imp-toolbar { flex-wrap: wrap; justify-content: flex-end; }
+
+/* The empty projects page now offers three ways in, side by side where there is room */
+.imp-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+@media (max-width: 520px) {
+  .dialog.imp-dialog { --imp-pad: 16px; padding-top: 20px; }
+  .dialog.imp-dialog h2 { font-size: 28px; }
+  .imp-fields { grid-template-columns: minmax(0, 1fr); }
+  .imp-drop { padding: 26px 14px; }
+  .imp-dialog .imp-actions { justify-content: stretch; }
+  .imp-dialog .imp-actions .button { flex: 1 1 auto; }
+}

@@ -1,0 +1,61 @@
+# Bible: Zero-Day Lullaby
+
+## Logline and premise
+
+When the neonatal ward's smart speakers hum one lullaby at 3 a.m., a half-deaf incident responder finds that the tune is a data channel, and that the dead man who sent for her built the weapon.
+
+**What happens, in order.** Mon 03:04, Tallinn: fourteen Pesa smart speakers in the neonatal ward of Harju Children's Hospital hum the same eight-note lullaby. Night nurse Pille Rebane calls Ilse Kantor of Tamm Incident Response. Ilse finds the hum is the exit route of an implant ("the Lullaby"). A records workstation on the sealed clinical network leaks data as faint sound; the speakers, which sit on the building-management network, listen, decode and upload. It has run 117 nights. The stolen data: neonatal and paediatric records of children of ministers in six countries, shared through the Baltic Paediatric Alliance records system, KindWard. The uploads go to a rented rack in Singapore, hop through a Lagos fintech, and vanish.
+
+Days 1-3: Ilse traces it; her phone starts humming; founder Jaan Tamm tells her to bring the old "Nightjar" laptop, then is murdered in the office on Pikk Street (Day 3). Jaan left a voicemail pointing to his music box. The box holds a microSD: his encrypted confession. Midpoint (Day 5): Ilse learns that in 2017 Jaan sold an exploit chain, Nightjar, to a broker (Fabian Zeller, Vienna), who sold it twice: to the Directorate (Colonel Novik) and to the Standing Committee on Lawful Access, the six security chiefs who now hunt the leak. The Committee wants it buried because their own copy spied on their own ministers' families too. Helle Kuusk, Jaan's partner, co-signed the sale and has been feeding Ilse's movements to Novik since September. And the 3 a.m. hum was not a bug: Jaan pushed a firmware update on the Thursday that raised the carrier's volume so the ward would hear it. He wanted her called.
+
+Days 5-8: a canary record planted in KindWard shows three listeners: the Directorate, the Committee, and an unidentified "Listener C". The Committee frames Ilse as the author (her commits are in the 2017 proof of concept). The Courier, Marit Soini, hired by the Committee to retrieve the implant's author and silence witnesses, defects; Pille carries a pulled speaker across on the Nightboat. Day 9, Helsinki summit (the Gulf Cable Accord): using Jaan's vendor signing key, Ilse pushes a kill-update that makes every infected speaker play the full lullaby aloud, in the summit hall too, and publishes the recipient lists. Novik slips away under cover. Cost: forty thousand speakers bricked, Chidi's company wrecked, Marit ruined, Ilse charged. Ending: Ilse goes public; at the last, Listener C acknowledges the kill-update. Someone else was always listening.
+
+## World and setting
+
+Present day, winter, dark by 15:30, minus eleven, snow on the Gulf of Finland, ice at the harbour edges. Tallinn: Old Town (Pikk Street spice warehouse, third floor: Tamm Incident Response), Ülemiste tech district (glass offices, Ilse's flat nearby on Peterburi tee), Kalamaja (wooden houses, Jaan's flat on Kotzebue Street), Harju Children's Hospital (fictional, Pelgulinna side, 18 minutes by car from Old Town). Helsinki: Katajanokka ferry terminal, the Merikatu Congress Centre (fictional, summit venue). Singapore: Tanjong Vault data centre. Lagos: Kobo Lane payments, Victoria Island.
+
+**Rules of the technology.** Sealed clinical network (KindWard) is air-gapped from the building-management network (BMS), which runs lights, heating and the speakers. The implant bridges the gap acoustically: a compromised records workstation encodes bits as detuned notes of a lullaby, in cents, at a level a person barely notices. Speakers decode it and upload over BMS. Throughput is tiny, so the thief takes only chosen fields and ministers' children's names. Costs: it works only at the 03:00-03:40 backup window when the ward is quiet; it needs line of sight to a speaker within 12 metres; a detuned note repeats every 94 seconds. Volume bug: audible only after Jaan's update. Time zones: Singapore is Tallinn +6; Lagos is Tallinn -1. Tallinn-Helsinki: the Nightboat leaves 23:00, berths 01:30, passengers may sleep aboard until 06:30; the day ferry takes 2h30 in ice. Summit: Tuesday, Day 9, 15:00 session on data sovereignty.
+
+**Glossary.** The Lullaby: the implant and its tune (eight notes; in Jaan's music box only seven sound). Pesa: smart-speaker brand ("nest"), made in Tartu. KindWard: shared hospital records. BMS: building-management network. Nightjar: the 2017 exploit chain sold by Jaan. Carrier: the hummed tune bearing data. The 94: the seconds between detuned repeats. Canary: a fake record with unique details, to trace who receives it. The Directorate: the fictional agency Novik serves (its country is never named). The Standing Committee: six security chiefs, secretary Ülo Hint. Nightboat: cheap overnight ferry. Kringel: Tallinn almond-and-raisin pastry, Helle's weapon. Rack 14-B: the Singapore dead drop. Kobo hold: Lagos call-centre hold music that carries the relay. Cardamom: Ilse's habit, a pod pocketed per hard problem. Kaka-paper: Jaan's word for scrap paper. Telliskivi: creative district, where Taavi hides. Cabin 7118: Courier's drop cabin. Foil: Ilse's phone-wrapping practice. Sauna rule: Estonians never discuss secrets in clothes. Kitchen test: "would it embarrass me on a kitchen table?"
+
+## Cast
+
+**Ilse Kantor**, 38, Ilse. Tall, white streak at the left temple, scar through the right eyebrow, deaf in the left ear since meningitis at six (turns her right ear to people; reads spectrograms like faces). Speaks short, dry, understated; asks "and then?"; never swears except "kurat" once at the end. Wants: to clean it up properly. Fears: being the one who knew and filed it. Hides: in 2017 she wrote parts of the proof of concept and accepted Jaan's "it's just a demo". Arc: from careful silence to costly publication.
+
+**Jaan Tamm**, 67, founder. Huge hands, bad left hip, wool vests buttoned wrong. Mangled proverbs ("A lamp in the hand is worth two in the bush"). Wants to atone; fears dying silent; hides the 2017 sale. Dead on Day 3; present in voicemail, music box, update log. Arc: guilt into sacrificial sabotage.
+
+**Pille Rebane**, 44, night nurse. Round, quick, chlorhexidine hands, pencil through grey-brown bun, huge laugh. Talks in diminutives and gallows jokes ("Dead is very quiet, dear; this is worse"). Wants her babies safe and her job. Fears the hospital closing. Hides that in September she let in a "speaker technician" for fifty euros. Arc: confession to witness and courier-by-ferry.
+
+**Colonel Aleksei Novik**, 59, Directorate. Soft cardigan, pigeon-feeder's hands, peels mandarins in a single spiral. Never raises his voice; asks questions instead of threatening ("And who would you like to be safe?"). Wants leverage at the summit; fears a war he believes only leverage prevents. Hides nothing, which is the horror. Arc: static; escapes.
+
+**Dr Mei Lin Ong**, 41, Singapore forensics lead at Tanjong Vault. Precise, understated, drinks hot water, says "Noted" for alarm. Wants her data centre clean; fears her employer's quiet lease to a shell; hides that she saw Rack 14-B's oddness a year ago. Arc: from compliance to sworn witness.
+
+**Chidi Abara**, 35, security lead at Kobo Lane, Lagos. Three phones, football metaphors, loud laugh, talks in the second person. Wants his platform alive; fears regulator and extradition; hides that he sells bug bounties on the side. Arc: becomes the loud public voice.
+
+**Marit Soini**, 52, "the Courier." Finnish, ex sea-rescue; grey braid, knits socks, missing the tip of the right little finger, calm. Speaks in few words, gentle, direct ("Yes. No. Not yet."). Carries sealed paper because phones leak. Wants a pension and no more cabins; fears being the last pair of hands. Hides that she has kept a name list of those she was told to "close". Arc: defects, pays.
+
+**Helle Kuusk**, 54, partner and office manager. Orange reading glasses, bakes kringel, uses diminutives ("my little firewall"). Wants her son Gert's visa and her firm; fears bankruptcy; hides the 2017 co-signature and the leaks. Arc: confession, then the ledger that unpicks the shell companies.
+
+**Taavi Mägi**, 27, junior analyst. Wears gloves indoors, talks in memes and bullet points, panics well. Wants to be taken seriously. Red herring for the mole. Arc: proves loyal, drives the getaway.
+
+**Leonid Sarapuu**, 46, locksmith and Directorate contractor. Fingerless gloves, courteous, a locksmith's patience, smells of machine oil. "Mind the step." Wants the job to end quietly. Killed Jaan, ordered by Novik's deputy, not Novik personally (Novik signs by silence).
+
+**Anneli Raud**, 61, investigative journalist. Cigarette-voiced, wears a man's overcoat, says "Slowly. Again." Wants one more big story. Marit pulled her from the Gulf in 2011. Takes Marit's papers.
+
+## Voice guide
+
+Close third, present tense, mainly Ilse; Courier and Pille chapters in the same register, but Marit's are slower and Pille's are warmer and funnier. Register: plain, concrete, technically exact but never lecturing; every technical idea is explained through a thing someone touches or does. Rhythm: short sentences, then one long one when the pursuit speeds up; chapters end on action, not aphorism. Humour: dry, from character, even at the worst moment. Dialogue: double quotes, a new paragraph for each speaker, interruptions with dashes, people answer different questions.
+
+*Sample paragraph (not part of the novel).* The corridor smells of floor wax and warm milk. Ilse stands where the wall turns, her good ear to the ward and her deaf side to the glass, and waits for the number she cannot hear. Nurse Rebane holds up a phone. On its screen, a ribbon of colour crawls left to right, a bright line, a dark gap, the line again. "There," Ilse says. "Ninety-four seconds. Every time." Pille tilts her head. "Like a cuckoo." "Like a clock." The nearest speaker, a white pebble on a shelf of knitted owls, sighs a note slightly flat. Ilse pockets a cardamom pod and does not crack it. Not yet. She wants to be sure of the pain first.
+
+**This narrator would never write:** a villain monologue; "hacking" montage clichés (green rain, "I'm in"); a line explaining a character's feeling after showing it; the word "suddenly"; a harm to a child on the page; a real intelligence service or real minister; a technical term left unexplained by a thing in the room; a chapter ending on a moral.
+
+## Motifs
+
+Ninety-four seconds (the repeat, also Ilse's heartbeat when afraid). The eighth note (missing from the box; Jaan's change). Cardamom pods. Hands (Jaan's, Marit's finger, Sarapuu's gloves, Novik's mandarin). Wrapped things: foil, swaddles, knitted owls, wool vests. Ice on the Gulf, a ferry's wake. Left side/right side: hearing. Paper in a digital age.
+
+## Timeline and ground rules
+
+2017: Jaan, Ilse (28) and Helle build a proof of concept for an audio-codec bug in a Pesa-derived library, with a demo tune ("the lullaby", Ilse's commits); Jaan sells Nightjar to Fabian Zeller, who sells to the Directorate and the Committee. 2019: Jaan quits exploit work, builds the IR firm. Early September (present year): the Directorate's contractor Sarapuu has "a technician" (a man called Aksel, never seen again) install the workstation implant at Harju; Pille lets him in. Thursday before Day 1: Jaan pushes the update. Day 1 Mon 03:04 hum; Day 3 Wed Jaan is killed (about 19:40); Day 5 Fri midpoint; Day 7 Sun canary; Day 8 Mon night frame, arrest, Nightboat; Day 9 Tue Helsinki, 15:00 climax.
+
+Ground rules: Ilse never hears with her left ear; Pille's baby patients are never in danger; Jaan's signing token (Tamm IR is Pesa's retained security contractor) works only once, until Pesa revokes it; the Lullaby halts when speakers hear the true eighth (Ilse's 2017 demo safety, retuned by Jaan, still in the box's bare comb tooth), sung in the pause the kill-update leaves; no single character knows the full picture until Day 7; Novik never kills with his own hands; Ilse never carries a gun. The ending is costly: Ilse is charged with unauthorised access by Estonia's prosecutor, but the evidence stands.

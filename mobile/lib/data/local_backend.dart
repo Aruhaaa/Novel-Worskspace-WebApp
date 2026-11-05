@@ -82,6 +82,101 @@ class LocalBackend implements Backend {
   Future<void> signOut() async => _prefs.remove(_sessionKey);
 
   @override
+  Future<void> requestPasswordReset(String email) async {
+    throw BackendException(
+      'Password reset needs the cloud database. In this copy your account lives on this phone only.',
+    );
+  }
+
+  @override
+  Future<void> changePassword(
+    String email,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    throw BackendException(
+      'Passwords are only used when the app is connected to the cloud database.',
+    );
+  }
+
+  @override
+  Future<void> saveUseMode(String mode) async {}
+
+  @override
+  Future<void> deleteAccount(
+    String userId,
+    String email,
+    String password,
+  ) async {
+    final mine = _table('projects')
+        .where((p) => p['user_id'] == userId)
+        .map((p) => p['id'])
+        .toSet();
+    for (final t in ['chapters', 'entities', 'logs', 'bin']) {
+      _table(t).removeWhere((r) => mine.contains(r['project_id']));
+    }
+    _table('projects').removeWhere((p) => p['user_id'] == userId);
+    _table('profiles').removeWhere((p) => p['id'] == userId);
+    await _save();
+    await _prefs.remove('blocks_$userId');
+    await _prefs.remove(_sessionKey);
+  }
+
+  @override
+  Future<void> reportNovel(
+    String reporterId,
+    Project project,
+    String reason,
+    String details,
+  ) async {
+    final reports = _table('reports');
+    final already = reports.any(
+      (r) =>
+          r['reporter_id'] == reporterId &&
+          r['target_type'] == 'novel' &&
+          r['target_id'] == project.id,
+    );
+    if (already) return;
+    reports.add({
+      'id': _uuid.v4(),
+      'reporter_id': reporterId,
+      'target_type': 'novel',
+      'target_id': project.id,
+      'target_user_id': project.userId,
+      'project_id': project.id,
+      'reason': reason,
+      'details': details.trim(),
+      'excerpt': '${project.title} - ${project.description}',
+      'status': 'open',
+      'created_at': _now(),
+    });
+    await _save();
+  }
+
+  @override
+  Future<Set<String>> blockedUsers(String userId) async =>
+      (_prefs.getStringList('blocks_$userId') ?? <String>[]).toSet();
+
+  @override
+  Future<bool> blockUser(String userId, String blockedId) async {
+    final now = _prefs.getStringList('blocks_$userId') ?? <String>[];
+    if (!now.contains(blockedId)) {
+      await _prefs.setStringList('blocks_$userId', [...now, blockedId]);
+    }
+    return true;
+  }
+
+  @override
+  Future<bool> unblockUser(String userId, String blockedId) async {
+    final now = _prefs.getStringList('blocks_$userId') ?? <String>[];
+    await _prefs.setStringList(
+      'blocks_$userId',
+      now.where((id) => id != blockedId).toList(),
+    );
+    return true;
+  }
+
+  @override
   Future<Profile> profile(String userId) async {
     final found = _table('profiles').where((p) => p['id'] == userId);
     if (found.isNotEmpty) return Profile.fromJson(found.first);

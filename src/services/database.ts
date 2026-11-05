@@ -1,5 +1,19 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { readThrough, isNetworkFailure } from '../lib/offlineCache';
+import { tryCloud, unwrap } from '../lib/cloud';
+import { pushLocalNotification } from '../lib/notifications';
+import {
+  isBundledAuthor,
+  isBundledNovel,
+  getBundledAuthor,
+  getBundledAuthors,
+  getBundledChapters,
+  getBundledProjects,
+  toggleBundledLike,
+  trackBundledView,
+  forgetBundledUser,
+} from '../lib/bundledLibrary';
 import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment, ChatMessage } from './types';
 
 // Mock Data Initializer for Local Storage fallback
@@ -149,8 +163,54 @@ const setLocalData = <T>(key: string, data: T): void => {
   localStorage.setItem(key, JSON.stringify(data));
 };
 
+// Local mode has no server to tell people things, so the app notes down, for the other account, what happened
+const localName = (userId: string): string => {
+  const profile = getLocalData<UserProfile[]>('novel_profiles', []).find((p) => p.id === userId);
+  return profile?.display_name || userId.replace(/^mock-user-/, '').split('@')[0] || '';
+};
+const localProject = (projectId: string): { owner: string; title: string } | null => {
+  const found = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).find((p) => p.id === projectId);
+  return found && !isBundledAuthor(found.user_id) ? { owner: found.user_id, title: found.title } : null;
+};
+
+// Bulk writes (import) go to the cloud in chunks: at most this many rows, and about this many bytes, per request
+const BULK_ROWS = 100;
+const BULK_BYTES = 1.5 * 1024 * 1024;
+
+/** Size of a string once written as UTF-8, close enough to keep a request near its target size. */
+const byteLength = (s: string): number => {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      n += 4;
+      i++;
+    } else n += 3;
+  }
+  return n;
+};
+
+/** Delete chapters by id, a few dozen per request so the address stays short. With `strict`, a failure is thrown. */
+const removeChapters = async (client: SupabaseClient, ids: string[], strict = false): Promise<void> => {
+  for (let i = 0; i < ids.length; i += 50) {
+    const { error } = await client.from('chapters').delete().in('id', ids.slice(i, i + 50));
+    if (error && strict) throw error;
+  }
+};
+
+/**
+ * The cloud client, except for the sample library's novels: their reviews and comments are kept on the device,
+ * because there is no row in the database for them to belong to.
+ */
+const cloudFor = (projectId: string): SupabaseClient | null => (isSupabaseConfigured && supabase && !isBundledNovel(projectId) ? supabase : null);
+
+const newestFirst = (a: Project, b: Project): number => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+
 export const databaseService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
+    if (isBundledAuthor(userId)) return getBundledAuthor(userId);
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
       return readThrough<UserProfile | null>(`profile_${userId}`, async () => {
@@ -210,6 +270,17 @@ export const databaseService = {
       const allProjects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
       return allProjects.filter(p => p.user_id === userId);
     }
+  },
+
+  /** Projects by id: the ones other people have shared with you. */
+  async getProjectsByIds(ids: string[]): Promise<Project[]> {
+    if (ids.length === 0) return [];
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('projects').select('*').in('id', ids);
+      if (error) throw error;
+      return data || [];
+    }
+    return getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).filter((p) => ids.includes(p.id));
   },
 
   async createProject(userId: string, title: string, description: string): Promise<Project> {
@@ -278,10 +349,10 @@ export const databaseService = {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('projects').select('*').eq('is_published', true).order('updated_at', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return [...(data || []), ...getBundledProjects()].sort(newestFirst);
     } else {
       const allProjects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
-      return allProjects.filter(p => p.is_published === true).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      return [...allProjects.filter(p => p.is_published === true), ...getBundledProjects()].sort(newestFirst);
     }
   },
 
@@ -359,7 +430,53 @@ export const databaseService = {
     }
   },
 
+  /**
+   * Remove a person's account and everything they made. With the cloud database this is one server function that
+   * also removes the sign-in; the caller then signs out. Needs supabase/setup_scripts/20261008_account_safety.sql.
+   */
+  async deleteAccount(userId: string): Promise<{ error: string | null }> {
+    if (isSupabaseConfigured && supabase) {
+      const res = await tryCloud('account', async (c) => unwrap(await c.rpc('delete_my_account')));
+      if (res.ok) {
+        // What this person left on the sample novels lives on this device only
+        forgetBundledUser(userId);
+        setLocalData('novel_comments', getLocalData<Comment[]>('novel_comments', INITIAL_COMMENTS).filter(c => c.user_id !== userId));
+        setLocalData('novel_reviews', getLocalData<Review[]>('novel_reviews', INITIAL_REVIEWS).filter(r => r.user_id !== userId));
+        return { error: null };
+      }
+      if (res.reason === 'setup') return { error: 'Deleting accounts is not switched on for this site yet. Please tell the site owner.' };
+      if (res.reason === 'network') return { error: 'Could not reach the server. Check your connection and try again.' };
+      const message = (res.error as { message?: unknown } | undefined)?.message;
+      return { error: typeof message === 'string' && message ? message : 'The account could not be deleted. Nothing was removed.' };
+    }
+
+    // Local mode: everything lives in this browser
+    const mine = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).filter(p => p.user_id === userId);
+    for (const project of mine) await this.deleteProject(project.id);
+    setLocalData('novel_profiles', getLocalData<UserProfile[]>('novel_profiles', []).map(p => ({
+      ...p,
+      followers: (p.followers || []).filter(id => id !== userId),
+      following: (p.following || []).filter(id => id !== userId),
+    })).filter(p => p.id !== userId));
+    setLocalData('novel_projects', getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).map(p => ({
+      ...p,
+      likes: (p.likes || []).filter(id => id !== userId),
+      views: (p.views || []).filter(id => id !== userId),
+    })));
+    forgetBundledUser(userId);
+    setLocalData('novel_comments', getLocalData<Comment[]>('novel_comments', INITIAL_COMMENTS).filter(c => c.user_id !== userId));
+    setLocalData('novel_reviews', getLocalData<Review[]>('novel_reviews', INITIAL_REVIEWS).filter(r => r.user_id !== userId));
+    setLocalData('novel_chats', getLocalData<ChatMessage[]>('novel_chats', []).filter(m => m.sender_id !== userId && m.receiver_id !== userId));
+    try {
+      localStorage.removeItem(`novelist_blocks_${userId}`);
+    } catch {
+      // ignore
+    }
+    return { error: null };
+  },
+
   async toggleLikeProject(projectId: string, userId: string): Promise<Project> {
+    if (isBundledNovel(projectId)) return toggleBundledLike(projectId, userId);
     if (isSupabaseConfigured && supabase) {
       // Fetch current likes
       const { data: proj, error: fetchErr } = await supabase.from('projects').select('likes').eq('id', projectId).single();
@@ -400,6 +517,7 @@ export const databaseService = {
   },
   // --- CHAPTERS ---
   async getChapters(projectId: string): Promise<Chapter[]> {
+    if (isBundledNovel(projectId)) return getBundledChapters(projectId);
     if (isSupabaseConfigured && supabase) {
       const client = supabase;
       return readThrough(`chapters_${projectId}`, async () => {
@@ -445,6 +563,89 @@ export const databaseService = {
       chapters.push(newChapter);
       setLocalData('novel_chapters', chapters);
       return newChapter;
+    }
+  },
+
+  /**
+   * Add many chapters after the ones a project already has, in as few requests as possible (used by import).
+   * The cloud database gets them in chunks of about 1.5 MB. If a later chunk fails, the chunks already saved are
+   * removed again and the error is thrown, so a failed import leaves nothing behind. The local database is written once.
+   */
+  async createChaptersBulk(projectId: string, items: { title: string; content: string }[]): Promise<Chapter[]> {
+    if (items.length === 0) return [];
+    if (isSupabaseConfigured && supabase) {
+      const client = supabase;
+      const { data: tail, error: tailError } = await client
+        .from('chapters')
+        .select('position')
+        .eq('project_id', projectId)
+        .order('position', { ascending: false })
+        .limit(1);
+      if (tailError) throw tailError;
+      const first = tail && tail.length ? Number(tail[0].position) + 1 : 0;
+
+      const chunks: { project_id: string; title: string; content: string; position: number }[][] = [];
+      let current: (typeof chunks)[number] = [];
+      let size = 0;
+      items.forEach((item, i) => {
+        const bytes = byteLength(item.title) + byteLength(item.content) + 120;
+        if (current.length > 0 && (current.length >= BULK_ROWS || size + bytes > BULK_BYTES)) {
+          chunks.push(current);
+          current = [];
+          size = 0;
+        }
+        current.push({ project_id: projectId, title: item.title, content: item.content, position: first + i });
+        size += bytes;
+      });
+      if (current.length > 0) chunks.push(current);
+
+      const saved: Chapter[] = [];
+      let inFlight: { from: number; to: number } | null = null;
+      try {
+        for (const chunk of chunks) {
+          inFlight = { from: chunk[0].position, to: chunk[chunk.length - 1].position };
+          const { data, error } = await client.from('chapters').insert(chunk).select();
+          if (error) throw error;
+          saved.push(...(data as Chapter[]));
+          inFlight = null;
+        }
+      } catch (err) {
+        // Best effort: take back what was saved. The chunk that was in flight may have arrived even though its answer did not.
+        try {
+          await removeChapters(client, saved.map((c) => c.id));
+          if (inFlight) await client.from('chapters').delete().eq('project_id', projectId).gte('position', inFlight.from).lte('position', inFlight.to);
+        } catch {
+          // nothing more can be done from here
+        }
+        throw err;
+      }
+      return saved.sort((a, b) => a.position - b.position);
+    } else {
+      const chapters = getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS);
+      const first = chapters.reduce((next, c) => (c.project_id === projectId ? Math.max(next, c.position + 1) : next), 0);
+      const taken = new Set(chapters.map((c) => c.id));
+      const now = new Date().toISOString();
+      const created: Chapter[] = items.map((item, i) => {
+        let id: string;
+        do {
+          id = `c-${Math.random().toString(36).slice(2, 11)}`;
+        } while (taken.has(id));
+        taken.add(id);
+        return { id, project_id: projectId, title: item.title, content: item.content, position: first + i, created_at: now, updated_at: now };
+      });
+      setLocalData('novel_chapters', [...chapters, ...created]);
+      return created;
+    }
+  },
+
+  /** Remove several chapters at once, without keeping a copy (used to undo an import). */
+  async deleteChaptersBulk(chapterIds: string[]): Promise<void> {
+    if (chapterIds.length === 0) return;
+    if (isSupabaseConfigured && supabase) {
+      await removeChapters(supabase, chapterIds, true);
+    } else {
+      const drop = new Set(chapterIds);
+      setLocalData('novel_chapters', getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS).filter((c) => !drop.has(c.id)));
     }
   },
 
@@ -646,17 +847,22 @@ export const databaseService = {
   // --- ENGAGEMENT & COMMUNITY ---
   async getProfilesByIds(userIds: string[]): Promise<UserProfile[]> {
     if (!userIds || userIds.length === 0) return [];
+    // The sample library's pen names are not in the database
+    const pennames = getBundledAuthors(userIds.filter(isBundledAuthor));
+    const ids = userIds.filter(id => !isBundledAuthor(id));
+    if (ids.length === 0) return pennames;
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('profiles').select('*').in('id', userIds);
+      const { data, error } = await supabase.from('profiles').select('*').in('id', ids);
       if (error) throw error;
-      return data || [];
+      return [...(data || []), ...pennames];
     } else {
       const profiles = getLocalData<UserProfile[]>('novel_profiles', []);
-      return profiles.filter(p => userIds.includes(p.id));
+      return [...profiles.filter(p => ids.includes(p.id)), ...pennames];
     }
   },
 
   async trackProjectView(projectId: string, userId: string): Promise<Project> {
+    if (isBundledNovel(projectId)) return trackBundledView(projectId, userId);
     if (isSupabaseConfigured && supabase) {
       const { data: proj, error: fetchErr } = await supabase.from('projects').select('*').eq('id', projectId).single();
       if (fetchErr) throw fetchErr;
@@ -668,7 +874,7 @@ export const databaseService = {
         if (error) throw error;
         return data;
       }
-      return proj as any;
+      return proj as Project;
     } else {
       const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
       const index = projects.findIndex(p => p.id === projectId);
@@ -687,8 +893,9 @@ export const databaseService = {
   },
 
   async getReviews(projectId: string): Promise<Review[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('reviews').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
+    const client = cloudFor(projectId);
+    if (client) {
+      const { data, error } = await client.from('reviews').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     } else {
@@ -698,8 +905,9 @@ export const databaseService = {
   },
 
   async createReview(projectId: string, userId: string, rating: number, content: string): Promise<Review> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('reviews').insert([{ project_id: projectId, user_id: userId, rating, content }]).select().single();
+    const client = cloudFor(projectId);
+    if (client) {
+      const { data, error } = await client.from('reviews').insert([{ project_id: projectId, user_id: userId, rating, content }]).select().single();
       if (error) throw error;
       return data;
     } else {
@@ -715,13 +923,18 @@ export const databaseService = {
       };
       reviews.unshift(newReview);
       setLocalData('novel_reviews', reviews);
+      const target = localProject(projectId);
+      if (target) {
+        pushLocalNotification(target.owner, { actor_id: userId, actor_name: localName(userId), kind: 'review', project_id: projectId, ref_id: newReview.id, snippet: content, meta: { project_title: target.title, rating } });
+      }
       return newReview;
     }
   },
 
   async getComments(projectId: string, chapterId?: string): Promise<Comment[]> {
-    if (isSupabaseConfigured && supabase) {
-      let query = supabase.from('comments').select('*').eq('project_id', projectId);
+    const client = cloudFor(projectId);
+    if (client) {
+      let query = client.from('comments').select('*').eq('project_id', projectId);
       if (chapterId) {
         query = query.eq('chapter_id', chapterId);
       } else {
@@ -743,8 +956,9 @@ export const databaseService = {
   },
 
   async createComment(projectId: string, userId: string, content: string, chapterId?: string): Promise<Comment> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('comments').insert([{ project_id: projectId, user_id: userId, content, chapter_id: chapterId }]).select().single();
+    const client = cloudFor(projectId);
+    if (client) {
+      const { data, error } = await client.from('comments').insert([{ project_id: projectId, user_id: userId, content, chapter_id: chapterId }]).select().single();
       if (error) throw error;
       return data;
     } else {
@@ -760,12 +974,22 @@ export const databaseService = {
       };
       comments.unshift(newComment);
       setLocalData('novel_comments', comments);
+      const target = localProject(projectId);
+      if (target) {
+        pushLocalNotification(target.owner, { actor_id: userId, actor_name: localName(userId), kind: 'comment', project_id: projectId, chapter_id: chapterId ?? null, ref_id: newComment.id, snippet: content, meta: { project_title: target.title } });
+      }
       return newComment;
     }
   },
 
   // --- FOLLOWERS & CHAT ---
   async toggleFollowUser(currentUserId: string, targetUserId: string): Promise<boolean> {
+    // A pen name in the sample library is not a person with an account, so there is nothing to follow
+    if (isBundledAuthor(targetUserId)) return false;
+    // With the cloud set up, the server does the whole thing: both profiles, and the notification
+    const viaServer = await tryCloud('social', async (c) => Boolean(unwrap(await c.rpc('follow_user', { p_target: targetUserId }))));
+    if (viaServer.ok) return viaServer.value;
+    if (viaServer.reason === 'error' || viaServer.reason === 'network') throw viaServer.error;
     const pCurrent = await this.getProfile(currentUserId) || { id: currentUserId, display_name: '', bio: '', daily_word_goal: 1000, following: [], followers: [] };
     const pTarget = await this.getProfile(targetUserId) || { id: targetUserId, display_name: '', bio: '', daily_word_goal: 1000, following: [], followers: [] };
     
@@ -784,6 +1008,9 @@ export const databaseService = {
 
     await this.updateProfile(currentUserId, { following: currentFollowing });
     await this.updateProfile(targetUserId, { followers: targetFollowers });
+    if (!isFollowing && !(isSupabaseConfigured && supabase)) {
+      pushLocalNotification(targetUserId, { actor_id: currentUserId, actor_name: pCurrent.display_name || localName(currentUserId), kind: 'follow' });
+    }
 
     return !isFollowing; // returns true if now following
   },
@@ -841,6 +1068,7 @@ export const databaseService = {
       };
       messages.push(newMsg);
       setLocalData('novel_chats', messages);
+      pushLocalNotification(receiverId, { actor_id: senderId, actor_name: localName(senderId), kind: 'message', ref_id: newMsg.id, snippet: content });
       return newMsg;
     }
   }

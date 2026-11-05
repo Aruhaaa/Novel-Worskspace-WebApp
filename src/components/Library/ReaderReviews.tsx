@@ -3,6 +3,8 @@ import { Star } from 'lucide-react';
 import { databaseService } from '../../services/database';
 import { useApp } from '../../context/AppContext';
 import type { Review, UserProfile } from '../../services/types';
+import { ReportButton } from '../Safety/ReportDialog';
+import { useT } from '../../i18n';
 
 interface Props {
   projectId: string;
@@ -25,7 +27,8 @@ const Stars: React.FC<{ value: number; onPick?: (n: number) => void }> = ({ valu
 );
 
 export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
-  const { user } = useApp();
+  const t = useT();
+  const { user, blockedIds } = useApp();
   const [reviews, setReviews] = useState<(Review & { profile?: UserProfile })[]>([]);
   const [loading, setLoading] = useState(true);
   const [newRating, setNewRating] = useState(5);
@@ -63,35 +66,37 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
     }
   };
 
-  const avg = reviews.length > 0 ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : null;
+  // What people you have blocked wrote is hidden from you, and left out of what you see counted
+  const shown = reviews.filter((r) => !blockedIds.includes(r.user_id));
+  const avg = shown.length > 0 ? (shown.reduce((a, r) => a + r.rating, 0) / shown.length).toFixed(1) : null;
 
   return (
-    <section aria-label="Reviews" style={{ marginTop: 44 }}>
+    <section aria-label={t('Reviews')} style={{ marginTop: 44 }}>
       <h2 className="section-title">
-        Reviews {avg && <span className="meta" style={{ fontFamily: 'var(--sans)', fontSize: 13 }}>· {avg} average · {reviews.length}</span>}
+        Reviews {avg && <span className="meta" style={{ fontFamily: 'var(--sans)', fontSize: 13 }}>· {avg} average · {shown.length}</span>}
       </h2>
 
       {user ? (
         <form className="review-box" onSubmit={handleSubmit}>
-          <strong style={{ fontSize: 13 }}>Leave a review</strong>
+          <strong style={{ fontSize: 13 }}>{t('Leave a review')}</strong>
           <div style={{ margin: '10px 0 12px' }}>
             <Stars value={newRating} onPick={setNewRating} />
           </div>
-          <textarea className="textarea" style={{ minHeight: 84 }} value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="What did you think of this novel?" />
+          <textarea className="textarea" style={{ minHeight: 84 }} value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={t('What did you think of this novel?')} />
           <button className="small-btn is-primary" style={{ marginTop: 12 }} disabled={!newContent.trim()}>
             Post review
           </button>
         </form>
       ) : (
-        <p className="meta">Sign in to leave a review.</p>
+        <p className="meta">{t('Sign in to leave a review.')}</p>
       )}
 
       {loading ? (
-        <p className="meta" style={{ marginTop: 14 }}>Loading reviews…</p>
-      ) : reviews.length === 0 ? (
-        <p className="meta" style={{ marginTop: 14 }}>No reviews yet. Be the first!</p>
+        <p className="meta" style={{ marginTop: 14 }}>{t('Loading reviews…')}</p>
+      ) : shown.length === 0 ? (
+        <p className="meta" style={{ marginTop: 14 }}>{t('No reviews yet. Be the first!')}</p>
       ) : (
-        reviews.map((r) => (
+        shown.map((r) => (
           <div className="review" key={r.id}>
             <span className="avatar">{(r.profile?.display_name || 'A')[0].toUpperCase()}</span>
             <div>
@@ -99,6 +104,7 @@ export const ReaderReviews: React.FC<Props> = ({ projectId }) => {
               <small>{new Date(r.created_at).toLocaleDateString()}</small>
               <Stars value={r.rating} />
               <p>{r.content}</p>
+              <ReportButton subject={{ type: 'review', targetId: r.id, authorId: r.user_id, authorName: r.profile?.display_name, projectId, excerpt: r.content }} />
             </div>
           </div>
         ))

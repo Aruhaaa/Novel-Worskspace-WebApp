@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -62,6 +63,10 @@ class AppState extends ChangeNotifier {
   Set<String> _saved = {};
   Map<String, ReadingProgress> _progress = {};
 
+  // People this person has blocked: their novels are not shown. The names are only for the list in Me.
+  Set<String> _blocked = {};
+  Map<String, String> _blockedNames = {};
+
   // ---- reading preferences ----
   ThemeOption get theme => _theme;
   String get proseFontId => _proseFont;
@@ -69,6 +74,13 @@ class AppState extends ChangeNotifier {
   Set<String> get saved => _saved;
   UseMode? get mode => _mode;
   bool get signedIn => user != null;
+
+  bool isBlocked(String userId) => _blocked.contains(userId);
+
+  /// Who is blocked, as (id, name) pairs
+  List<MapEntry<String, String>> get blockedPeople => [
+    for (final id in _blocked) MapEntry(id, _blockedNames[id] ?? 'Someone'),
+  ];
 
   /// Past the front door: signed in, or browsing as a guest
   bool get inApp => signedIn || guest;
@@ -99,8 +111,24 @@ class AppState extends ChangeNotifier {
   Future<void> _loadAccount() async {
     final u = user;
     if (u == null) return;
-    final m = prefs.getString('mode_${u.id}');
+    // The answer follows the account to any phone; this phone's own copy is the fallback
+    final m = u.mode ?? prefs.getString('mode_${u.id}');
     _mode = UseMode.values.where((x) => x.name == m).firstOrNull;
+    // An answer given here before it was kept on the account is offered to the account once
+    if (u.mode == null && _mode != null)
+      unawaited(backend.saveUseMode(_mode!.name));
+    try {
+      _blocked = await backend.blockedUsers(u.id);
+      final names = prefs.getString('blocked_names_${u.id}');
+      _blockedNames = names == null
+          ? {}
+          : (jsonDecode(names) as Map<String, dynamic>).map(
+              (k, v) => MapEntry(k, v.toString()),
+            );
+    } catch (_) {
+      _blocked = {};
+      _blockedNames = {};
+    }
     try {
       profile = await backend.profile(u.id);
     } catch (_) {
@@ -133,6 +161,8 @@ class AppState extends ChangeNotifier {
     user = null;
     profile = null;
     _mode = null;
+    _blocked = {};
+    _blockedNames = {};
     guest = false;
     notifyListeners();
   }
@@ -140,8 +170,79 @@ class AppState extends ChangeNotifier {
   Future<void> chooseMode(UseMode mode) async {
     _mode = mode;
     final u = user;
-    if (u != null) await prefs.setString('mode_${u.id}', mode.name);
+    if (u != null) {
+      await prefs.setString('mode_${u.id}', mode.name);
+      user = u.withMode(mode.name);
+      await backend.saveUseMode(mode.name);
+    }
     notifyListeners();
+  }
+
+  // ---- passwords and leaving ----
+  Future<void> changePassword(String current, String next) {
+    final u = user;
+    if (u == null) throw BackendException('Sign in first.');
+    return backend.changePassword(u.email, current, next);
+  }
+
+  /// Remove the account and everything in it, and forget what this phone kept for it.
+  Future<void> deleteAccount(String password) async {
+    final u = user;
+    if (u == null) return;
+    // What this phone holds for the account's novels, worked out before they are gone
+    var projectIds = <String>[];
+    try {
+      projectIds = (await backend.myProjects(u.id)).map((p) => p.id).toList();
+    } catch (_) {
+      // still removed from the account; the phone's copies of a novel it cannot list are not reachable anyway
+    }
+    await backend.deleteAccount(u.id, u.email, password);
+    for (final k in prefs.getKeys().toList()) {
+      final mine =
+          k == 'mode_${u.id}' ||
+          k == 'blocks_${u.id}' ||
+          k == 'blocked_names_${u.id}' ||
+          projectIds.any(k.endsWith);
+      if (mine) await prefs.remove(k);
+    }
+    user = null;
+    profile = null;
+    _mode = null;
+    _blocked = {};
+    _blockedNames = {};
+    guest = false;
+    notifyListeners();
+  }
+
+  // ---- reporting and blocking ----
+  Future<void> reportNovel(Project project, String reason, String details) {
+    final u = user;
+    if (u == null) throw BackendException('Sign in to send a report.');
+    return backend.reportNovel(u.id, project, reason, details);
+  }
+
+  /// Hide a writer's novels. Returns false when it could only be kept on this phone, not on the account.
+  Future<bool> blockAuthor(String authorId, String name) async {
+    final u = user;
+    if (u == null) return false;
+    _blocked = {..._blocked, authorId};
+    _blockedNames = {
+      ..._blockedNames,
+      authorId: name.trim().isEmpty ? 'Someone' : name.trim(),
+    };
+    await prefs.setString('blocked_names_${u.id}', jsonEncode(_blockedNames));
+    notifyListeners();
+    return backend.blockUser(u.id, authorId);
+  }
+
+  Future<bool> unblockAuthor(String authorId) async {
+    final u = user;
+    if (u == null) return false;
+    _blocked = {..._blocked}..remove(authorId);
+    _blockedNames = {..._blockedNames}..remove(authorId);
+    await prefs.setString('blocked_names_${u.id}', jsonEncode(_blockedNames));
+    notifyListeners();
+    return backend.unblockUser(u.id, authorId);
   }
 
   Future<void> saveProfile({String? displayName, int? dailyWordGoal}) async {

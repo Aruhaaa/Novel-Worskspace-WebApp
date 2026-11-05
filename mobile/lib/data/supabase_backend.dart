@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config.dart';
 import 'backend.dart';
 import 'models.dart';
 
@@ -107,7 +108,16 @@ class SupabaseBackend implements Backend {
     // The session is kept on the phone, so this works with no signal
     final u = _c.auth.currentUser;
     if (u == null || u.email == null) return null;
-    return AppUser(id: u.id, email: u.email!);
+    return _userOf(u.id, u.email!, u.userMetadata);
+  }
+
+  static AppUser _userOf(String id, String email, Map<String, dynamic>? meta) {
+    final m = meta?['use_mode'];
+    return AppUser(
+      id: id,
+      email: email,
+      mode: m == 'read' || m == 'write' || m == 'both' ? m as String : null,
+    );
   }
 
   @override
@@ -119,7 +129,7 @@ class SupabaseBackend implements Backend {
     final u = res.user;
     if (u == null || u.email == null)
       throw BackendException('Could not sign in.');
-    return AppUser(id: u.id, email: u.email!);
+    return _userOf(u.id, u.email!, u.userMetadata);
   });
 
   @override
@@ -128,7 +138,7 @@ class SupabaseBackend implements Backend {
     if (res.session == null) return null; // the email has to be confirmed first
     final u = res.user;
     if (u == null || u.email == null) return null;
-    return AppUser(id: u.id, email: u.email!);
+    return _userOf(u.id, u.email!, u.userMetadata);
   });
 
   @override
@@ -139,6 +149,161 @@ class SupabaseBackend implements Backend {
       await _c.auth.signOut();
     } catch (_) {
       // signed out on this phone either way
+    }
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) => _run(() async {
+    try {
+      await _c.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: Config.publicAppUrl,
+      );
+    } on AuthException catch (e) {
+      // Too many requests is worth saying; anything else is kept vague so this cannot show who has an account
+      if (e.statusCode == '429' ||
+          RegExp(r'rate|seconds', caseSensitive: false).hasMatch(e.message)) {
+        throw BackendException(
+          'Too many requests. Please wait a minute and try again.',
+        );
+      }
+    }
+  });
+
+  /// Signs in again to prove it is the owner at the keyboard, without changing who is signed in
+  Future<void> _confirmPassword(String email, String password) async {
+    try {
+      await _c.auth.signInWithPassword(email: email.trim(), password: password);
+    } on AuthException {
+      throw BackendException('That password is not right.');
+    }
+  }
+
+  @override
+  Future<void> changePassword(
+    String email,
+    String currentPassword,
+    String newPassword,
+  ) => _run(() async {
+    await _confirmPassword(email, currentPassword);
+    await _c.auth.updateUser(UserAttributes(password: newPassword));
+  });
+
+  @override
+  Future<void> saveUseMode(String mode) async {
+    try {
+      await _c.auth.updateUser(UserAttributes(data: {'use_mode': mode}));
+    } catch (_) {
+      // Still kept on this phone; it is offered to the account again next time
+    }
+  }
+
+  @override
+  Future<void> deleteAccount(String userId, String email, String password) =>
+      _run(() async {
+        await _confirmPassword(email, password);
+        try {
+          await _c.rpc('delete_my_account');
+        } on PostgrestException catch (e) {
+          if (isMissingSchema(e)) {
+            throw BackendException(
+              'Deleting accounts is not switched on for this site yet. Please tell the site owner.',
+            );
+          }
+          rethrow;
+        }
+        await clearCache();
+        try {
+          // The account is gone on the server, so only this phone's copy of the sign-in is left to remove
+          await _c.auth.signOut(scope: SignOutScope.local);
+        } catch (_) {
+          // signed out on this phone either way
+        }
+      });
+
+  // ---- reporting and blocking. The tables and functions come from supabase/setup_scripts/20261008_account_safety.sql.
+
+  @override
+  Future<void> reportNovel(
+    String reporterId,
+    Project project,
+    String reason,
+    String details,
+  ) => _run(() async {
+    try {
+      await _c.rpc(
+        'submit_report',
+        params: {
+          'p_type': 'novel',
+          'p_target_id': project.id,
+          'p_reason': reason,
+          'p_details': details.trim(),
+        },
+      );
+    } on PostgrestException catch (e) {
+      if (isMissingSchema(e)) {
+        throw BackendException(
+          'Reporting is not switched on for this site yet. Please tell the site owner.',
+        );
+      }
+      rethrow;
+    }
+  });
+
+  List<String> _blocksOnPhone(String userId) =>
+      _prefs.getStringList('blocks_$userId') ?? <String>[];
+
+  @override
+  Future<Set<String>> blockedUsers(String userId) async {
+    try {
+      final rows = await _c
+          .from('user_blocks')
+          .select('blocked_id')
+          .eq('blocker_id', userId);
+      final ids = rows.map((r) => r['blocked_id'].toString()).toSet();
+      await _prefs.setStringList('blocks_$userId', ids.toList());
+      return ids;
+    } catch (_) {
+      // Not set up yet, or no signal: this phone's copy is the answer
+      return _blocksOnPhone(userId).toSet();
+    }
+  }
+
+  @override
+  Future<bool> blockUser(String userId, String blockedId) async {
+    final now = _blocksOnPhone(userId);
+    if (!now.contains(blockedId)) {
+      await _prefs.setStringList('blocks_$userId', [...now, blockedId]);
+    }
+    try {
+      await _c
+          .from('user_blocks')
+          .upsert(
+            {'blocker_id': userId, 'blocked_id': blockedId},
+            onConflict: 'blocker_id,blocked_id',
+            ignoreDuplicates: true,
+          );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> unblockUser(String userId, String blockedId) async {
+    await _prefs.setStringList(
+      'blocks_$userId',
+      _blocksOnPhone(userId).where((id) => id != blockedId).toList(),
+    );
+    try {
+      await _c
+          .from('user_blocks')
+          .delete()
+          .eq('blocker_id', userId)
+          .eq('blocked_id', blockedId);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

@@ -19,6 +19,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _password = TextEditingController();
   bool _busy = false;
   bool _showPassword = false;
+  // "Forgot password" swaps the form for a single email box
+  bool _forgot = false;
   String? _error;
   String? _notice;
 
@@ -27,6 +29,42 @@ class _AuthScreenState extends State<AuthScreen> {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendReset() async {
+    final email = _email.text.trim();
+    if (!email.contains('@')) {
+      setState(() {
+        _error = 'Enter your email address.';
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _notice = null;
+    });
+    try {
+      await context.read<AppState>().backend.requestPasswordReset(email);
+      // The same words whether or not that address has an account
+      if (mounted) {
+        setState(() {
+          _notice = 'If there is an account for that address, a link to choose a new password is on its way. It may take a minute, and it can land in spam.';
+        });
+      }
+    } on BackendException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -82,7 +120,13 @@ class _AuthScreenState extends State<AuthScreen> {
     final t = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_signUp ? 'Create an account' : 'Welcome back'),
+        title: Text(
+          _forgot
+              ? 'Forgot your password?'
+              : _signUp
+              ? 'Create an account'
+              : 'Welcome back',
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -91,10 +135,18 @@ class _AuthScreenState extends State<AuthScreen> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Eyebrow(_signUp ? 'Free, and it takes a moment' : 'Sign in'),
+                Eyebrow(
+                  _forgot
+                      ? 'A new password'
+                      : _signUp
+                      ? 'Free, and it takes a moment'
+                      : 'Sign in',
+                ),
                 const SizedBox(height: 10),
                 Text(
-                  _signUp
+                  _forgot
+                      ? 'Enter your email and we will send a link to choose a new password.'
+                      : _signUp
                       ? 'Start your first book, or just keep your place in someone else\'s.'
                       : 'Pick up where you left off.',
                   style: t.textTheme.headlineSmall,
@@ -107,33 +159,34 @@ class _AuthScreenState extends State<AuthScreen> {
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Email'),
                 ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _password,
-                  obscureText: !_showPassword,
-                  autofillHints: [
-                    _signUp
-                        ? AutofillHints.newPassword
-                        : AutofillHints.password,
-                  ],
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _busy ? null : _submit(),
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    suffixIcon: IconButton(
-                      tooltip: _showPassword
-                          ? 'Hide password'
-                          : 'Show password',
-                      icon: Icon(
-                        _showPassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                if (!_forgot) const SizedBox(height: 14),
+                if (!_forgot)
+                  TextField(
+                    controller: _password,
+                    obscureText: !_showPassword,
+                    autofillHints: [
+                      _signUp
+                          ? AutofillHints.newPassword
+                          : AutofillHints.password,
+                    ],
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _busy ? null : _submit(),
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      suffixIcon: IconButton(
+                        tooltip: _showPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
                       ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
-                ),
                 if (_error != null) ...[
                   const SizedBox(height: 14),
                   Text(
@@ -144,28 +197,58 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
                 if (_notice != null) ...[
                   const SizedBox(height: 14),
-                  Text(_notice!, style: t.textTheme.bodyMedium),
+                  Text(
+                    _notice!,
+                    style: t.textTheme.bodyMedium,
+                    key: const Key('auth-notice'),
+                  ),
                 ],
+                if (!_signUp && !_forgot)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => setState(() {
+                        _forgot = true;
+                        _error = null;
+                        _notice = null;
+                      }),
+                      child: const Text('Forgot password?'),
+                    ),
+                  ),
                 const SizedBox(height: 22),
                 FilledButton(
-                  onPressed: _busy ? null : _submit,
+                  onPressed: _busy ? null : (_forgot ? _sendReset : _submit),
                   child: _busy
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(_signUp ? 'Create account' : 'Sign in'),
+                      : Text(
+                          _forgot
+                              ? 'Send reset link'
+                              : _signUp
+                              ? 'Create account'
+                              : 'Sign in',
+                        ),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => setState(() {
-                    _signUp = !_signUp;
+                    if (_forgot) {
+                      _forgot = false;
+                    } else {
+                      _signUp = !_signUp;
+                    }
                     _error = null;
                     _notice = null;
                   }),
                   child: Text(
-                    _signUp ? 'I already have an account' : 'Create an account',
+                    _forgot
+                        ? 'Back to sign in'
+                        : _signUp
+                        ? 'I already have an account'
+                        : 'Create an account',
                   ),
                 ),
                 if (!context.read<AppState>().backend.isCloud) ...[

@@ -6,7 +6,7 @@ import { useDailyGoal } from '../../lib/dailyGoal';
 import { usePublishProject } from '../../lib/publish';
 import type { Project } from '../../services/types';
 import { AudienceAnalyticsModal } from './AudienceAnalyticsModal';
-import { ExportDialog } from '../Export/ExportDialog';
+import { ExportDialog } from '../Export/ExportDialogLazy';
 import { ContinueCard } from './ContinueCard';
 import { RemoveSampleDialog, SampleButton } from './SampleProject';
 import { isSampleProject } from '../../lib/sample';

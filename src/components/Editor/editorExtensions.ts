@@ -78,6 +78,91 @@ export const FindHighlight = Extension.create({
   },
 });
 
+// ---- Read aloud: the paragraph being read ----
+
+export const speakKey = new PluginKey<{ pos: number | null }>('novelistSpeak');
+
+/** Marks the paragraph that is being read aloud. */
+export const SpeakHighlight = Extension.create({
+  name: 'novelistSpeak',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin<{ pos: number | null }>({
+        key: speakKey,
+        state: {
+          init: () => ({ pos: null }),
+          apply(tr, prev) {
+            const meta = tr.getMeta(speakKey) as { pos: number | null } | undefined;
+            if (meta) return meta;
+            if (tr.docChanged && prev.pos !== null) return { pos: tr.mapping.map(prev.pos) };
+            return prev;
+          },
+        },
+        props: {
+          decorations(state) {
+            const pos = speakKey.getState(state)?.pos;
+            if (pos === null || pos === undefined) return null;
+            const node = state.doc.nodeAt(pos);
+            if (!node) return null;
+            return DecorationSet.create(state.doc, [Decoration.node(pos, pos + node.nodeSize, { class: 'is-speaking' })]);
+          },
+        },
+      }),
+    ];
+  },
+});
+
+// ---- Typewriter scrolling ----
+
+export const typewriterKey = new PluginKey<{ enabled: boolean }>('novelistTypewriter');
+
+/** The nearest ancestor that scrolls, which is what has to move to keep the caret where it is wanted. */
+const scrollParent = (el: HTMLElement): HTMLElement => {
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+  }
+  return (document.scrollingElement as HTMLElement) || document.documentElement;
+};
+
+/** Keeps the line being written a little above the middle of the screen, as a typewriter keeps the page in place. */
+export const Typewriter = Extension.create({
+  name: 'novelistTypewriter',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin<{ enabled: boolean }>({
+        key: typewriterKey,
+        state: {
+          init: () => ({ enabled: false }),
+          apply(tr, prev) {
+            const meta = tr.getMeta(typewriterKey) as { enabled: boolean } | undefined;
+            return meta ? { enabled: !!meta.enabled } : prev;
+          },
+        },
+        view: () => ({
+          update(view, prevState) {
+            if (!typewriterKey.getState(view.state)?.enabled) return;
+            // Only when the writing moved the caret, not when something else redrew the page
+            if (prevState.doc.eq(view.state.doc) && prevState.selection.eq(view.state.selection)) return;
+            if (!view.hasFocus()) return;
+            let caret: { top: number; bottom: number };
+            try {
+              caret = view.coordsAtPos(view.state.selection.head);
+            } catch {
+              return;
+            }
+            const scroller = scrollParent(view.dom as HTMLElement);
+            const box = scroller.getBoundingClientRect();
+            const delta = (caret.top + caret.bottom) / 2 - (box.top + box.height * 0.45);
+            // Small drifts are left alone, so the page does not tremble while typing along a line
+            if (Math.abs(delta) > 6) scroller.scrollBy({ top: delta, behavior: 'auto' });
+          },
+        }),
+      }),
+    ];
+  },
+});
+
 const currentKey = new PluginKey('novelistCurrentBlock');
 
 /** Gives the paragraph the cursor is in a class, so focus mode can quiet everything else. */

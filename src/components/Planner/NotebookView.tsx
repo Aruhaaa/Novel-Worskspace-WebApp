@@ -10,6 +10,10 @@ import { Dialog } from '../ui/Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { MarginsRail, RailBlock, RailRow } from '../ui/MarginsRail';
 import { EntityDetails } from '../Notebook/EntityDetails';
+import { RelationshipMap } from '../Notebook/RelationshipMap';
+import { RoleBanner } from '../Collab/RoleBanner';
+import { can } from '../../lib/collab';
+import { useT } from '../../i18n';
 
 type Tab = 'all' | 'character' | 'location' | 'item' | 'lore';
 
@@ -32,7 +36,10 @@ const typeIcon = (type: WikiEntity['type']) => {
 };
 
 export const NotebookView: React.FC = () => {
-  const { entities, chapters, createEntity, deleteEntity, updateEntity } = useApp();
+  const t = useT();
+  const { entities, chapters, createEntity, deleteEntity, updateEntity, activeProject, projectRole } = useApp();
+  const structure = can.editStructure(projectRole);
+  const [view, setView] = useState<'list' | 'map'>('list');
   const openChapter = useOpenChapter();
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -136,13 +143,20 @@ export const NotebookView: React.FC = () => {
         World notebook <span>/ {notebook.length} {notebook.length === 1 ? 'note' : 'notes'}</span>
       </h1>
       <div className="toolbar-actions">
-        <button className="button button-primary button-small" onClick={() => openForm(null)}>
-          Add entity
-        </button>
+        {structure && (
+          <button className="button button-primary button-small" onClick={() => openForm(null)}>
+            Add entity
+          </button>
+        )}
       </div>
     </div>
     <div className="studio-view">
       <div className="page page-wide" style={{ paddingTop: 28 }}>
+        <RoleBanner />
+        <div className="world-filter" role="group" aria-label={t('How to look at the notebook')}>
+          <button aria-pressed={view === 'list'} onClick={() => setView('list')}>{t('List')}</button>
+          <button aria-pressed={view === 'map'} onClick={() => setView('map')}>{t('Relationship map')}</button>
+        </div>
         <div className="world-filter" role="group" aria-label="Filter the world notebook">
           {TABS.map((t) => (
             <button key={t.id} aria-pressed={activeTab === t.id} onClick={() => setActiveTab(t.id)}>
@@ -170,6 +184,9 @@ export const NotebookView: React.FC = () => {
           </EmptyState>
         ) : (
           <div className="entity-layout">
+            {view === 'map' && activeProject ? (
+              <RelationshipMap projectId={activeProject.id} entities={visible} selectedId={selected?.id ?? null} onSelect={(entity) => setSelectedEntityId(entity.id)} />
+            ) : (
             <div>
               {visible.map((ent) => (
                 <button
@@ -193,6 +210,7 @@ export const NotebookView: React.FC = () => {
                 </button>
               ))}
             </div>
+            )}
 
             {selected && (
               <aside className="card detail-panel" aria-live="polite" aria-label="Entity details">
@@ -206,6 +224,7 @@ export const NotebookView: React.FC = () => {
                     if (chapter) openChapter(chapter, term);
                   }}
                 />
+                {structure && (
                 <div className="page-actions" style={{ marginTop: 18 }}>
                   <button className="small-btn" onClick={() => openForm(selected)}>
                     <Pencil /> Edit entity
@@ -214,6 +233,7 @@ export const NotebookView: React.FC = () => {
                     <Trash2 /> Delete
                   </button>
                 </div>
+                )}
               </aside>
             )}
           </div>

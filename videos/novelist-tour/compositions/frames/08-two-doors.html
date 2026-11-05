@@ -1,0 +1,90 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f08-h{top:150px;font-size:80px}
+.f08-ph{position:absolute;top:336px;width:276px;height:569px;background:#1d1c1a;border-radius:36px;padding:12px}
+.f08-ph img{display:block;width:252px;height:545px;border-radius:25px}
+.f08-tab{position:absolute;left:134px;font:500 14px/1 "DM Sans",sans-serif;letter-spacing:4px;color:#5A5A5A;text-transform:uppercase}
+#f08-row{position:absolute;left:0;top:0;width:1920px;height:1080px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-jjkv" id="root" data-composition-id="08-two-doors" data-start="0" data-duration="8.1" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-4weo" id="f08-bg" class="clip bg" data-start="0" data-duration="8.1" data-track-index="0"></div>
+    <div data-hf-id="hf-xkfd" id="f08-cam" class="cam">
+    <div data-hf-id="hf-g27d" class="eyebrow" id="f08-eyebrow">06 · Two doors</div>
+    <div data-hf-id="hf-xmo3" class="h" id="f08-h"><span data-hf-id="hf-5rtz" class="l " id="f08-h1"><span data-hf-id="hf-ys6r" class="w">The</span> <span data-hf-id="hf-azly" class="w">same</span> <span data-hf-id="hf-6ifp" class="w">novels,</span></span><span data-hf-id="hf-x3y4" class="l" id="f08-h2"><em data-hf-id="hf-2lav"><span data-hf-id="hf-mx6p" class="w">on</span> <span data-hf-id="hf-kxir" class="w">your</span> <span data-hf-id="hf-odji" class="w">phone.</span></em></span></div>
+    <div data-hf-id="hf-y7sy" id="f08-row">
+    <div data-hf-id="hf-tqh1" class="f08-tab" id="f08-t1" style="top:406px">Read</div>
+    <div data-hf-id="hf-7n8z" class="f08-tab" id="f08-t2" style="top:448px">Write</div>
+    <div data-hf-id="hf-fld8" class="f08-tab" id="f08-t3" style="top:490px">Me</div>
+    <div data-hf-id="hf-h3fm" class="f08-ph" id="f08-p1" style="left:330px"><img data-hf-id="hf-5v91" src="assets/crops/f08-p1.png" alt=""></div>
+    <div data-hf-id="hf-10zn" class="f08-ph" id="f08-p2" style="left:666px"><img data-hf-id="hf-klpi" src="assets/crops/f08-p2.png" alt=""></div>
+    <div data-hf-id="hf-kryj" class="f08-ph" id="f08-p3" style="left:1002px"><img data-hf-id="hf-yuev" src="assets/crops/f08-p3.png" alt=""></div>
+    <div data-hf-id="hf-izes" class="f08-ph" id="f08-p4" style="left:1338px"><img data-hf-id="hf-ow2w" src="assets/crops/f08-p4.png" alt=""></div>
+    </div>
+    </div>
+
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f08-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    tl.fromTo("#f08-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.15);
+    slamLine("#f08-h1", 0.3, 0.09);
+    tl.fromTo("#f08-p1", { opacity: 0, y: 70, scale: 1.06, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 0.6);
+    tl.fromTo("#f08-p2", { opacity: 0, y: 70, scale: 1.06, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 1.25);
+    tl.fromTo("#f08-p3", { opacity: 0, y: 70, scale: 1.06, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 1.875);
+    tl.fromTo("#f08-p4", { opacity: 0, y: 70, scale: 1.06, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 2.5);
+    tl.fromTo("#f08-t1, #f08-t2, #f08-t3", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E, stagger: 0.1 }, 0.9);
+    slamLine("#f08-h2", 2.5, 0.1);
+    shake(2.5, 3);
+    // parallax: the row drifts a little against the headline while it holds
+    tl.fromTo("#f08-row", { x: 0 }, { x: -30, duration: 4.4, ease: "power1.inOut" }, 3.1);
+    push(1.035, 0, 7.5);
+    window.__timelines["08-two-doors"] = tl;
+  </script>
+</template>

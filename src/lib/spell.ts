@@ -18,6 +18,7 @@ export const SPELL_LANGUAGES: { id: string; label: string }[] = [
   { id: 'pt', label: 'Português' },
   { id: 'nl', label: 'Nederlands' },
   { id: 'id', label: 'Bahasa Indonesia' },
+  { id: 'ms', label: 'Bahasa Melayu' },
 ];
 
 const SPELL_KEY = 'novelist_spell';

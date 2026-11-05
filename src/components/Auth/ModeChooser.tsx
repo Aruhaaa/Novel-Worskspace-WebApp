@@ -5,9 +5,11 @@ import { Brand } from '../Brand';
 import { ModeOptions } from './ModeOptions';
 import { openingPath, type UseMode } from '../../lib/mode';
 import landscape from '../../assets/quiet-landscape.svg';
+import { useT } from '../../i18n';
 
 /** Shown once after signing in, when this device has not heard the answer yet. */
 export const ModeChooser: React.FC = () => {
+  const t = useT();
   const { setMode } = useApp();
   const navigate = useNavigate();
   const [choice, setChoice] = useState<UseMode | null>(null);
@@ -26,16 +28,16 @@ export const ModeChooser: React.FC = () => {
         <h2>
           Two rooms,
           <br />
-          one <em>door.</em>
+          one <em>{t('door.')}</em>
         </h2>
-        <p>Read what others have written. Write your own. Move between them whenever you like.</p>
+        <p>{t('Read what others have written. Write your own. Move between them whenever you like.')}</p>
         <img src={landscape} alt="" width="380" height="430" />
       </section>
 
       <section className="auth-form">
         <form className="auth-card" onSubmit={go}>
-          <h1 id="mode-h">What brings you here?</h1>
-          <p className="lead">This only decides what opens first. You can read and write either way, and change it any time in Preferences.</p>
+          <h1 id="mode-h">{t('What brings you here?')}</h1>
+          <p className="lead">{t('This only decides what opens first. You can read and write either way, and change it any time in Preferences.')}</p>
           <ModeOptions value={choice} onChange={setChoice} labelledBy="mode-h" />
           <button className="button button-primary" style={{ width: '100%' }} disabled={!choice}>
             Continue

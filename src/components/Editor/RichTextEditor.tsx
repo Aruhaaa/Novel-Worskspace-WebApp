@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import type { LiveSession } from '../../lib/liveEditing';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
@@ -21,18 +24,43 @@ import {
   Highlighter,
   MoreHorizontal,
   Search,
-  SpellCheck
+  SpellCheck,
+  Keyboard,
+  Volume2,
+  BookA
 } from 'lucide-react';
-import Mention from '@tiptap/extension-mention';
+import Mention, { type MentionOptions } from '@tiptap/extension-mention';
 import { ReactRenderer } from '@tiptap/react';
-import tippy from 'tippy.js';
-import MentionList from './MentionList';
+import tippy, { type Instance } from 'tippy.js';
+import MentionList, { type MentionListHandle, type MentionListProps } from './MentionList';
 import { useApp } from '../../context/AppContext';
 import { EDITOR_FONTS, loadEditorFont, saveEditorFont, getEditorFontFamily } from '../../lib/editorFonts';
-import { CurrentBlock, FindHighlight, StyleNotes, findKey, findRanges, styleKey, type StyleState } from './editorExtensions';
+import { CurrentBlock, FindHighlight, SpeakHighlight, StyleNotes, Typewriter, findKey, findRanges, speakKey, styleKey, typewriterKey, type StyleState } from './editorExtensions';
+import { loadLookupAllowed, loadTypewriter, saveTypewriter } from '../../lib/writingTools';
+import { useReadAloud } from '../../lib/useReadAloud';
+import { ReadAloudBar } from '../Speech/ReadAloudBar';
+import { LookupPanel } from './LookupPanel';
+import { useT } from '../../i18n';
 import { FIND_HANDOFF_KEY, onRequestFind } from '../../lib/uiEvents';
 import { STYLE_KINDS, type StyleKind } from '../../lib/style';
 import { loadSpellPrefs, loadStylePrefs, saveStylePrefs } from '../../lib/spell';
+
+/** Another person's cursor: a thin line in their colour with their name above it (the name is for the eyes only) */
+const renderCaret = (user: { name?: string; color?: string }): HTMLElement => {
+  const caret = document.createElement('span');
+  caret.classList.add('collaboration-carets__caret');
+  caret.setAttribute('style', `border-color: ${user.color ?? '#888'}`);
+  const label = document.createElement('div');
+  label.classList.add('collaboration-carets__label');
+  label.setAttribute('style', `background-color: ${user.color ?? '#888'}`);
+  label.setAttribute('aria-hidden', 'true');
+  label.appendChild(document.createTextNode(user.name ?? ''));
+  // Word joiners keep the line from breaking around the cursor
+  caret.appendChild(document.createTextNode(String.fromCharCode(0x2060)));
+  caret.appendChild(label);
+  caret.appendChild(document.createTextNode(String.fromCharCode(0x2060)));
+  return caret;
+};
 
 interface RichTextEditorProps {
   content: string;
@@ -42,6 +70,12 @@ interface RichTextEditorProps {
   header?: React.ReactNode;
   /** Called with the entry a clicked @mention points at (its id, or its name in older text) */
   onMentionClick?: (idOrName: string) => void;
+  /** Write together with the others who have this chapter open (lib/liveEditing.ts). Decided before the editor is made, never changed after. */
+  live?: LiveSession | null;
+  /** False for someone who may only read */
+  editable?: boolean;
+  /** Put this text in the chapter in place of what is there, such as a restored version. Only used while writing together. */
+  replaceWith?: { html: string; nonce: number } | null;
 }
 
 interface ToolProps {
@@ -66,7 +100,8 @@ const Tool: React.FC<ToolProps> = ({ label, active, disabled, onClick, children 
   </button>
 );
 
-const MenuBar = ({ editor, onToggleFindReplace, fontId, onFontChange, styleOn, onToggleStyle }: { editor: any, onToggleFindReplace: () => void, fontId: string, onFontChange: (id: string) => void, styleOn: boolean, onToggleStyle: () => void }) => {
+const MenuBar = ({ editor, onToggleFindReplace, fontId, onFontChange, styleOn, onToggleStyle, typewriterOn, onToggleTypewriter, canListen, listening, onToggleListen, canLookup, lookupOn, onToggleLookup }: { editor: Editor | null, onToggleFindReplace: () => void, fontId: string, onFontChange: (id: string) => void, styleOn: boolean, onToggleStyle: () => void, typewriterOn: boolean, onToggleTypewriter: () => void, canListen: boolean, listening: boolean, onToggleListen: () => void, canLookup: boolean, lookupOn: boolean, onToggleLookup: () => void }) => {
+  const t = useT();
   if (!editor) {
     return null;
   }
@@ -108,11 +143,14 @@ const MenuBar = ({ editor, onToggleFindReplace, fontId, onFontChange, styleOn, o
       <span className="sep" />
       <Tool label="Find and replace" onClick={onToggleFindReplace}><Search /></Tool>
       <Tool label="Style notes" active={styleOn} onClick={onToggleStyle}><SpellCheck /></Tool>
+      <Tool label={t('Typewriter scrolling')} active={typewriterOn} onClick={onToggleTypewriter}><Keyboard /></Tool>
+      {canLookup && <Tool label={t('Look up a word')} active={lookupOn} onClick={onToggleLookup}><BookA /></Tool>}
+      {canListen && <Tool label={t('Read aloud')} active={listening} onClick={onToggleListen}><Volume2 /></Tool>}
     </div>
   );
 };
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = 'Every world begins somewhere…', header, onMentionClick }) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = 'Every world begins somewhere…', header, onMentionClick, live = null, editable = true, replaceWith = null }) => {
   const mentionClick = React.useRef(onMentionClick);
   useEffect(() => {
     mentionClick.current = onMentionClick;
@@ -133,6 +171,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
   const [spell] = React.useState(loadSpellPrefs);
   const allKinds = React.useMemo(() => STYLE_KINDS.map((k) => k.id), []);
   const [stylePrefs, setStylePrefs] = React.useState(() => loadStylePrefs(allKinds));
+  const [lookupOpen, setLookupOpen] = React.useState(false);
+  const [lookupAllowed] = React.useState(loadLookupAllowed);
+  const [typewriter, setTypewriter] = React.useState(loadTypewriter);
+  const toggleTypewriter = () => {
+    setTypewriter((on) => {
+      saveTypewriter(!on);
+      return !on;
+    });
+  };
   const styleOn = stylePrefs.on;
   const styleKinds = stylePrefs.kinds as StyleKind[];
   const [styleReport, setStyleReport] = React.useState<Pick<StyleState, 'counts' | 'stats'> | null>(null);
@@ -153,16 +200,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
 
   const { entities } = useApp();
 
-  const suggestion = {
+  const suggestion: MentionOptions['suggestion'] = {
     items: ({ query }: { query: string }) => {
       return entities.filter(item => item.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
     },
     render: () => {
-      let component: any;
-      let popup: any;
+      let component: ReactRenderer<MentionListHandle, MentionListProps> | undefined;
+      let popup: Instance[] | undefined;
 
       return {
-        onStart: (props: any) => {
+        onStart: (props) => {
           component = new ReactRenderer(MentionList, {
             props,
             editor: props.editor,
@@ -172,8 +219,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
             return;
           }
 
+          const rect = props.clientRect;
           popup = tippy('body', {
-            getReferenceClientRect: props.clientRect,
+            // The caret's box can come back empty for a moment; an empty box keeps the list where it was
+            getReferenceClientRect: () => rect() ?? new DOMRect(),
             appendTo: () => document.body,
             content: component.element,
             showOnCreate: true,
@@ -183,19 +232,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
             theme: 'light-border',
           });
         },
-        onUpdate(props: any) {
-          component.updateProps(props);
-          if (!props.clientRect) return;
+        onUpdate(props) {
+          component?.updateProps(props);
+          if (!props.clientRect || !popup) return;
+          const rect = props.clientRect;
           popup[0].setProps({
-            getReferenceClientRect: props.clientRect,
+            getReferenceClientRect: () => rect() ?? new DOMRect(),
           });
         },
-        onKeyDown(props: any) {
+        onKeyDown(props) {
           if (props.event.key === 'Escape') {
-            popup[0].hide();
+            popup?.[0].hide();
             return true;
           }
-          return component.ref?.onKeyDown(props);
+          return component?.ref?.onKeyDown(props) ?? false;
         },
         onExit() {
           if (popup) popup[0].destroy();
@@ -206,8 +256,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
   };
 
   const editor = useEditor({
+    // The editor is made once the screen is on the page. Made earlier (while the screen is still being prepared), Tiptap
+    // may throw it away a moment later, before it was ever shown.
+    immediatelyRender: false,
+    editable,
     extensions: [
-      StarterKit,
+      // Writing together keeps its own undo history, which only undoes this person's changes
+      StarterKit.configure(live ? { undoRedo: false } : {}),
       Placeholder.configure({
         placeholder,
       }),
@@ -218,14 +273,26 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
       FindHighlight,
       CurrentBlock,
       StyleNotes,
+      Typewriter,
+      SpeakHighlight,
       Mention.configure({
         HTMLAttributes: {
           class: 'mention',
         },
         suggestion,
       }),
+      ...(live
+        ? [
+            Collaboration.configure({ document: live.ydoc }),
+            CollaborationCaret.configure({ provider: { awareness: live.awareness }, user: live.user, render: renderCaret }),
+          ]
+        : []),
     ],
-    content,
+    // Writing together: the document comes from the others, or is filled once from the saved text (see onCreate)
+    content: live ? undefined : content,
+    onCreate: ({ editor: created }) => {
+      if (live?.needsInit && content) live.fill(() => created.commands.setContent(content, { emitUpdate: false }), content);
+    },
     editorProps: {
       attributes: {
         className: 'tiptap-body',
@@ -249,15 +316,30 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
   });
 
   // Sync content when active chapter changes (but not on every keystroke to avoid cursor jumping)
+  // Writing together has no such sync: the shared document is the truth, and a render that lags a moment behind it
+  // must never put older text back over what someone else has just written
   useEffect(() => {
+    if (live) return;
     if (editor && content !== editor.getHTML()) {
       // Only set content if it's vastly different (e.g., swapping chapters) to prevent cursor resets.
       // A simple heuristic: if lengths differ significantly or we just loaded a new chapter.
       // But Tiptap provides a better way: we only set if we haven't typed it.
       // Since `content` comes from props, we just check if it's not equal to what's inside.
-      editor.commands.setContent(content, { emitUpdate: false } as any);
+      editor.commands.setContent(content, { emitUpdate: false });
     }
-  }, [content, editor]);
+  }, [content, editor, live]);
+
+  // A restored version is put in the shared document as an ordinary change, so everyone sees it
+  const lastReplace = React.useRef(0);
+  useEffect(() => {
+    if (!editor || !live || !replaceWith || replaceWith.nonce === lastReplace.current) return;
+    lastReplace.current = replaceWith.nonce;
+    editor.commands.setContent(replaceWith.html);
+  }, [editor, live, replaceWith]);
+
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editor, editable]);
 
   // Keep the highlighted matches in step with the find box
   const markMatches = React.useCallback(
@@ -336,6 +418,55 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
     };
   }, [editor]);
 
+  // Read aloud: the paragraphs of the chapter, and the one being read is marked on the page
+  const speakBlocks = React.useRef<{ pos: number; size: number; text: string }[]>([]);
+  const ra = useReadAloud({
+    paragraphs: () => {
+      const blocks: { pos: number; size: number; text: string }[] = [];
+      editor?.state.doc.descendants((node, pos) => {
+        if (!node.isTextblock) return true;
+        const text = node.textContent.trim();
+        if (text) blocks.push({ pos, size: node.nodeSize, text });
+        return false;
+      });
+      speakBlocks.current = blocks;
+      return blocks.map((b) => b.text);
+    },
+    // From the paragraph the cursor is in
+    startAt: () => {
+      const head = editor?.state.selection.head ?? 0;
+      return Math.max(0, speakBlocks.current.findIndex((b) => head <= b.pos + b.size));
+    },
+    onHighlight: (index) => {
+      if (!editor || editor.isDestroyed) return;
+      const block = index === null ? null : speakBlocks.current[index];
+      editor.view.dispatch(editor.state.tr.setMeta(speakKey, { pos: block ? block.pos : null }));
+      if (block) (editor.view.nodeDOM(block.pos) as HTMLElement | null)?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    },
+    lang: spell.lang ? spell.lang.slice(0, 2) : undefined,
+  });
+  // Writing while it reads would move the paragraphs under it, so any change stops the reading
+  const raRef = React.useRef(ra);
+  useEffect(() => {
+    raRef.current = ra;
+  });
+  useEffect(() => {
+    if (!editor) return;
+    const stopOnEdit = () => {
+      if (raRef.current.state !== 'idle') raRef.current.stop();
+    };
+    editor.on('update', stopOnEdit);
+    return () => {
+      editor.off('update', stopOnEdit);
+    };
+  }, [editor]);
+
+  // Typewriter scrolling follows the toolbar button
+  useEffect(() => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr.setMeta(typewriterKey, { enabled: typewriter }));
+  }, [editor, typewriter]);
+
   // Turn the style notes on or off in the editor
   useEffect(() => {
     if (!editor) return;
@@ -376,7 +507,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
 
   return (
     <>
-      <MenuBar editor={editor} onToggleFindReplace={() => setShowFindReplace(!showFindReplace)} fontId={fontId} onFontChange={handleFontChange} styleOn={styleOn} onToggleStyle={toggleStyle} />
+      {editable && <MenuBar editor={editor} onToggleFindReplace={() => setShowFindReplace(!showFindReplace)} fontId={fontId} onFontChange={handleFontChange} styleOn={styleOn} onToggleStyle={toggleStyle} typewriterOn={typewriter} onToggleTypewriter={toggleTypewriter} canListen={ra.supported} listening={ra.state !== 'idle'} onToggleListen={ra.state === 'idle' ? ra.start : ra.stop} canLookup={lookupAllowed} lookupOn={lookupOpen} onToggleLookup={() => setLookupOpen((v) => !v)} />}
 
       {styleOn && (
         <div className="style-bar" role="region" aria-label="Style notes">
@@ -444,11 +575,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
         </div>
       )}
 
+      {lookupOpen && editor && <LookupPanel editor={editor} onClose={() => setLookupOpen(false)} />}
+      <ReadAloudBar ra={ra} />
+
       <div className="studio-view writing-view">
         <article className="writing-paper">
           {header}
           <div
-            className="manuscript-editor novel-editor"
+            className={`manuscript-editor novel-editor${typewriter ? ' typewriter-on' : ''}`}
             style={{ fontFamily: getEditorFontFamily(fontId) }}
           >
             <EditorContent editor={editor} />

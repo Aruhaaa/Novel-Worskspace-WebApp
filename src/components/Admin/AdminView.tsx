@@ -4,6 +4,8 @@ import { useApp } from '../../context/AppContext';
 import { GENRES } from '../../lib/genres';
 import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
+import { ReportsQueue } from './ReportsQueue';
+import { ErrorsPanel } from './ErrorsPanel';
 
 export const AdminView: React.FC = () => {
   const { user, publicProjects, createExternalProject } = useApp();
@@ -107,6 +109,8 @@ export const AdminView: React.FC = () => {
                 </div>
               </section>
             </div>
+            <ReportsQueue />
+            <ErrorsPanel />
             <section className="card" aria-labelledby="ra-h">
               <h3 id="ra-h">Recent additions</h3>
               {stats.recent.length === 0 ? (

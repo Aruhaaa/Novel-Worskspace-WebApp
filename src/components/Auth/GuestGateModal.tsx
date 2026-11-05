@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Dialog } from '../ui/Dialog';
+import { useT } from '../../i18n';
 
 interface GuestGateModalProps {
   isOpen: boolean;
@@ -13,9 +14,10 @@ interface GuestGateModalProps {
 export const GuestGateModal: React.FC<GuestGateModalProps> = ({
   isOpen,
   onClose,
-  title = 'Keep your work safe.',
-  message = 'Please log in or create an account to use this feature.',
+  title,
+  message,
 }) => {
+  const t = useT();
   const navigate = useNavigate();
   const { logout } = useApp();
 
@@ -27,15 +29,15 @@ export const GuestGateModal: React.FC<GuestGateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onClose={onClose} labelledBy="gate-h">
-      <p className="eyebrow">ACCOUNT REQUIRED</p>
-      <h2 id="gate-h">{title}</h2>
-      <p>{message}</p>
+      <p className="eyebrow">{t('ACCOUNT REQUIRED')}</p>
+      <h2 id="gate-h">{title ?? t('Keep your work safe.')}</h2>
+      <p>{message ?? t('Please log in or create an account to use this feature.')}</p>
       <div className="dialog-actions">
         <button className="button button-outline button-small" onClick={onClose}>
-          Maybe later
+          {t('Maybe later')}
         </button>
         <button className="button button-primary button-small" onClick={handleLogin}>
-          Log in to continue
+          {t('Log in to continue')}
         </button>
       </div>
     </Dialog>

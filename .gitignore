@@ -32,3 +32,7 @@ dist-ssr
 release/
 electron-builder/
 
+
+# Playwright
+playwright-report
+test-results

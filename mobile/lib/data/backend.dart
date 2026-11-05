@@ -27,6 +27,35 @@ abstract class Backend {
   Future<Profile> profile(String userId);
   Future<Profile> saveProfile(Profile profile);
 
+  /// Email a link for choosing a new password. It says the same whether or not the address has an account.
+  Future<void> requestPasswordReset(String email);
+
+  /// Asks for the current password first
+  Future<void> changePassword(
+    String email,
+    String currentPassword,
+    String newPassword,
+  );
+
+  /// Remove the account and everything in it, for good. The cloud asks for the password again first.
+  Future<void> deleteAccount(String userId, String email, String password);
+
+  /// Remember on the account what the person came for. Does nothing without a cloud.
+  Future<void> saveUseMode(String mode);
+
+  // --- reporting and blocking
+  Future<void> reportNovel(
+    String reporterId,
+    Project project,
+    String reason,
+    String details,
+  );
+  Future<Set<String>> blockedUsers(String userId);
+
+  /// Both return whether the change reached the account (true) or only this phone (false)
+  Future<bool> blockUser(String userId, String blockedId);
+  Future<bool> unblockUser(String userId, String blockedId);
+
   // --- the library
   Future<List<Project>> publishedProjects();
   Future<Project> toggleLike(String projectId, String userId);

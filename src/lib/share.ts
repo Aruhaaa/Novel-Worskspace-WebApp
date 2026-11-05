@@ -3,16 +3,17 @@ import { tryCloud, unwrap, type CloudResult } from './cloud';
 /**
  * Private reading links for beta readers. A link holds a secret token; anyone with the link can read the
  * manuscript and leave comments, without an account. The writer can see the comments and revoke the link.
- * Needs the tables and functions from supabase/migrations/20261003_cloud_sync.sql.
+ * Needs the tables and functions from supabase/setup_scripts/20261003_cloud_sync.sql.
  */
 
 // Where a link should point. The desktop app has no web address of its own, so it uses the published site.
 const PUBLIC_APP_URL = 'https://novel-worskspace-web-app.vercel.app/';
 
-export const linkUrl = (token: string): string => {
-  const here = typeof location !== 'undefined' && location.protocol.startsWith('http') ? `${location.origin}${location.pathname}` : PUBLIC_APP_URL;
-  return `${here}#/read/${token}`;
-};
+/** The address the app is served from, for links that must open it again (reading links, password-reset emails). */
+export const appBaseUrl = (): string =>
+  typeof location !== 'undefined' && location.protocol.startsWith('http') ? `${location.origin}${location.pathname}` : PUBLIC_APP_URL;
+
+export const linkUrl = (token: string): string => `${appBaseUrl()}#/read/${token}`;
 
 export interface ShareLink {
   id: string;

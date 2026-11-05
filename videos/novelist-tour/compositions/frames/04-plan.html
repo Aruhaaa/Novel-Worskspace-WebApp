@@ -1,0 +1,109 @@
+<template>
+  <style>
+@font-face{font-family:"DM Sans";font-weight:700;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Bold.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:500;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Medium.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-Regular.ttf") format("truetype");}
+@font-face{font-family:"DM Sans";font-weight:600;font-style:normal;font-display:block;src:url("assets/fonts/DMSans-SemiBold.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular-Italic.ttf") format("truetype");}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:block;src:url("assets/fonts/InstrumentSerif-Regular.ttf") format("truetype");}
+#root{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;font-family:"DM Sans",sans-serif;color:#262722}
+#root *{box-sizing:border-box}
+.bg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:#F5F2EB}
+.eyebrow{position:absolute;left:134px;top:118px;font:500 22px/1.15 "DM Sans",sans-serif;letter-spacing:4px;text-transform:uppercase;color:#813F38;white-space:nowrap}
+.h{position:absolute;left:134px;font-family:"Instrument Serif",serif;font-weight:400;color:#262722;line-height:1.04;white-space:nowrap}
+.h .l{display:block}
+.h em{font-style:italic;color:#813F38}
+.w{display:inline-block}
+.cap{position:absolute;font:400 24px/1.3 "DM Sans",sans-serif;color:#5A5A5A;white-space:nowrap}
+.card{position:absolute;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.card img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ring{position:absolute;border-radius:50%;border:1px solid #E7CF93}
+.wm{position:absolute;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.wm .mk{width:54px;height:54px;display:block;background:url(assets/logo-mark.svg) center/contain no-repeat}
+.wm .n{font-family:"Instrument Serif",serif;font-size:36px;line-height:1;color:#262722}
+.wm .s{display:block;font:500 12px/1 "DM Sans",sans-serif;letter-spacing:5px;text-transform:uppercase;color:#5A5A5A;margin-top:6px}
+svg{overflow:visible}
+.cam{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#f04-h{top:166px;font-size:84px}
+.f04-c{position:absolute;left:0;top:0;width:900px;height:562px;transform-origin:0 0;border:1px solid #E7CF93;background:rgba(255,255,255,.3);overflow:hidden}
+.f04-c img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.f04-hc{left:870px;top:906px}
+.f04-sc{top:780px}
+#f04-rule{position:absolute;left:134px;top:836px;width:1620px;height:1px;background:#E7CF93}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <div data-hf-id="hf-y4b3" id="root" data-composition-id="04-plan" data-start="0" data-duration="7.9" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-5rqv" id="f04-bg" class="clip bg" data-start="0" data-duration="7.9" data-track-index="0"></div>
+    <div data-hf-id="hf-lpdh" id="f04-cam" class="cam">
+    <div data-hf-id="hf-8s0p" class="eyebrow" id="f04-eyebrow">02 · Plan</div>
+    <div data-hf-id="hf-sylb" class="h" id="f04-h"><span data-hf-id="hf-x0mr" class="l " id="f04-h1"><span data-hf-id="hf-ny80" class="w">Three</span> <span data-hf-id="hf-wma4" class="w">ways</span> <span data-hf-id="hf-z575" class="w">to</span> <span data-hf-id="hf-nwjf" class="w">see</span></span><span data-hf-id="hf-ocqw" class="l" id="f04-h2"><em data-hf-id="hf-2lav"><span data-hf-id="hf-rpws" class="w">one</span> <span data-hf-id="hf-5f9o" class="w">novel.</span></em></span></div>
+    <div data-hf-id="hf-ywns" id="f04-rule"></div>
+    <div data-hf-id="hf-639j" class="f04-c" id="f04-c1"><img data-hf-id="hf-sij2" src="assets/crops/f04-chapters.png" alt=""></div>
+    <div data-hf-id="hf-xfdo" class="f04-c" id="f04-c2"><img data-hf-id="hf-duf2" src="assets/crops/f04-board.png" alt=""></div>
+    <div data-hf-id="hf-y71h" class="f04-c" id="f04-c3"><img data-hf-id="hf-ypgv" src="assets/crops/f04-notebook.png" alt=""></div>
+    <div data-hf-id="hf-m559" class="cap f04-hc" id="f04-hc1">Chapters</div>
+    <div data-hf-id="hf-ldqh" class="cap f04-hc" id="f04-hc2">A board of scenes</div>
+    <div data-hf-id="hf-7yt0" class="cap f04-hc" id="f04-hc3">A notebook of people and places</div>
+    <div data-hf-id="hf-ay4e" class="cap f04-sc" id="f04-sc1" style="left:134px">Chapters</div>
+    <div data-hf-id="hf-5b95" class="cap f04-sc" id="f04-sc2" style="left:694px">A board of scenes</div>
+    <div data-hf-id="hf-l063" class="cap f04-sc" id="f04-sc3" style="left:1254px">A notebook of people and places</div>
+    </div>
+
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const E = "power3.out";
+    const IO = "power3.inOut";
+    const CAM = "#f04-cam";
+    gsap.set(CAM, { x: 0, y: 0, scale: 1, transformOrigin: "50% 50%" });
+    // headline slam: each word arrives from a larger scale with a focus pull
+    const slamLine = (sel, t, stagger = 0.1, dur = 0.75, blur = 14, from = 1.3) =>
+      gsap.utils.toArray(sel + " .w").forEach((el, i) =>
+        tl.fromTo(el, { opacity: 0, scale: from, filter: "blur(" + blur + "px)", transformOrigin: "0% 70%" },
+          { opacity: 1, scale: 1, filter: "blur(0px)", duration: dur, ease: "power4.out" }, t + i * stagger));
+    // a short, decaying shake of the whole content on a hit (deterministic)
+    const shake = (t, a) => {
+      tl.to(CAM, { x: a, y: -a * 0.6, duration: 0.04, ease: "none" }, t);
+      tl.to(CAM, { x: -a * 0.8, y: a * 0.5, duration: 0.05, ease: "none" }, ">");
+      tl.to(CAM, { x: a * 0.5, y: -a * 0.3, duration: 0.06, ease: "none" }, ">");
+      tl.to(CAM, { x: 0, y: 0, duration: 0.18, ease: "power2.out" }, ">");
+    };
+    // one continuous, constant-speed push on all the content
+    const push = (to, t0, d) => tl.fromTo(CAM, { scale: 1 }, { scale: to, duration: d, ease: "none" }, t0);
+    // a card whips in from off axis with a focus pull
+    const whip = (sel, t, from, d = 1.0) =>
+      tl.fromTo(sel, Object.assign({ opacity: 0, scale: 1.1, filter: "blur(8px)" }, from),
+        { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: d, ease: "expo.out" }, t);
+    const HX = 870, HY = 330, SY = 450, SK = 0.555556;
+    const SX = [134,694,1254];
+    tl.fromTo("#f04-eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.15);
+    slamLine("#f04-h1", 0.3, 0.09);
+    slamLine("#f04-h2", 0.9);
+    gsap.set("#f04-c1, #f04-c2, #f04-c3", { x: HX, y: HY, scale: 1, opacity: 0 });
+    gsap.set("#f04-hc1, #f04-hc2, #f04-hc3, #f04-sc1, #f04-sc2, #f04-sc3, #f04-rule", { opacity: 0 });
+    const hero = (sel, t, dx, dy) => tl.fromTo(sel, { x: HX + dx, y: HY + dy, scale: 1.1, opacity: 0, filter: "blur(8px)" }, { x: HX, y: HY, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.95, ease: "expo.out" }, t);
+    const settle = (sel, t, slot) => tl.to(sel, { x: SX[slot], y: SY, scale: SK, duration: 0.7, ease: "power4.inOut" }, t);
+    // 1 chapters: takes the stage, then shrinks into slot 1 as the board arrives
+    hero("#f04-c1", 0.35, 120, 80);
+    tl.fromTo("#f04-hc1", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 1.0);
+    tl.to("#f04-hc1", { opacity: 0, duration: 0.3, ease: "power2.in" }, 1.7);
+    settle("#f04-c1", 1.875, 0);
+    tl.fromTo("#f04-sc1", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 2.45);
+    // 2 board
+    hero("#f04-c2", 1.875, 200, 0);
+    tl.fromTo("#f04-hc2", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 2.6);
+    tl.to("#f04-hc2", { opacity: 0, duration: 0.3, ease: "power2.in" }, 3.5);
+    settle("#f04-c2", 3.75, 1);
+    tl.fromTo("#f04-sc2", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 4.3);
+    // 3 notebook
+    hero("#f04-c3", 3.75, 200, 0);
+    tl.fromTo("#f04-hc3", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 4.5);
+    tl.to("#f04-hc3", { opacity: 0, duration: 0.3, ease: "power2.in" }, 5.5);
+    settle("#f04-c3", 5.625, 2);
+    tl.fromTo("#f04-sc3", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, 6.2);
+    tl.fromTo("#f04-rule", { opacity: 0, scaleX: 0, transformOrigin: "0% 50%" }, { opacity: 1, scaleX: 1, duration: 0.8, ease: "power3.out" }, 6.3);
+    push(1.03, 0, 7.5);
+    window.__timelines["04-plan"] = tl;
+  </script>
+</template>
