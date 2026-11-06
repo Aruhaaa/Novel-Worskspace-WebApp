@@ -36,7 +36,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok) {
+          // Keep only the app's own page for offline use, not About, Privacy or Contact, or the app could open as one of those
+          const isAppPage = url.pathname === new URL(self.registration.scope).pathname || url.pathname.endsWith('/index.html');
+          if (response.ok && isAppPage) {
             const copy = response.clone();
             caches.open(CACHE).then((cache) => cache.put(self.registration.scope, copy));
           }

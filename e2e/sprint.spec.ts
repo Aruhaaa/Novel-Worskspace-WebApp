@@ -31,7 +31,7 @@ test.describe('writing sprint', () => {
     await expect(summary).toContainText('Goal of 5 words reached.');
     // The countdown has gone from the footer and the page title is back to normal
     await expect(page.locator('.studio-statusbar')).not.toContainText('Sprint 0');
-    await expect(page).toHaveTitle('Novelist Workspace');
+    await expect(page).toHaveTitle('Novelist Workspace: write, plan and publish your novel');
   });
 
   test('only the words written during the sprint count, not what was already on the page', async ({ page }) => {

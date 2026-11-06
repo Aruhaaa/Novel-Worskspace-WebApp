@@ -1,5 +1,10 @@
 // Bahasa Melayu, part 10: the account section of Preferences, the page a private reading link opens, audience, the landing page's open book.
 const part: Record<string, string> = {
+  // Landing page footer links (the pages themselves are plain English HTML in public/)
+  "About": "Tentang",
+  "Privacy": "Privasi",
+  "Contact": "Hubungi",
+
   // Audience, library, landing page book
   "Anonymous reader": "Pembaca tanpa nama",
   "Readers · {n}": "Pembaca · {n}",
