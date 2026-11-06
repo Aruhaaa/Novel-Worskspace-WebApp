@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import { ANON_KEY } from './scripts/dev-supabase/keys.mjs';
-import { APP_PORT, APP_BARE_PORT, LITE_PORT, LITE_BARE_PORT } from './e2e/cloud/env';
+import { APP_PORT, APP_BARE_PORT, APP_PRE_PORT, LITE_PORT, LITE_BARE_PORT, LITE_PRE_PORT } from './e2e/cloud/env';
 
 // The cloud tests run the real app against a stand-in for Supabase (scripts/dev-supabase): the app's real database
 // schema and setup scripts on a real PostgreSQL engine, with row level security, triggers and Realtime. Nothing here can
@@ -8,7 +8,8 @@ import { APP_PORT, APP_BARE_PORT, LITE_PORT, LITE_BARE_PORT } from './e2e/cloud/
 //
 //   npm run test:e2e:cloud
 //
-// "cloud" has the newest setup script applied. "cloud-before-setup" does not, to see that the app copes until it is run.
+// "cloud" has the newest setup script applied. "cloud-before-setup" has none of the newer ones, and "cloud-before-publishing" has all but
+// the chapter publishing one, to see that the app copes until each is run.
 const channel = process.env.PW_CHANNEL === 'bundled' ? undefined : (process.env.PW_CHANNEL ?? 'msedge');
 
 const standIn = (port: number, extra = '') => ({
@@ -40,11 +41,14 @@ export default defineConfig({
   projects: [
     { name: 'cloud', testMatch: /\.cloud\.spec\.ts$/, use: { baseURL: `http://localhost:${APP_PORT}` } },
     { name: 'cloud-before-setup', testMatch: /\.before-setup\.spec\.ts$/, use: { baseURL: `http://localhost:${APP_BARE_PORT}` } },
+    { name: 'cloud-before-publishing', testMatch: /\.before-publishing\.spec\.ts$/, use: { baseURL: `http://localhost:${APP_PRE_PORT}` } },
   ],
   webServer: [
     standIn(LITE_PORT),
     standIn(LITE_BARE_PORT, '--no-next-features'),
+    standIn(LITE_PRE_PORT, '--no-chapter-publishing'),
     app(APP_PORT, LITE_PORT),
     app(APP_BARE_PORT, LITE_BARE_PORT),
+    app(APP_PRE_PORT, LITE_PRE_PORT),
   ],
 });

@@ -55,6 +55,12 @@ export interface Chapter {
   title: string;
   content: string;
   position: number;
+  /**
+   * When the chapter was published to readers. `null` is a draft. Missing (older data, or a database that has not had
+   * supabase/setup_scripts/20261106_chapter_publishing.sql run yet) counts as published whenever the novel is public:
+   * see src/lib/chapterPublishing.ts.
+   */
+  published_at?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -6,7 +6,7 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-seo-pages.mjs",
     "lint": "eslint .",
     "library:build": "node scripts/build-library.mjs",
     "library:check": "node scripts/build-library.mjs --check",
@@ -18,7 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:sql": "node supabase/tests/next-features.test.mjs",
+    "test:sql": "node supabase/tests/next-features.test.mjs && node supabase/tests/chapter-publishing.test.mjs",
     "i18n:check": "node scripts/i18n-check.mjs",
     "test:e2e:cloud": "playwright test -c playwright.cloud.config.ts",
     "dev:cloud": "node scripts/dev-supabase/server.mjs"

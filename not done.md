@@ -17,7 +17,15 @@ The website is in Malay on its main screens and in the Write space: language cho
 
 ## Phone app (`mobile/`) catches up
 
-Done: notifications (cloud only, no push) and error reporting. Not started: sign in with Google and Apple (deep link back into the app), shared projects and live writing, read aloud, the relationship map, and Malay.
+Done: notifications (cloud only, no push), error reporting, and hiding draft chapters from readers. Not started: sign in with Google and Apple (deep link back into the app), shared projects and live writing, read aloud, the relationship map, publishing a chapter from the phone, and Malay.
+
+## Publishing chapter by chapter: what is left
+
+Built and tested on the stand-in server. Still to do: run `supabase/setup_scripts/20261106_chapter_publishing.sql` on the real database after the website update (steps in `supabase/README.md`), a notification to followers when a new chapter comes out, an Ongoing / Complete label, scheduled publishing, and search-visible pages for novels that writers publish (the static pages cover only the sample novels).
+
+## Database access rules
+
+`entities` (the world notebook) and `word_count_logs` still have the old open policies, and the hard-coded admin email is unchanged. `projects` and `chapters` are closed by the script above once it is run.
 
 ## Push messages
 
@@ -30,4 +38,4 @@ Everything cloud-side was tried only against a stand-in server. Still to do with
 ## Left out on purpose
 
 - Payments, subscriptions or paid chapters.
-- The database access rules and the hard-coded admin email: deferred by request, still listed in `limit.md`.
+- The hard-coded admin email, and the open rules on `entities` and `word_count_logs`: deferred by request, still listed in `limit.md`.

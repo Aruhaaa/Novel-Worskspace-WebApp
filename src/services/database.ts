@@ -14,6 +14,7 @@ import {
   trackBundledView,
   forgetBundledUser,
 } from '../lib/bundledLibrary';
+import { isMissingColumn, isMissingFunction } from '../lib/chapterPublishing';
 import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment, ChatMessage } from './types';
 
 // Mock Data Initializer for Local Storage fallback
@@ -379,8 +380,54 @@ export const databaseService = {
       };
       projects[index] = updated;
       setLocalData('novel_projects', projects);
+      // Turning a whole novel on with no chapter published publishes them all (the database does the same in a trigger)
+      if (isPublished) {
+        const chapters = getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS);
+        const mine = chapters.filter((c) => c.project_id === projectId);
+        if (mine.length > 0 && mine.every((c) => c.published_at === null)) {
+          const stamp = new Date().toISOString();
+          setLocalData('novel_chapters', chapters.map((c) => (c.project_id === projectId ? { ...c, published_at: stamp } : c)));
+        }
+      }
       return updated;
     }
+  },
+
+  /**
+   * Publish or unpublish chapters of one novel (draft = `published_at` null). A novel is listed in the library while at least one
+   * of its chapters is published, so the first chapter published lists it and the last one unpublished takes it out. Only the
+   * owner or a co-author may do this (the database refuses anyone else). Returns the chapters as they are now and the project.
+   */
+  async setChaptersPublished(projectId: string, chapterIds: string[], published: boolean): Promise<{ chapters: Chapter[]; project: Project }> {
+    const stamp = published ? new Date().toISOString() : null;
+    if (isSupabaseConfigured && supabase) {
+      const client = supabase;
+      if (chapterIds.length > 0) {
+        const { error } = await client.from('chapters').update({ published_at: stamp }).eq('project_id', projectId).in('id', chapterIds);
+        if (error) {
+          if (isMissingColumn(error)) throw new Error('Publishing chapter by chapter needs a database update first. Ask the person who runs the database to run the chapter publishing setup.');
+          throw error;
+        }
+      }
+      const { data: project, error: projectError } = await client.from('projects').select('*').eq('id', projectId).single();
+      if (projectError) throw projectError;
+      const { data: chapters, error: chaptersError } = await client.from('chapters').select('*').eq('project_id', projectId).order('position', { ascending: true });
+      if (chaptersError) throw chaptersError;
+      return { chapters: (chapters || []) as Chapter[], project: project as Project };
+    }
+    const all = getLocalData<Chapter[]>('novel_chapters', INITIAL_CHAPTERS);
+    const ids = new Set(chapterIds);
+    const next = all.map((c) => (c.project_id === projectId && ids.has(c.id) ? { ...c, published_at: stamp } : c));
+    setLocalData('novel_chapters', next);
+    const mine = next.filter((c) => c.project_id === projectId).sort((a, b) => a.position - b.position);
+    const listed = mine.some((c) => c.published_at !== null);
+    const projects = getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS);
+    const index = projects.findIndex((p) => p.id === projectId);
+    if (index === -1) throw new Error('Project not found');
+    const project: Project = { ...projects[index], is_published: listed, updated_at: new Date().toISOString() };
+    projects[index] = project;
+    setLocalData('novel_projects', projects);
+    return { chapters: mine, project };
   },
   async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
@@ -478,6 +525,10 @@ export const databaseService = {
   async toggleLikeProject(projectId: string, userId: string): Promise<Project> {
     if (isBundledNovel(projectId)) return toggleBundledLike(projectId, userId);
     if (isSupabaseConfigured && supabase) {
+      // Once the chapter publishing setup has run, only this function may change likes. Before that, the old way still works.
+      const viaFunction = await supabase.rpc('toggle_project_like', { p_project: projectId });
+      if (!viaFunction.error) return viaFunction.data as Project;
+      if (!isMissingFunction(viaFunction.error)) throw viaFunction.error;
       // Fetch current likes
       const { data: proj, error: fetchErr } = await supabase.from('projects').select('likes').eq('id', projectId).single();
       if (fetchErr) throw fetchErr;
@@ -557,6 +608,7 @@ export const databaseService = {
         title,
         content: '',
         position: projectChapters.length,
+        published_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -631,7 +683,7 @@ export const databaseService = {
           id = `c-${Math.random().toString(36).slice(2, 11)}`;
         } while (taken.has(id));
         taken.add(id);
-        return { id, project_id: projectId, title: item.title, content: item.content, position: first + i, created_at: now, updated_at: now };
+        return { id, project_id: projectId, title: item.title, content: item.content, position: first + i, published_at: null, created_at: now, updated_at: now };
       });
       setLocalData('novel_chapters', [...chapters, ...created]);
       return created;
@@ -864,9 +916,12 @@ export const databaseService = {
   async trackProjectView(projectId: string, userId: string): Promise<Project> {
     if (isBundledNovel(projectId)) return trackBundledView(projectId, userId);
     if (isSupabaseConfigured && supabase) {
+      const viaFunction = await supabase.rpc('record_project_view', { p_project: projectId });
+      if (!viaFunction.error) return viaFunction.data as Project;
+      if (!isMissingFunction(viaFunction.error)) throw viaFunction.error;
       const { data: proj, error: fetchErr } = await supabase.from('projects').select('*').eq('id', projectId).single();
       if (fetchErr) throw fetchErr;
-      
+
       let currentViews = proj?.views || [];
       if (!currentViews.includes(userId)) {
         currentViews = [...currentViews, userId];

@@ -151,7 +151,9 @@ const orderClause = (searchParams) => {
 
 // ---------------------------------------------------------------------------------------------------------------------
 /** `nextFeatures: false` leaves out supabase/setup_scripts/20261105_next_features.sql, to see the app before that setup step has been run. */
-export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatures = true } = {}) {
+// `chapterPublishing: false` leaves out supabase/setup_scripts/20261106_chapter_publishing.sql (it needs next features too). That script
+// closes the open access to projects and chapters, so leaving it out shows the app against the database as it was before.
+export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatures = true, chapterPublishing = true } = {}) {
   const db = new PGlite();
 
   // Platform pieces Supabase provides
@@ -185,6 +187,7 @@ export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatu
   `);
   await db.exec(readFileSync(`${supabaseDir}migrations/20261022125111_remote_schema.sql`, 'utf8'));
   if (nextFeatures) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261105_next_features.sql`, 'utf8'));
+  if (nextFeatures && chapterPublishing) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261106_chapter_publishing.sql`, 'utf8'));
   for (const sql of extraSql) await db.exec(sql);
 
   // Row changes are announced so Realtime can pass them on
@@ -701,7 +704,7 @@ export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatu
 if ((process.argv[1] || '').split('\\').join('/').endsWith('/dev-supabase/server.mjs')) {
   const i = process.argv.indexOf('--port');
   const port = i > -1 ? Number(process.argv[i + 1]) : 54321;
-  const lite = await startSupabaseLite({ port, nextFeatures: !process.argv.includes('--no-next-features') });
+  const lite = await startSupabaseLite({ port, nextFeatures: !process.argv.includes('--no-next-features'), chapterPublishing: !process.argv.includes('--no-chapter-publishing') });
   console.log(`Supabase stand-in running at ${lite.url}`);
   console.log(`VITE_SUPABASE_URL=${lite.url}`);
   console.log(`VITE_SUPABASE_ANON_KEY=${lite.anonKey}`);

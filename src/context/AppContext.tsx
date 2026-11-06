@@ -85,6 +85,8 @@ interface AppContextType {
   createProject: (title: string, description: string) => Promise<void>;
   createExternalProject: (title: string, authorName: string, description: string, genre: string, coverUrl: string) => Promise<{error: string | null}>;
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
+  /** Publish or unpublish chapters of the open project, one at a time or several (owner only). */
+  publishChapters: (chapterIds: string[], published: boolean) => Promise<{ error: string | null }>;
   updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
   trackProjectView: (projectId: string) => Promise<void>;
@@ -626,10 +628,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProjects(prev => prev.map(p => p.id === projectId ? updated : p));
       if (activeProject && activeProject.id === projectId) {
         setActiveProjectState(updated);
+        // Turning a whole novel on publishes its chapters when none were, so the chapter list has changed too
+        if (isPublished) setChapters(await databaseService.getChapters(projectId));
       }
       loadPublicProjects(); // Refresh library
     } catch (err) {
       console.error('Error publishing project:', err);
+    }
+  };
+
+  /** Publish or unpublish chapters of the open project (owner only). The novel enters the library with its first published chapter. */
+  const publishChapters = async (chapterIds: string[], published: boolean): Promise<{ error: string | null }> => {
+    if (!activeProject) return { error: 'No novel is open.' };
+    if (!can.manage(projectRole)) return { error: 'Only the owner of a novel can publish its chapters.' };
+    try {
+      // A novel that comes into the library through its chapters is shown under the writer's name, like a whole-novel publish
+      if (published && !activeProject.author_name) {
+        const authorName = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'Anonymous');
+        await databaseService.updateProjectSettings(activeProject.id, { author_name: authorName });
+      }
+      const { chapters: next, project } = await databaseService.setChaptersPublished(activeProject.id, chapterIds, published);
+      setChapters(next);
+      // Only the published mark changes on the open chapter, so words not saved yet in the editor are never replaced
+      setActiveChapter((prev) => {
+        const fresh = prev ? next.find((c) => c.id === prev.id) : undefined;
+        return prev && fresh ? { ...prev, published_at: fresh.published_at } : prev;
+      });
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));
+      setActiveProjectState(project);
+      loadPublicProjects();
+      return { error: null };
+    } catch (err) {
+      console.error('Error publishing chapters:', err);
+      return { error: messageOf(err, 'Could not change what is published.') };
     }
   };
 
@@ -1127,6 +1158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createProject,
         createExternalProject,
         publishProject,
+        publishChapters,
         updateProjectSettings,
         toggleLikeProject,
         trackProjectView,

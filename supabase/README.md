@@ -152,6 +152,40 @@ and cannot do. `npm run test:e2e:cloud` runs the real app in a browser against a
 engine, with row level security, triggers and Realtime. `npm run dev:cloud` starts the stand-in on its own. It is a good check of this app's
 code and of the SQL. It is not Supabase itself, so a real project can still behave differently (for example in how long Realtime takes to reconnect).
 
+# Publishing chapter by chapter, and closing the open access to projects and chapters (fourth step)
+
+`supabase/setup_scripts/20261106_chapter_publishing.sql`. Needs the third step first. Safe to run more than once.
+
+**Order matters. Update the website first, run the script second.** The new website works before and after the script (likes fall back to the old
+way, and the per-chapter buttons stay hidden until the script has run). An old copy of the website, run against a database that has had the script,
+cannot save likes or views and cannot change a project it does not own. The desktop app is updated by its own release; a copy that has not updated
+yet has the same problem, so release first.
+
+1. Deploy the new website, and publish the desktop release if you use it.
+2. In **SQL Editor** > **New query**, paste the whole of `supabase/setup_scripts/20261106_chapter_publishing.sql` and press **Run**.
+3. Check: `select count(*) filter (where published_at is not null) as published, count(*) as all_chapters from public.chapters;` The chapters of
+   every novel that was public are published, so nothing readers could see before has gone.
+
+**What it does**
+- Adds `chapters.published_at` (empty = draft). A novel is listed in the Public Library while at least one chapter is published, and the database keeps
+  `projects.is_published` in step. Turning a whole novel on from the Publish button publishes all its chapters when none was. Turning it off keeps which
+  chapters were published, so turning it on again brings the same ones back.
+- Only the **owner** can publish or unpublish a chapter (a trigger refuses anyone else, editors and co-authors included).
+- **Replaces the open "Allow public ..." policies on `projects` and `chapters`.** Anyone can read a listed novel and its published chapters. The owner and the
+  people a project is shared with can read everything in it. The owner and co-authors can change a project (but not hand it to someone else); the owner can
+  delete it. The owner and co-authors can add and delete chapters; editors can write in them; viewers can read.
+- Likes and views are saved by two functions, `toggle_project_like` and `record_project_view`, because other people may no longer change a novel directly. A visitor who is
+  not signed in can be counted as nobody: views and likes belong to signed-in accounts.
+
+**What it does not change:** `entities` (the world notebook), `word_count_logs` and a few other tables still have their old open policies (see `limit.md`).
+A project saved with a `user_id` that is not any account's id (for example `anonymous`, from before accounts) is no longer readable by anyone unless it is public.
+
+**To undo it:** `supabase/rollback_chapter_publishing.sql` puts the old open access back and removes the triggers and functions. It keeps the column.
+
+`npm run test:sql` runs both SQL test files, including `supabase/tests/chapter-publishing.test.mjs` (who can read and change what, publishing and the listing,
+likes, the backfill, running twice, rolling back). The cloud browser tests (`npm run test:e2e:cloud`) run against a stand-in that has the script, and a third one
+(`e2e/cloud/chapters.before-publishing.spec.ts`) against one that does not.
+
 # Sign in with Google or Apple (optional, needs your own Google / Apple developer accounts)
 
 The website can show "Continue with Google" and "Continue with Apple" on the sign-in screen. They need accounts only you can make, so
@@ -187,7 +221,7 @@ What to know:
 Part of the same third-step script. There is nothing more to switch on: once it has been run, **Manuscripts > Share** works.
 
 - **Invitations.** The owner makes an invitation link for a role: *co-author* (writes and arranges everything except sharing, publishing and deleting), *editor* (writes in the chapters) or *viewer* (reads). A link works for 1, 7 or 30 days and admits 1 to 50 people. It can be switched off at any time. Someone who is not signed in sees what the link is for, then signs in and comes straight back to it.
-- **Who may do what** is checked by the screens. The invitations, memberships and the live channels are checked by the database itself (row level security and the `project_role()` function), so a stranger cannot read the member list, make an invitation, raise their own role, or join a project's live channel. The older "Allow public" policies on projects and chapters are still open to anyone with the website's public key (see `limit.md`), so a determined person could still change chapters directly. That is the deferred database-rules problem, not something this step fixes.
+- **Who may do what** is checked by the screens. The invitations, memberships and the live channels are checked by the database itself (row level security and the `project_role()` function), so a stranger cannot read the member list, make an invitation, raise their own role, or join a project's live channel. Until the fourth step (`20261106_chapter_publishing.sql`) is run, the older "Allow public" policies on projects and chapters are still open to anyone with the website's public key (see `limit.md`), so a determined person could change chapters directly. That step replaces those two tables' policies with ones that follow the roles.
 - **Writing together.** When a project has other people on it and two or more have the same chapter open, they write in it together: each sees the other's cursor and changes as they type. It travels over a private Realtime channel named `project:<project id>:doc:<chapter id>` that only people on the project may join (two policies on `realtime.messages`, created by the script). Each person's editor still saves the chapter to the database as before. It can be turned off per device in Preferences > Writing together. If the editor says "Not connected to the others", Realtime is off for the project, or the two policies are missing: run the script again.
 - A viewer sees a chapter change when the writers' autosave lands (a second or two later), not keystroke by keystroke.
 - Tested against the stand-in server with two people (`npm run test:e2e:cloud`, `e2e/cloud/collab.cloud.spec.ts`) and in local mode with two tabs (`e2e/collab.spec.ts`). Not tried with more people, on a slow connection, or against a real Supabase project.
