@@ -5,6 +5,10 @@ import { Brand } from '../Brand';
 import landscape from '../../assets/quiet-landscape.svg';
 import { OpenBook } from './OpenBook';
 import { mark, useT } from '../../i18n';
+import { appBaseUrl } from '../../lib/share';
+
+/** A plain page next to the app (About, Privacy, Contact). Built from the site's own address so it also works from the desktop app. */
+const pageUrl = (file: string): string => new URL(file, appBaseUrl()).href;
 
 type PreviewTab = 'write' | 'shape' | 'world';
 
@@ -416,6 +420,9 @@ export const LandingView: React.FC = () => {
         <Brand to="#/" />
         <p>{t('A considered space for the writing life.')}</p>
         <div>
+          <a href={pageUrl('about.html')}>{t('About')}</a>
+          <a href={pageUrl('privacy.html')}>{t('Privacy')}</a>
+          <a href={pageUrl('contact.html')}>{t('Contact')}</a>
           <span>{t('NOVELIST WORKSPACE')}</span>
         </div>
       </footer>
