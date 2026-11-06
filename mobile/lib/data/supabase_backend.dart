@@ -351,6 +351,20 @@ class SupabaseBackend implements Backend {
 
   @override
   Future<Project> toggleLike(String projectId, String userId) => _run(() async {
+    // Once the chapter publishing setup has run, only this function may change likes. Before that, the old way below still works.
+    try {
+      final saved = await _c.rpc(
+        'toggle_project_like',
+        params: {'p_project': projectId},
+      );
+      return Project.fromJson(Map<String, dynamic>.from(saved as Map));
+    } on PostgrestException catch (e) {
+      final missing =
+          e.code == 'PGRST202' ||
+          e.code == '42883' ||
+          e.message.toLowerCase().contains('could not find the function');
+      if (!missing) rethrow;
+    }
     final row = await _c
         .from('projects')
         .select('likes')

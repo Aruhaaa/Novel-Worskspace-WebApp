@@ -126,6 +126,7 @@ class Chapter {
     required this.position,
     required this.createdAt,
     required this.updatedAt,
+    this.isDraft = false,
   });
 
   final String id;
@@ -138,6 +139,10 @@ class Chapter {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// A chapter the writer has not published (the database's `published_at` is null). A row that has no such column at all
+  /// (a database that has not had the chapter publishing script run) is not a draft, so nothing readers saw before is hidden.
+  final bool isDraft;
+
   factory Chapter.fromJson(Map<String, dynamic> j) => Chapter(
     id: j['id'].toString(),
     projectId: j['project_id'].toString(),
@@ -146,6 +151,7 @@ class Chapter {
     position: (j['position'] as num?)?.toInt() ?? 0,
     createdAt: _date(j['created_at']),
     updatedAt: _date(j['updated_at']),
+    isDraft: j.containsKey('published_at') && j['published_at'] == null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -166,6 +172,7 @@ class Chapter {
     position: position ?? this.position,
     createdAt: createdAt,
     updatedAt: DateTime.now(),
+    isDraft: isDraft,
   );
 }
 

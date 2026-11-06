@@ -26,12 +26,18 @@ class _NovelScreenState extends State<NovelScreen> {
   @override
   void initState() {
     super.initState();
-    _chapters = context.read<Backend>().chapters(widget.project.id);
+    _chapters = _published();
   }
 
   void _retry() => setState(() {
-    _chapters = context.read<Backend>().chapters(widget.project.id);
+    _chapters = _published();
   });
+
+  /// Readers see only published chapters; drafts are for the writer, even when the writer is the one reading.
+  Future<List<Chapter>> _published() => context
+      .read<Backend>()
+      .chapters(widget.project.id)
+      .then((all) => all.where((c) => !c.isDraft).toList());
 
   Future<void> _like() async {
     final state = context.read<AppState>();

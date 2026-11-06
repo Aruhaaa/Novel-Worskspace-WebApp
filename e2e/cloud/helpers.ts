@@ -1,12 +1,13 @@
 import { expect, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { ANON_KEY } from '../../scripts/dev-supabase/keys.mjs';
-import { LITE_BARE_PORT, LITE_PORT } from './env';
+import { LITE_BARE_PORT, LITE_PORT, LITE_PRE_PORT } from './env';
 
 export const PASSWORD = 'cloud-test-pass';
 
 /** Which stand-in the running project talks to. */
-export const liteUrl = (testInfo: TestInfo) => `http://127.0.0.1:${testInfo.project.name === 'cloud-before-setup' ? LITE_BARE_PORT : LITE_PORT}`;
+export const liteUrl = (testInfo: TestInfo) =>
+  `http://127.0.0.1:${testInfo.project.name === 'cloud-before-setup' ? LITE_BARE_PORT : testInfo.project.name === 'cloud-before-publishing' ? LITE_PRE_PORT : LITE_PORT}`;
 
 let counter = 0;
 /** A new address for every test, so tests sharing one database never meet each other's rows. */
@@ -95,16 +96,22 @@ export const openAsVisitor = async (browser: Browser, testInfo: TestInfo): Promi
   return page;
 };
 
-/** A published novel with one chapter, by this person. */
+/**
+ * A published novel with one chapter, by this person: written first, then turned on, the way the app's Publish novel button does it.
+ * (With the chapter publishing setup in place, turning a novel on publishes its chapters; a chapter added to a novel that is already
+ * public is a draft until the owner publishes it.)
+ */
 export const publishNovel = async (account: Account, title: string, text = 'The tide came in slowly and went out again, as it always had.') => {
   const project = await account.api
     .from('projects')
-    .insert({ user_id: account.id, title, description: 'A test novel', is_published: true, author_name: account.name, genre: 'Fantasy' })
+    .insert({ user_id: account.id, title, description: 'A test novel', is_published: false, author_name: account.name, genre: 'Fantasy' })
     .select()
     .single();
   if (project.error) throw new Error(`project failed: ${project.error.message}`);
   const chapter = await account.api.from('chapters').insert({ project_id: project.data.id, title: 'Part 1', content: `<p>${text}</p>`, position: 0 });
   if (chapter.error) throw new Error(`chapter failed: ${chapter.error.message}`);
+  const on = await account.api.from('projects').update({ is_published: true }).eq('id', project.data.id);
+  if (on.error) throw new Error(`publish failed: ${on.error.message}`);
   return { id: project.data.id as string, title };
 };
 

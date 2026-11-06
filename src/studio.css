@@ -984,3 +984,8 @@ button.tl-head:hover strong { color: var(--accent); }
   .space-switch svg { display: none; }
   .studio-header { gap: 10px; }
 }
+
+/* Publishing chapter by chapter (chapter index) */
+.tile-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tile-pub { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); background: var(--sheet); }
+.tile-pub.is-published { color: var(--accent); border-color: var(--accent); }

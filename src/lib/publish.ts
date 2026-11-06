@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/ui/toastContext';
 import type { Project } from '../services/types';
-import { t } from '../i18n';
+import { t, tp } from '../i18n';
 
 /** Publish or unpublish a project under the author's display name. */
 export const usePublishProject = () => {
@@ -16,6 +16,32 @@ export const usePublishProject = () => {
       message: publishing ? t('“{title}” is now in the Public Library.', { title: project.title }) : t('“{title}” is no longer public.', { title: project.title }),
       actionLabel: t('Undo'),
       onAction: () => publishProject(project.id, !publishing, authorName),
+    });
+  };
+};
+
+/** Take chapters back to drafts, with a message that can undo it. (Publishing goes through PublishChapterDialog, which asks first.) */
+export const useUnpublishChapters = () => {
+  const { activeProject, chapters, publishChapters } = useApp();
+  const { toast } = useToast();
+  return async (chapterIds: string[]) => {
+    if (!activeProject || chapterIds.length === 0) return;
+    const ids = new Set(chapterIds);
+    const left = chapters.filter((c) => c.published_at !== null && !ids.has(c.id)).length;
+    const { error } = await publishChapters(chapterIds, false);
+    if (error) {
+      toast({ message: error });
+      return;
+    }
+    toast({
+      message:
+        left === 0
+          ? t('“{title}” is no longer in the Public Library, because none of its chapters is published.', { title: activeProject.title })
+          : tp(chapterIds.length, '{n} chapter is a draft again.', '{n} chapters are drafts again.'),
+      actionLabel: t('Undo'),
+      onAction: () => {
+        void publishChapters(chapterIds, true);
+      },
     });
   };
 };

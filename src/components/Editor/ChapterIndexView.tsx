@@ -18,6 +18,9 @@ import { RoleBanner } from '../Collab/RoleBanner';
 import { can } from '../../lib/collab';
 import { useFeedback } from '../../lib/feedback';
 import { fmtDate, tp, useT } from '../../i18n';
+import { draftsUpTo, isDraft, summarise } from '../../lib/chapterPublishing';
+import { useUnpublishChapters } from '../../lib/publish';
+import { PublishChapterDialog } from './PublishChapterDialog';
 
 export const ChapterIndexView: React.FC = () => {
   const t = useT();
@@ -34,6 +37,7 @@ export const ChapterIndexView: React.FC = () => {
     reorderChapters,
     updateChapterMeta,
     projectRole,
+    isSupabase,
   } = useApp();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -48,6 +52,9 @@ export const ChapterIndexView: React.FC = () => {
   const noteTotals = new Map<string, number>();
   for (const f of openNotes) noteTotals.set(f.chapterId, (noteTotals.get(f.chapterId) || 0) + 1);
   const [moveError, setMoveError] = useState(false);
+  // Chapters waiting for the writer to confirm publishing them
+  const [publishIds, setPublishIds] = useState<string[] | null>(null);
+  const unpublish = useUnpublishChapters();
 
   const projectId = activeProject?.id;
   const loadBin = useCallback(async () => {
@@ -70,6 +77,12 @@ export const ChapterIndexView: React.FC = () => {
 
   // Adding, removing and reordering chapters is for the owner and co-authors
   const structure = can.editStructure(projectRole);
+  // Publishing, like sharing, is for the owner
+  const owner = can.manage(projectRole);
+  // Until the chapter publishing database update has been run, the cloud sends chapters with no published mark at all, and only
+  // whole-novel publishing exists. Local mode always has it.
+  const perChapter = !isSupabase || chapters.some((c) => c.published_at !== undefined);
+  const pub = summarise(chapters);
 
   const totalWords = chapters.reduce((sum, c) => sum + countWords(c.content), 0);
   const plan = projectGoal ? planGoal(projectGoal, totalWords) : null;
@@ -153,6 +166,16 @@ export const ChapterIndexView: React.FC = () => {
             Could not save the new order. It has been put back; check your connection and try again.
           </p>
         )}
+        {perChapter && chapters.length > 0 && (
+          <p className="section-note" style={{ marginBottom: 14 }} data-testid="publish-summary">
+            {pub.published === 0
+              ? t('Nothing here is published yet. Readers see only chapters you publish.')
+              : t('{published} of {total} chapters are published, so readers can read them in the Public Library.', { published: String(pub.published), total: String(pub.total) })}
+            {owner && pub.drafts > 0 && pub.published > 0 && (
+              <> <button className="link-accent" onClick={() => setPublishIds(chapters.filter(isDraft).map((c) => c.id))}>{t('Publish all drafts')}</button></>
+            )}
+          </p>
+        )}
         {structure && chapters.length > 1 && (
           <p className="section-note" style={{ marginBottom: 14 }}>
             {t('Drag a chapter by its handle to reorder. With the keyboard, focus the handle, press Space, move with the arrow keys, then Space again.')}
@@ -201,6 +224,25 @@ export const ChapterIndexView: React.FC = () => {
                                 <option key={s} value={s}>{t(STATUS_LABEL[s])}</option>
                               ))}
                             </select>
+                            {perChapter && <span className={`tile-pub ${isDraft(chap) ? 'is-draft' : 'is-published'}`}>{isDraft(chap) ? t('Draft') : t('Published')}</span>}
+                            {owner && perChapter && (
+                              isDraft(chap) ? (
+                                <>
+                                  <button className="small-btn is-primary" onClick={() => setPublishIds([chap.id])} aria-label={t('Publish {title}', { title: chap.title || t('untitled chapter') })}>
+                                    {t('Publish')}
+                                  </button>
+                                  {draftsUpTo(chapters, chap.id).length > 1 && (
+                                    <button className="small-btn" onClick={() => setPublishIds(draftsUpTo(chapters, chap.id).map((c) => c.id))} aria-label={t('Publish every draft up to {title}', { title: chap.title || t('untitled chapter') })}>
+                                      {t('Publish up to here')}
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <button className="small-btn" onClick={() => unpublish([chap.id])} aria-label={t('Unpublish {title}', { title: chap.title || t('untitled chapter') })}>
+                                  {t('Unpublish')}
+                                </button>
+                              )
+                            )}
                           </div>
                           {structure && (
                           <div className="tile-tools">
@@ -312,6 +354,7 @@ export const ChapterIndexView: React.FC = () => {
         </RailBlock>
       </MarginsRail>
 
+      <PublishChapterDialog chapterIds={publishIds} onClose={() => setPublishIds(null)} />
       <ExportDialog project={showExport ? activeProject : null} onClose={() => setShowExport(false)} />
       <ImportDialog open={showImport} onClose={() => setShowImport(false)} target="append" />
       <FeedbackDialog project={showFeedback ? activeProject : null} onClose={() => setShowFeedback(false)} />

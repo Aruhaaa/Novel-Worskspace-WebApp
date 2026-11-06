@@ -13,6 +13,7 @@ import { useToast } from '../ui/toastContext';
 import { sanitizeHtml } from '../../lib/sanitize';
 import { getReadingPlace, setReadingPlace } from '../../lib/readingPlace';
 import { isBundledNovel } from '../../lib/bundledLibrary';
+import { publishedChapters } from '../../lib/chapterPublishing';
 import { useDomReadAloud } from '../Speech/useDomReadAloud';
 import { ReadAloudBar } from '../Speech/ReadAloudBar';
 import { tp, useT } from '../../i18n';
@@ -67,7 +68,8 @@ export const LibraryReaderView: React.FC = () => {
       setLoading(true);
       try {
         const data = await databaseService.getChapters(activePublicProject.id);
-        setChapters(data);
+        // Drafts are for the writer: a reader (the owner included) sees only what has been published
+        setChapters(publishedChapters(data));
       } catch (err) {
         console.error('Failed to load chapters for reader', err);
       } finally {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Maximize, Minimize, Printer, Download, Lightbulb, MessageSquare } from 'lucide-react';
+import { Maximize, Minimize, Printer, Download, Lightbulb, MessageSquare, BookOpenCheck, EyeOff } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { countWords, htmlToText, readMinutes } from '../../lib/text';
-import { usePublishProject } from '../../lib/publish';
+import { usePublishProject, useUnpublishChapters } from '../../lib/publish';
+import { isDraft } from '../../lib/chapterPublishing';
+import { PublishChapterDialog } from './PublishChapterDialog';
 import { useDailyGoal } from '../../lib/dailyGoal';
 import { metaFor, STATUS_LABEL, STATUS_ORDER, type ChapterStatus } from '../../lib/chapterMeta';
 import { openCapture } from '../../lib/uiEvents';
@@ -39,6 +41,8 @@ export const EditorView: React.FC = () => {
   const { activeProject, chapters, activeChapter, entities, chapterMeta, updateChapterMeta, updateEntity, isSupabase, zenMode, setZenMode, projectRole, projectIsShared, user, profile, applyRemoteChapter } = useApp();
   const canText = can.editText(projectRole);
   const canManage = can.manage(projectRole);
+  const unpublishChapters = useUnpublishChapters();
+  const [publishIds, setPublishIds] = useState<string[] | null>(null);
   const daily = useDailyGoal();
   const navigate = useNavigate();
   const autosave = useChapterAutosave((id, title, content) => {
@@ -309,6 +313,13 @@ export const EditorView: React.FC = () => {
               { label: t('Reader feedback…'), icon: <MessageSquare />, onSelect: () => setShowFeedback(true) },
               { label: t('Export…'), icon: <Download />, onSelect: () => setShowExport(true) },
               { label: t('Print view'), icon: <Printer />, onSelect: () => navigate('/print') },
+              ...(canManage && activeChapter && (!isSupabase || chapters.some((c) => c.published_at !== undefined))
+                ? [
+                    isDraft(activeChapter)
+                      ? { label: t('Publish this chapter…'), icon: <BookOpenCheck />, onSelect: () => setPublishIds([activeChapter.id]) }
+                      : { label: t('Unpublish this chapter'), icon: <EyeOff />, onSelect: () => void unpublishChapters([activeChapter.id]) },
+                  ]
+                : []),
             ]}
           />
           {activeProject && canManage && (
@@ -380,6 +391,7 @@ export const EditorView: React.FC = () => {
         </div>
       </footer>
 
+      <PublishChapterDialog chapterIds={publishIds} onClose={() => setPublishIds(null)} />
       <ExportDialog project={showExport ? activeProject : null} onClose={() => setShowExport(false)} />
 
       <VersionHistory

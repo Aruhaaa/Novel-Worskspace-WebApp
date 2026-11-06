@@ -13,7 +13,8 @@ import part7 from './ms-7.ts';
 import part8 from './ms-8.ts';
 import part9 from './ms-9.ts';
 import part10 from './ms-10.ts';
+import part11 from './ms-11.ts';
 
-const ms: Record<string, string> = { ...part1, ...part2, ...part3, ...part4, ...part5, ...part6, ...part7, ...part8, ...part9, ...part10 };
+const ms: Record<string, string> = { ...part1, ...part2, ...part3, ...part4, ...part5, ...part6, ...part7, ...part8, ...part9, ...part10, ...part11 };
 
 export default ms;

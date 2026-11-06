@@ -130,3 +130,17 @@ test.describe('sample library', () => {
     await expect(card(page, entries[0].title)).toHaveCount(0);
   });
 });
+
+// The plain library pages (scripts/build-seo-pages.mjs) link to /#/library/novel/<id>. A visitor with no account lands on that novel.
+test.describe('a link to a sample novel', () => {
+  test.skip(entries.length === 0, 'The sample library has not been built (npm run library:build).');
+
+  test('opens the novel for someone who is not signed in, with no sign-in screen', async ({ page }) => {
+    await page.addInitScript(() => localStorage.removeItem('novelist_sample_library'));
+    const novel = entries[0];
+    await page.goto(`/#/library/novel/${novel.id}`);
+    await expect(page.getByRole('heading', { name: novel.title }).first()).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`#/library/novel/${novel.id}$`));
+    await expect(page.getByRole('button', { name: /sign in|log in/i })).toHaveCount(0);
+  });
+});

@@ -174,7 +174,7 @@ const useBodyMode = (mode: 'landing' | 'auth' | 'app' | 'shared', focused: boole
 };
 
 const AuthWrapper: React.FC = () => {
-  const { user, loading, zenMode, activeView, activeProject, isGuest, mode, recovering } = useApp();
+  const { user, loading, zenMode, activeView, activeProject, isGuest, mode, recovering, loginAsGuest } = useApp();
   const location = useLocation();
   const [isSidebarOpen, setSidebarOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -204,6 +204,13 @@ const AuthWrapper: React.FC = () => {
   React.useEffect(() => {
     if (signedIn) prefetchScreens();
   }, [signedIn]);
+
+  // A link to a novel (from a library page a search engine found, or from anyone) is meant to open it with no account.
+  // Someone not signed in is let in as a guest and taken to that novel, instead of being sent to the sign-in screen.
+  const wantsNovel = location.pathname.startsWith('/library/novel/');
+  React.useEffect(() => {
+    if (!loading && !user && wantsNovel) loginAsGuest(location.pathname);
+  }, [loading, user, wantsNovel, location.pathname, loginAsGuest]);
 
   // A private reading link works for anyone, signed in or not, and shows no app chrome
   const isShared = location.pathname.startsWith('/read/');
