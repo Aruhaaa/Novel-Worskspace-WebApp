@@ -6,15 +6,20 @@ import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
 import { ReportsQueue } from './ReportsQueue';
 import { ErrorsPanel } from './ErrorsPanel';
+import { CoverPicker } from '../ui/CoverPicker';
+import { LanguageSelect } from '../ui/LanguageSelect';
+import { resolveCover, type CoverChoice } from '../../lib/coverImage';
 
 export const AdminView: React.FC = () => {
-  const { user, publicProjects, createExternalProject } = useApp();
+  const { user, publicProjects, createExternalProject, uploadCoverImage } = useApp();
+  const [language, setLanguage] = useState('en');
 
   const [title, setTitle] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('Fantasy');
-  const [coverUrl, setCoverUrl] = useState('');
+  const [cover, setCover] = useState<CoverChoice>({ url: '', picture: null });
+  const [coverBusy, setCoverBusy] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -42,7 +47,8 @@ export const AdminView: React.FC = () => {
     setIsSubmitting(true);
     setMessage('');
     
-    const { error } = await createExternalProject(title, authorName, description, genre, coverUrl);
+    const picked = await resolveCover(cover, uploadCoverImage);
+    const { error } = picked.error ? { error: picked.error } : await createExternalProject(title, authorName, description, genre, picked.url, language);
     
     setIsSubmitting(false);
     if (error) {
@@ -52,7 +58,7 @@ export const AdminView: React.FC = () => {
       setTitle('');
       setAuthorName('');
       setDescription('');
-      setCoverUrl('');
+      setCover({ url: '', picture: null });
       setTimeout(() => setMessage(''), 4000);
     }
   };
@@ -142,9 +148,10 @@ export const AdminView: React.FC = () => {
                   {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </label>
-              <label className="field"><span>Cover image URL</span><input className="input" type="url" placeholder="https://…" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} /></label>
+              <label className="field"><span>Language</span><LanguageSelect id="admin-language" value={language} onChange={setLanguage} className="select" /></label>
+              <div className="field"><span id="admin-cover-label">Cover picture</span><CoverPicker labelId="admin-cover-label" value={cover} onChange={setCover} onBusy={setCoverBusy} disabled={isSubmitting} /></div>
               <label className="field"><span>Description / synopsis</span><textarea className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} /></label>
-              <button className="small-btn is-primary" disabled={isSubmitting}>{isSubmitting ? 'Publishing…' : 'Publish to library'}</button>
+              <button className="small-btn is-primary" disabled={isSubmitting || coverBusy}>{isSubmitting ? 'Publishing…' : 'Publish to library'}</button>
               {message && <p className="mock-note" role="status" style={{ marginTop: 14 }}>{message}</p>}
             </form>
           </section>

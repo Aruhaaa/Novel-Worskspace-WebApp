@@ -86,6 +86,10 @@ abstract class Backend {
   });
   Future<void> deleteChapter(String id);
 
+  /// Publish or unpublish one chapter (only the owner may; the database refuses anyone else). Needs the chapter publishing
+  /// setup on the database: a chapter that came back without `hasPublishState` has nothing to change.
+  Future<Chapter> setChapterPublished(String id, bool published);
+
   /// Keep a copy of a chapter that is about to be deleted, so it can be restored
   Future<void> keepDeleted(Chapter chapter);
   Future<List<DeletedChapter>> recentlyDeleted(String projectId);

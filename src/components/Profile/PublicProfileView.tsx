@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GenreTag } from '../Library/GenreChips';
+import { LanguageTag } from '../ui/LanguageSelect';
 import { EmptyState } from '../ui/EmptyState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -173,7 +174,8 @@ export const PublicProfileView: React.FC = () => {
             <div className="grid-2">
               {authorProjects.map((project) => (
                 <article className="card" key={project.id}>
-                  {project.genre ? <GenreTag genre={project.genre} /> : <span className="badge">{t('Uncategorized')}</span>}
+                  {project.genre ? <GenreTag genre={project.genre} /> : <span className="badge">{t('Uncategorized')}</span>}{' '}
+                  <LanguageTag code={project.language} />
                   <h3 style={{ marginTop: 12 }}>{project.title}</h3>
                   <p style={{ margin: '8px 0 14px' }}>{project.description || t('No description provided.')}</p>
                   <p className="meta">

@@ -338,6 +338,16 @@ class LocalBackend implements Backend {
     return Chapter.fromJson(row);
   }
 
+  // On the phone alone a novel is published as a whole (setPublished); there is no chapter by chapter, so nothing changes.
+  @override
+  Future<Chapter> setChapterPublished(String id, bool published) async {
+    final row = _table('chapters').firstWhere(
+      (c) => c['id'] == id,
+      orElse: () => throw BackendException('That chapter no longer exists.'),
+    );
+    return Chapter.fromJson(row);
+  }
+
   @override
   Future<void> deleteChapter(String id) async {
     _table('chapters').removeWhere((c) => c['id'] == id);
@@ -524,11 +534,15 @@ class LocalBackend implements Backend {
   Future<List<AppNotification>?> notifications(String userId) async => null;
 
   @override
-  Future<void> markNotificationsRead(String userId, {List<String>? ids}) async {}
+  Future<void> markNotificationsRead(
+    String userId, {
+    List<String>? ids,
+  }) async {}
 
   @override
   Future<NotificationSettings> notificationSettings(String userId) async {
-    final muted = _prefs.getStringList('notify_muted_$userId') ?? const <String>[];
+    final muted =
+        _prefs.getStringList('notify_muted_$userId') ?? const <String>[];
     return NotificationSettings(muted: muted.toSet());
   }
 

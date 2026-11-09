@@ -17,11 +17,15 @@ The website is in Malay on its main screens and in the Write space: language cho
 
 ## Phone app (`mobile/`) catches up
 
-Done: notifications (cloud only, no push), error reporting, and hiding draft chapters from readers. Not started: sign in with Google and Apple (deep link back into the app), shared projects and live writing, read aloud, the relationship map, publishing a chapter from the phone, and Malay.
+Done: notifications (cloud only, no push), error reporting, and hiding draft chapters from readers. Publishing or taking down a chapter from the chapter list (owner only, shown only once the database script has run) is done. Not started: sign in with Google and Apple (deep link back into the app), shared projects and live writing, read aloud, the relationship map, Malay, uploading a novel cover from the phone (it shows covers, but only the website uploads them), and the language of a novel (the phone neither shows, filters by nor sets it).
 
 ## Publishing chapter by chapter: what is left
 
 Built and tested on the stand-in server. Still to do: run `supabase/setup_scripts/20261106_chapter_publishing.sql` on the real database after the website update (steps in `supabase/README.md`), a notification to followers when a new chapter comes out, an Ongoing / Complete label, scheduled publishing, and search-visible pages for novels that writers publish (the static pages cover only the sample novels).
+
+## Novel language: what is left
+
+Built and tested on the stand-in server. Still to do: run `supabase/setup_scripts/20261107_novel_language.sql` on the real database (steps in `supabase/README.md`), link the versions of one story so a reader can switch between them ("also in Bahasa Melayu"), the phone app (show, filter, set), filtering the library to novels with no language, more languages than the seventeen listed, and the language in the share preview and the search box.
 
 ## Database access rules
 
@@ -33,7 +37,7 @@ On the phone (Firebase Cloud Messaging and Apple push) and in the browser (web p
 
 ## Checks against the real thing
 
-Everything cloud-side was tried only against a stand-in server. Still to do with real accounts: a real Supabase project (the setup script, Realtime, private channels for live writing), a real email service for notifications, real Google and Apple sign-in, and a real published desktop release for automatic updates.
+Everything cloud-side was tried only against a stand-in server. Still to do with real accounts: a real Supabase project (the setup scripts, Realtime, private channels for live writing, and file storage for cover pictures), a real email service for notifications, real Google and Apple sign-in, and a real published desktop release for automatic updates.
 
 ## Left out on purpose
 

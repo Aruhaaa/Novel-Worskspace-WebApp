@@ -15,6 +15,8 @@ import {
   forgetBundledUser,
 } from '../lib/bundledLibrary';
 import { isMissingColumn, isMissingFunction } from '../lib/chapterPublishing';
+import { blobToDataUrl, COVER_BUCKET, coverFileName, storedCoverName } from '../lib/coverImage';
+import { isMissingLanguageColumn } from '../lib/novelLanguage';
 import type { Project, Chapter, WikiEntity, WordCountLog, UserProfile, Review, Comment, ChatMessage } from './types';
 
 // Mock Data Initializer for Local Storage fallback
@@ -284,13 +286,16 @@ export const databaseService = {
     return getLocalData<Project[]>('novel_projects', INITIAL_PROJECTS).filter((p) => ids.includes(p.id));
   },
 
-  async createProject(userId: string, title: string, description: string): Promise<Project> {
+  async createProject(userId: string, title: string, description: string, language?: string | null): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
+      const plain = { title, description, user_id: userId };
+      let { data, error } = await supabase
         .from('projects')
-        .insert([{ title, description, user_id: userId }])
+        .insert([language ? { ...plain, language } : plain])
         .select()
         .single();
+      // A database that has not had the novel language setup run has no such column: make the novel without it
+      if (error && language && isMissingLanguageColumn(error)) ({ data, error } = await supabase.from('projects').insert([plain]).select().single());
       if (error) throw error;
       return data;
     } else {
@@ -300,6 +305,7 @@ export const databaseService = {
         user_id: userId,
         title,
         description,
+        ...(language ? { language } : {}),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -309,21 +315,23 @@ export const databaseService = {
     }
   },
 
-  async createExternalProject(userId: string, title: string, authorName: string, description: string, genre: string, coverUrl: string): Promise<Project> {
+  async createExternalProject(userId: string, title: string, authorName: string, description: string, genre: string, coverUrl: string, language?: string | null): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
+      const plain = {
+        title,
+        description,
+        user_id: userId,
+        is_published: true,
+        author_name: authorName,
+        genre,
+        cover_url: coverUrl
+      };
+      let { data, error } = await supabase
         .from('projects')
-        .insert([{ 
-          title, 
-          description, 
-          user_id: userId,
-          is_published: true,
-          author_name: authorName,
-          genre,
-          cover_url: coverUrl
-        }])
+        .insert([language ? { ...plain, language } : plain])
         .select()
         .single();
+      if (error && language && isMissingLanguageColumn(error)) ({ data, error } = await supabase.from('projects').insert([plain]).select().single());
       if (error) throw error;
       return data;
     } else {
@@ -337,12 +345,55 @@ export const databaseService = {
         author_name: authorName,
         genre,
         cover_url: coverUrl,
+        ...(language ? { language } : {}),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       projects.unshift(newProj);
       setLocalData('novel_projects', projects);
       return newProj;
+    }
+  },
+
+  /**
+   * Keep a cover picture (already shrunk by `prepareCover`) and give back the address to store in `cover_url`. With an account it goes to
+   * the public "covers" bucket, in the person's own folder; on a device with no account there is no server, so the picture itself is kept.
+   */
+  async uploadCover(userId: string, picture: Blob): Promise<string> {
+    if (isSupabaseConfigured && supabase) {
+      const name = coverFileName(userId, crypto.randomUUID());
+      // Sent as raw bytes (not a form) with its type spelled out, which is how the storage service reads a plain upload
+      const { error } = await supabase.storage.from(COVER_BUCKET).upload(name, await picture.arrayBuffer(), { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+      if (error) throw error;
+      return supabase.storage.from(COVER_BUCKET).getPublicUrl(name).data.publicUrl;
+    }
+    return blobToDataUrl(picture);
+  },
+
+  /** Delete a stored cover file that nothing uses any more. Quiet on purpose: a file left behind costs a few KB, a failure here must not undo a save. */
+  async removeCover(url: string): Promise<void> {
+    const name = storedCoverName(url);
+    if (!name || !(isSupabaseConfigured && supabase)) return;
+    try {
+      await supabase.storage.from(COVER_BUCKET).remove([name]);
+    } catch {
+      // see above
+    }
+  },
+
+  /** Delete every cover file a person uploaded (their whole folder). Used when an account is deleted. Quiet, like `removeCover`. */
+  async removeAllCovers(userId: string): Promise<void> {
+    if (!(isSupabaseConfigured && supabase)) return;
+    try {
+      const bucket = supabase.storage.from(COVER_BUCKET);
+      for (let round = 0; round < 20; round++) {
+        const { data, error } = await bucket.list(userId, { limit: 100 });
+        if (error || !data?.length) return;
+        const { error: failed } = await bucket.remove(data.map((f) => `${userId}/${f.name}`));
+        if (failed) return;
+      }
+    } catch {
+      // the account is already gone; a few files left behind are not worth turning that into a failure
     }
   },
 
@@ -429,14 +480,18 @@ export const databaseService = {
     setLocalData('novel_projects', projects);
     return { chapters: mine, project };
   },
-  async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>): Promise<Project> {
+  async updateProjectSettings(projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name' | 'language'>>): Promise<Project> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('projects')
-        .update({ ...fields, updated_at: new Date().toISOString() })
-        .eq('id', projectId)
-        .select()
-        .single();
+      const client = supabase;
+      const write = (values: typeof fields) =>
+        client.from('projects').update({ ...values, updated_at: new Date().toISOString() }).eq('id', projectId).select().single();
+      let { data, error } = await write(fields);
+      // No language column yet (the setup has not been run): save everything else the form held
+      if (error && 'language' in fields && isMissingLanguageColumn(error)) {
+        const rest = { ...fields };
+        delete rest.language;
+        ({ data, error } = await write(rest));
+      }
       if (error) throw error;
       return data;
     } else {
@@ -485,6 +540,8 @@ export const databaseService = {
     if (isSupabaseConfigured && supabase) {
       const res = await tryCloud('account', async (c) => unwrap(await c.rpc('delete_my_account')));
       if (res.ok) {
+        // The pictures are public files outside the database, so the function above could not take them; the sign-in still works for this
+        await this.removeAllCovers(userId);
         // What this person left on the sample novels lives on this device only
         forgetBundledUser(userId);
         setLocalData('novel_comments', getLocalData<Comment[]>('novel_comments', INITIAL_COMMENTS).filter(c => c.user_id !== userId));

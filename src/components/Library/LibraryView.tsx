@@ -8,6 +8,8 @@ import { PageHead } from '../ui/PageHead';
 import { isBundledNovel } from '../../lib/bundledLibrary';
 import { GenreFilter, GenreTag } from './GenreChips';
 import { fmtDate, tp, useT } from '../../i18n';
+import { languageLabel, languagesIn } from '../../lib/novelLanguage';
+import { LanguageTag } from '../ui/LanguageSelect';
 
 type SortBy = 'newest' | 'liked' | 'az';
 
@@ -36,9 +38,10 @@ export const NovelCard: React.FC<{ project: Project; index: number }> = ({ proje
         <Link className="by" to={`/library/author/${project.user_id}`}>
           {project.author_name || t('Anonymous')}
         </Link>
-        {(project.genre || isBundledNovel(project.id)) && (
+        {(project.genre || project.language || isBundledNovel(project.id)) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {project.genre && <GenreTag genre={project.genre} />}
+            <LanguageTag code={project.language} />
             {isBundledNovel(project.id) && (
               <span className="badge" title={t('Part of the sample library that comes with the site')}>
                 {t('Sample')}
@@ -69,6 +72,7 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('All');
+  const [filterLanguage, setFilterLanguage] = useState('All');
   const [sortBy, setSortBy] = useState<SortBy>('newest');
 
   useEffect(() => {
@@ -78,8 +82,13 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
 
   const source = mode === 'saved' ? publicProjects.filter((p) => user && p.likes?.includes(user.id)) : publicProjects;
 
+  // The language filter is offered once the library holds novels in more than one language, and only for the languages it holds
+  const languages = languagesIn(source);
+  const languageFilter = languages.includes(filterLanguage) ? filterLanguage : 'All';
+
   const projects = source
     .filter((p) => filterGenre === 'All' || p.genre === filterGenre)
+    .filter((p) => languageFilter === 'All' || p.language === languageFilter)
     .filter(
       (p) =>
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -126,6 +135,17 @@ export const LibraryScreen: React.FC<{ mode: 'public' | 'saved' }> = ({ mode }) 
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </label>
+            {languages.length > 1 && (
+              <label>
+                <span className="sr-only">{t('Filter by language')}</span>
+                <select className="select" value={languageFilter} onChange={(e) => setFilterLanguage(e.target.value)} data-testid="language-filter">
+                  <option value="All">{t('All languages')}</option>
+                  {languages.map((code) => (
+                    <option key={code} value={code} lang={code}>{languageLabel(code)}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label>
               <span className="sr-only">{t('Sort')}</span>
               <select className="select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>

@@ -5,9 +5,10 @@
 // It runs the app's real database schema (supabase/migrations/*.sql) and setup scripts (supabase/setup_scripts/*.sql)
 // on PGlite, a real PostgreSQL engine that runs inside this process, and answers the parts of Supabase's HTTP and
 // WebSocket interfaces the app uses: sign-up and sign-in, the REST interface with row level security applied as the
-// signed-in person, remote procedure calls, and Realtime (table changes, broadcast and presence).
+// signed-in person, remote procedure calls, Realtime (table changes, broadcast and presence), and a small file storage
+// (upload, public download and delete, with the database's own policies on storage.objects deciding who may).
 //
-// It is NOT Supabase: no email, no storage, no OAuth, data lives in memory and is gone when it stops. Never use it
+// It is NOT Supabase: no email, no OAuth, files and data live in memory and are gone when it stops. Never use it
 // for real work. It exists so the real supabase-js client and the real SQL can be exercised together.
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -153,7 +154,9 @@ const orderClause = (searchParams) => {
 /** `nextFeatures: false` leaves out supabase/setup_scripts/20261105_next_features.sql, to see the app before that setup step has been run. */
 // `chapterPublishing: false` leaves out supabase/setup_scripts/20261106_chapter_publishing.sql (it needs next features too). That script
 // closes the open access to projects and chapters, so leaving it out shows the app against the database as it was before.
-export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatures = true, chapterPublishing = true } = {}) {
+// `coverUploads: false` leaves out supabase/setup_scripts/20261106_cover_uploads.sql, so there is no "covers" bucket, as in a project that has not run it.
+// `novelLanguage: false` leaves out supabase/setup_scripts/20261107_novel_language.sql, so projects have no `language` column.
+export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatures = true, chapterPublishing = true, coverUploads = true, novelLanguage = true } = {}) {
   const db = new PGlite();
 
   // Platform pieces Supabase provides
@@ -184,10 +187,31 @@ export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatu
     grant select, insert on realtime.messages to authenticated;
     grant usage on sequence realtime.messages_id_seq to authenticated;
     grant execute on function realtime.topic() to authenticated;
+    create schema storage;
+    create table storage.buckets (
+      id text primary key, name text not null, owner uuid, public boolean default false,
+      file_size_limit bigint, allowed_mime_types text[], created_at timestamptz default now(), updated_at timestamptz default now()
+    );
+    create table storage.objects (
+      id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id), name text, owner uuid,
+      metadata jsonb, created_at timestamptz default now(), updated_at timestamptz default now(), unique (bucket_id, name)
+    );
+    alter table storage.objects enable row level security;
+    create function storage.foldername(name text) returns text[] language plpgsql immutable as $$
+    declare _parts text[];
+    begin
+      select string_to_array(name, '/') into _parts;
+      return _parts[1:array_length(_parts, 1) - 1];
+    end $$;
+    grant usage on schema storage to anon, authenticated, service_role;
+    grant all on storage.objects to anon, authenticated, service_role;
+    grant execute on function storage.foldername(text) to anon, authenticated, service_role;
   `);
   await db.exec(readFileSync(`${supabaseDir}migrations/20261022125111_remote_schema.sql`, 'utf8'));
   if (nextFeatures) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261105_next_features.sql`, 'utf8'));
   if (nextFeatures && chapterPublishing) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261106_chapter_publishing.sql`, 'utf8'));
+  if (coverUploads) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261106_cover_uploads.sql`, 'utf8'));
+  if (novelLanguage) await db.exec(readFileSync(`${supabaseDir}setup_scripts/20261107_novel_language.sql`, 'utf8'));
   for (const sql of extraSql) await db.exec(sql);
 
   // Row changes are announced so Realtime can pass them on
@@ -455,10 +479,88 @@ export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatu
     return send(res, 405, { message: 'Method not allowed' });
   };
 
+  // -------------------------------------------------------------------------------------------------------------------
+  // Storage: the files are kept in memory; whether a person may add or delete one is decided by the database's policies on
+  // storage.objects, run as that person, the way the real Storage service does it.
+  // -------------------------------------------------------------------------------------------------------------------
+  const files = new Map(); // "bucket/name" -> { bytes, type }
+  const readRaw = (req) =>
+    new Promise((resolve) => {
+      const chunks = [];
+      req.on('data', (c) => chunks.push(c));
+      req.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+  const storageError = (status, error, message = error) => httpError(status, { statusCode: String(status), error, message });
+
+  const handleStorage = async (req, res, url, raw) => {
+    const identity = identityOf(req.headers.authorization);
+    const rest = decodeURIComponent(url.pathname.replace('/storage/v1/object/', ''));
+    // Download of a file in a public bucket, which needs no sign-in
+    if (req.method === 'GET' && rest.startsWith('public/')) {
+      const [bucket, ...nameParts] = rest.slice('public/'.length).split('/');
+      const name = nameParts.join('/');
+      const b = (await db.query('select public from storage.buckets where id = $1', [bucket])).rows[0];
+      const file = files.get(`${bucket}/${name}`);
+      if (!b?.public || !file) throw storageError(404, 'not_found', 'Object not found');
+      res.writeHead(200, { 'Content-Type': file.type, 'Content-Length': file.bytes.length, 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' });
+      return res.end(file.bytes);
+    }
+    // The names of the files in one folder, as far as the person's own policies let them see
+    if (req.method === 'POST' && rest.startsWith('list/')) {
+      const bucket = rest.slice('list/'.length);
+      let options = {};
+      try {
+        options = JSON.parse(raw.toString('utf8') || '{}');
+      } catch {
+        // an unreadable request lists nothing
+      }
+      const prefix = String(options.prefix || '').replace(/\/+$/, '');
+      const found = await as(identity, (tx) =>
+        tx.query('select name from storage.objects where bucket_id = $1 and name like $2 order by name limit $3', [bucket, `${prefix ? prefix + '/' : ''}%`, Number(options.limit) || 100]),
+      );
+      const cut = prefix ? prefix.length + 1 : 0;
+      return send(res, 200, found.rows.map((r) => ({ name: r.name.slice(cut).split('/')[0], id: r.name, bucket_id: bucket })));
+    }
+    if (req.method === 'POST') {
+      const [bucket, ...nameParts] = rest.split('/');
+      const name = nameParts.join('/');
+      const b = (await db.query('select file_size_limit, allowed_mime_types from storage.buckets where id = $1', [bucket])).rows[0];
+      if (!b) throw storageError(404, 'Bucket not found');
+      const type = String(req.headers['content-type'] || 'application/octet-stream').split(';')[0].trim();
+      if (b.allowed_mime_types && !b.allowed_mime_types.includes(type)) throw storageError(415, 'invalid_mime_type', `mime type ${type} is not supported`);
+      if (b.file_size_limit && raw.length > Number(b.file_size_limit)) throw storageError(413, 'Payload too large', 'The object exceeded the maximum allowed size');
+      try {
+        await as(identity, (tx) =>
+          tx.query('insert into storage.objects (bucket_id, name, owner, metadata) values ($1, $2, auth.uid(), $3)', [bucket, name, JSON.stringify({ size: raw.length, mimetype: type })]),
+        );
+      } catch (e) {
+        if (e.code === '42501') throw storageError(403, 'Unauthorized', 'new row violates row-level security policy');
+        if (e.code === '23505') throw storageError(409, 'Duplicate', 'The resource already exists');
+        throw e;
+      }
+      files.set(`${bucket}/${name}`, { bytes: raw, type });
+      return send(res, 200, { Id: crypto.randomUUID(), Key: `${bucket}/${name}` });
+    }
+    if (req.method === 'DELETE') {
+      const bucket = rest.split('/')[0];
+      let prefixes = [];
+      try {
+        prefixes = JSON.parse(raw.toString('utf8') || '{}').prefixes ?? [];
+      } catch {
+        // an unreadable list deletes nothing
+      }
+      const gone = await as(identity, (tx) => tx.query('delete from storage.objects where bucket_id = $1 and name = any($2) returning name', [bucket, prefixes]));
+      for (const r of gone.rows) files.delete(`${bucket}/${r.name}`);
+      return send(res, 200, gone.rows.map((r) => ({ name: r.name, bucket_id: bucket })));
+    }
+    throw storageError(405, 'Method not allowed');
+  };
+
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, undefined);
     const url = new URL(req.url, `http://localhost:${port}`);
     try {
+      if (url.pathname.startsWith('/storage/v1/object/')) return await handleStorage(req, res, url, await readRaw(req));
       const body = req.method === 'GET' || req.method === 'HEAD' || req.method === 'DELETE' ? undefined : await readBody(req);
       if (url.pathname.startsWith('/auth/v1')) return await handleAuth(req, res, url, body);
       if (url.pathname.startsWith('/rest/v1/')) return await handleRest(req, res, url, body);
@@ -704,7 +806,7 @@ export async function startSupabaseLite({ port = 54321, extraSql = [], nextFeatu
 if ((process.argv[1] || '').split('\\').join('/').endsWith('/dev-supabase/server.mjs')) {
   const i = process.argv.indexOf('--port');
   const port = i > -1 ? Number(process.argv[i + 1]) : 54321;
-  const lite = await startSupabaseLite({ port, nextFeatures: !process.argv.includes('--no-next-features'), chapterPublishing: !process.argv.includes('--no-chapter-publishing') });
+  const lite = await startSupabaseLite({ port, nextFeatures: !process.argv.includes('--no-next-features'), chapterPublishing: !process.argv.includes('--no-chapter-publishing'), coverUploads: !process.argv.includes('--no-cover-uploads'), novelLanguage: !process.argv.includes('--no-novel-language') });
   console.log(`Supabase stand-in running at ${lite.url}`);
   console.log(`VITE_SUPABASE_URL=${lite.url}`);
   console.log(`VITE_SUPABASE_ANON_KEY=${lite.anonKey}`);

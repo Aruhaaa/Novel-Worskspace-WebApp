@@ -157,6 +157,65 @@ class _ProjectScreenState extends State<ProjectScreen> {
     }
   }
 
+  // The book is listed in the library while at least one chapter is published, and the database keeps that in step, so look at
+  // the book again after a chapter is published or taken down.
+  Future<void> _refreshProject() async {
+    try {
+      final mine = await _backend.myProjects(_project.userId);
+      final fresh = mine.where((p) => p.id == _project.id).firstOrNull;
+      if (fresh != null && mounted) {
+        setState(() {
+          _project = fresh;
+        });
+      }
+    } catch (_) {
+      // The chapter itself was saved; the book's own label catches up the next time this screen opens
+    }
+  }
+
+  Future<void> _setChapterPublished(Chapter c, bool publish) async {
+    final name = c.title.isEmpty ? 'Untitled chapter' : c.title;
+    final others = (_chapters ?? const <Chapter>[])
+        .where((x) => x.id != c.id && x.hasPublishState && !x.isDraft)
+        .length;
+    final ok = await confirm(
+      context,
+      title: publish ? 'Publish “$name”?' : 'Take “$name” down?',
+      text: publish
+          ? (others == 0
+                ? 'Readers can read it in the public library, and the book joins the library with it. You can take it down again whenever you like.'
+                : 'Readers can read it in the public library straight away. You can take it down again whenever you like.')
+          : (others == 0
+                ? 'It is the only published chapter, so the book leaves the public library too. Nothing is deleted.'
+                : 'Readers can no longer read it. It stays in your book.'),
+      action: publish ? 'Publish' : 'Unpublish',
+    );
+    if (!ok || !mounted) return;
+    try {
+      await _backend.setChapterPublished(c.id, publish);
+      if (!mounted) return;
+      await _refreshProject();
+      if (!mounted) return;
+      _reload();
+      say(
+        context,
+        publish ? 'Published “$name”.' : '“$name” is no longer public.',
+        actionLabel: 'Undo',
+        onAction: () async {
+          try {
+            await _backend.setChapterPublished(c.id, !publish);
+            await _refreshProject();
+            if (mounted) _reload();
+          } catch (e) {
+            if (mounted) say(context, describe(e));
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) say(context, describe(e));
+    }
+  }
+
   Future<void> _restoreLast(Chapter original) async {
     final bin = await _backend.recentlyDeleted(_project.id);
     final item = bin
@@ -688,6 +747,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                           _StatusChip(
                                             note?.status ?? ChapterStatus.draft,
                                           ),
+                                          if (c.hasPublishState)
+                                            _PublishChip(published: !c.isDraft),
                                         ],
                                       ),
                                     ],
@@ -695,14 +756,35 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                 ),
                                 PopupMenuButton<String>(
                                   tooltip: 'Chapter options',
-                                  onSelected: (v) =>
-                                      v == 'delete' ? _delete(c) : _open(c),
-                                  itemBuilder: (_) => const [
-                                    PopupMenuItem(
+                                  onSelected: (v) {
+                                    switch (v) {
+                                      case 'delete':
+                                        _delete(c);
+                                      case 'publish':
+                                        _setChapterPublished(c, true);
+                                      case 'unpublish':
+                                        _setChapterPublished(c, false);
+                                      default:
+                                        _open(c);
+                                    }
+                                  },
+                                  itemBuilder: (_) => [
+                                    const PopupMenuItem(
                                       value: 'open',
                                       child: Text('Open'),
                                     ),
-                                    PopupMenuItem(
+                                    if (c.hasPublishState)
+                                      PopupMenuItem(
+                                        value: c.isDraft
+                                            ? 'publish'
+                                            : 'unpublish',
+                                        child: Text(
+                                          c.isDraft
+                                              ? 'Publish this chapter'
+                                              : 'Unpublish this chapter',
+                                        ),
+                                      ),
+                                    const PopupMenuItem(
                                       value: 'delete',
                                       child: Text('Delete'),
                                     ),
@@ -751,6 +833,40 @@ class _Stat extends StatelessWidget {
           Text(value, style: t.textTheme.titleLarge),
         ],
       ),
+    );
+  }
+}
+
+/// Whether readers can read this chapter. Worded "Not published" because the other chip's "Draft" is about the writing, not readers.
+class _PublishChip extends StatelessWidget {
+  const _PublishChip({required this.published});
+  final bool published;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          published ? Icons.public : Icons.visibility_off_outlined,
+          size: 13,
+          color: published
+              ? t.colorScheme.primary
+              : t.colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          published ? 'Published' : 'Not published',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 11,
+            color: published
+                ? t.colorScheme.primary
+                : t.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     );
   }
 }

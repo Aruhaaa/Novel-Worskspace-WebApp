@@ -6,8 +6,9 @@ const BLOCKS = 'p, h1, h2, h3, h4, h5, h6, li';
 /**
  * Read aloud for a page that is already on screen, such as a novel in the reader: the blocks of text inside `root`
  * that match `selector` are read in order, and the one being read is marked with the class `is-speaking`.
+ * `lang` is the language of that text (a novel's own language), so a voice that speaks it is chosen; without it the app's language is used.
  */
-export const useDomReadAloud = (selector: string): ReadAloud => {
+export const useDomReadAloud = (selector: string, lang?: string): ReadAloud => {
   const elements = useRef<HTMLElement[]>([]);
   const marked = useRef<HTMLElement | null>(null);
 
@@ -42,5 +43,6 @@ export const useDomReadAloud = (selector: string): ReadAloud => {
       return startAt();
     },
     onHighlight: highlight,
+    lang,
   });
 };

@@ -12,6 +12,7 @@ import { UpdateNotice } from './components/Desktop/UpdateNotice';
 import { onOpenCapture, onOpenSearch } from './lib/uiEvents';
 import { ToastProvider } from './components/ui/Toast';
 import { TourHost } from './components/Tour/TourHost';
+import { PublishLanguageDialog } from './components/ui/PublishLanguageDialog';
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { takePendingJoin } from './lib/pendingJoin';
 
@@ -305,6 +306,7 @@ const AuthWrapper: React.FC = () => {
         </Suspense>
       )}
       <TourHost />
+      <PublishLanguageDialog />
       <UpdateNotice />
     </>
   );

@@ -127,6 +127,7 @@ class Chapter {
     required this.createdAt,
     required this.updatedAt,
     this.isDraft = false,
+    this.hasPublishState = false,
   });
 
   final String id;
@@ -143,6 +144,10 @@ class Chapter {
   /// (a database that has not had the chapter publishing script run) is not a draft, so nothing readers saw before is hidden.
   final bool isDraft;
 
+  /// The database sent a `published_at` for this chapter at all, so publishing it chapter by chapter works. False on a phone-only
+  /// copy and on a database that has not had the chapter publishing script run, where the buttons stay hidden.
+  final bool hasPublishState;
+
   factory Chapter.fromJson(Map<String, dynamic> j) => Chapter(
     id: j['id'].toString(),
     projectId: j['project_id'].toString(),
@@ -152,6 +157,7 @@ class Chapter {
     createdAt: _date(j['created_at']),
     updatedAt: _date(j['updated_at']),
     isDraft: j.containsKey('published_at') && j['published_at'] == null,
+    hasPublishState: j.containsKey('published_at'),
   );
 
   Map<String, dynamic> toJson() => {
@@ -173,6 +179,7 @@ class Chapter {
     createdAt: createdAt,
     updatedAt: DateTime.now(),
     isDraft: isDraft,
+    hasPublishState: hasPublishState,
   );
 }
 
@@ -460,15 +467,21 @@ class AppNotification {
   bool get unread => readAt == null;
 
   factory AppNotification.fromRow(Map<String, dynamic> r) {
-    final meta = r['meta'] is Map ? Map<String, dynamic>.from(r['meta'] as Map) : <String, dynamic>{};
+    final meta = r['meta'] is Map
+        ? Map<String, dynamic>.from(r['meta'] as Map)
+        : <String, dynamic>{};
     return AppNotification(
       id: r['id'].toString(),
       kind: (r['kind'] ?? '').toString(),
       actorName: (r['actor_name'] ?? '').toString(),
       snippet: (r['snippet'] ?? '').toString(),
       count: (r['count'] as num?)?.toInt() ?? 1,
-      createdAt: DateTime.tryParse((r['created_at'] ?? '').toString()) ?? DateTime.now(),
-      readAt: r['read_at'] == null ? null : DateTime.tryParse(r['read_at'].toString()),
+      createdAt:
+          DateTime.tryParse((r['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+      readAt: r['read_at'] == null
+          ? null
+          : DateTime.tryParse(r['read_at'].toString()),
       projectTitle: (meta['project_title'] ?? '').toString(),
       rating: (meta['rating'] as num?)?.toInt(),
       role: (meta['role'] ?? '').toString(),
@@ -478,7 +491,9 @@ class AppNotification {
   /// What it says, in one line
   String get title {
     final who = actorName.trim().isEmpty ? 'Someone' : actorName.trim();
-    final novel = projectTitle.trim().isEmpty ? 'your novel' : projectTitle.trim();
+    final novel = projectTitle.trim().isEmpty
+        ? 'your novel'
+        : projectTitle.trim();
     switch (kind) {
       case 'follow':
         return '$who started following you';
@@ -487,7 +502,9 @@ class AppNotification {
       case 'review':
         return '$who reviewed $novel';
       case 'message':
-        return count > 1 ? '$who sent you $count new messages' : '$who sent you a message';
+        return count > 1
+            ? '$who sent you $count new messages'
+            : '$who sent you a message';
       case 'share_comment':
         return '$who commented on a reading link for $novel';
       case 'collab':

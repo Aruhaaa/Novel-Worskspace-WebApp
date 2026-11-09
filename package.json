@@ -1,7 +1,7 @@
 {
   "name": "temp-vite",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:sql": "node supabase/tests/next-features.test.mjs && node supabase/tests/chapter-publishing.test.mjs",
+    "test:sql": "node supabase/tests/next-features.test.mjs && node supabase/tests/chapter-publishing.test.mjs && node supabase/tests/cover-uploads.test.mjs && node supabase/tests/novel-language.test.mjs",
     "i18n:check": "node scripts/i18n-check.mjs",
     "test:e2e:cloud": "playwright test -c playwright.cloud.config.ts",
     "dev:cloud": "node scripts/dev-supabase/server.mjs"

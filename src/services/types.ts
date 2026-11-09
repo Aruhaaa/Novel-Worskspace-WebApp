@@ -23,6 +23,8 @@ export interface Project {
   author_name?: string;
   genre?: string;
   cover_url?: string;
+  /** The language this novel is written in: a two or three letter code. Missing when never chosen, or on a database without the setup. */
+  language?: string | null;
   likes?: string[]; // Array of user IDs who liked it
   views?: string[]; // Array of user IDs who viewed/read it
   created_at: string;

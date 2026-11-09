@@ -186,6 +186,66 @@ A project saved with a `user_id` that is not any account's id (for example `anon
 likes, the backfill, running twice, rolling back). The cloud browser tests (`npm run test:e2e:cloud`) run against a stand-in that has the script, and a third one
 (`e2e/cloud/chapters.before-publishing.spec.ts`) against one that does not.
 
+# Uploading a cover picture (fifth step, independent of the others)
+
+`supabase/setup_scripts/20261106_cover_uploads.sql`. Needs none of the other steps. Safe to run more than once.
+
+The novel settings (Manuscripts > Edit details) let a writer upload a cover picture instead of pasting a link. The website shrinks the picture to at most
+800 x 1200 as a JPEG (about 100 to 200 KB) and sends it to a public storage bucket called `covers`. Until the script has been run there is no such bucket:
+choosing a picture then says "Picture upload is not switched on for this site yet", the rest of the form keeps what was typed, and pasting a link still works.
+Nothing breaks, so this can be run before or after the website update, or together with the fourth step.
+
+1. In **SQL Editor** > **New query**, paste the whole of `supabase/setup_scripts/20261106_cover_uploads.sql` and press **Run**.
+2. Check it: `select id, public, file_size_limit from storage.buckets where id = 'covers';` should list one row, public, 2097152.
+3. In the app, open Manuscripts > Edit details on a novel, choose a picture and save. In the dashboard under **Storage** > `covers` there is now a folder named after your
+   account id with one file in it.
+
+**What it does**
+- Makes the public `covers` bucket (JPEG, PNG and WebP only, 2 MB at most). Anyone can look at a cover, which is what makes it show with a published novel.
+- Four policies on `storage.objects` let a signed-in person list, add, replace and delete files **only inside their own folder** (the first part of every file name is their
+  account id). Nobody can write into someone else's folder, and someone who is not signed in cannot write at all.
+- It changes no table of the app.
+
+**Good to know**
+- A replaced or removed cover, and every cover of an account that is deleted, is deleted from the bucket by the website. This is best effort: if the person is offline at that
+  moment, the file stays (a few KB, and nothing links to it). Empty the `covers` bucket in the dashboard if you ever want to clear leftovers.
+- With no account (this device only) a cover is kept inside the project itself, as a data address, because there is no server.
+- The phone app shows these covers (they are ordinary web addresses) but cannot upload one yet.
+
+**To undo it:** `supabase/rollback_cover_uploads.sql` removes the policies, so nobody can upload any more. It keeps the bucket and its files, so covers in use keep showing.
+
+`npm run test:sql` runs `supabase/tests/cover-uploads.test.mjs` (the bucket's settings and who can add, change and delete what). The cloud browser tests
+(`e2e/cloud/covers.*.spec.ts`) upload through the real app to the stand-in's storage, with and without the script. The stand-in's storage is a small imitation
+(files in memory, the policies above checked as the real service does), not Supabase Storage itself.
+
+# The language a novel is written in (sixth step, independent of the others)
+
+`supabase/setup_scripts/20261107_novel_language.sql`. Needs none of the other steps and can be run in any order with them. Safe to run more than once.
+
+A writer chooses the language of each novel (English, Bahasa Melayu and fifteen others) when starting it, in Manuscripts > Edit details, and when publishing a
+novel that has none yet. The same story in two languages is two novels, each with its own language, published one by one. Readers see the language on each card
+and, once the library holds novels in more than one language, can filter by it. Until the script has been run, the website says "Choosing a language is not
+switched on for this site yet" in Edit details, does not offer the choice when starting a novel (except for a first novel, where it is simply left out when saving),
+and publishes as before. Nothing breaks, so this can be run before or after the website update.
+
+1. In **SQL Editor** > **New query**, paste the whole of `supabase/setup_scripts/20261107_novel_language.sql` and press **Run**.
+2. Check it: `select column_name from information_schema.columns where table_schema = 'public' and table_name = 'projects' and column_name = 'language';` lists one row.
+3. In the app, open Manuscripts > Edit details on a novel: there is now a "Language of this novel" choice.
+
+**What it does**
+- Adds one column, `projects.language` (a two or three letter code such as `en` or `ms`, or nothing), and a check that refuses anything else.
+- Lets the people who may change a project's other settings (the owner and co-authors) change it. Editors, viewers, strangers and visitors cannot.
+- Every novel starts with no language. Nothing is guessed: a novel is asked when it is next published, or the writer sets it in Edit details.
+
+**Good to know**
+- If the chapter publishing script (fourth step) is run again after this one, it keeps this permission; the order does not matter.
+- The phone app does not show or set the language yet. A novel published from the phone keeps whatever language it already had (none, for a new one).
+
+**To undo it:** `supabase/rollback_novel_language.sql` stops the language being changed and checked. It keeps the column and every language already chosen.
+
+`npm run test:sql` runs `supabase/tests/novel-language.test.mjs` (what the column accepts, who can change it, both orders with the chapter publishing script,
+rolling back). The cloud browser tests (`e2e/cloud/language.*.spec.ts`) run the real app against the stand-in with and without the script.
+
 # Sign in with Google or Apple (optional, needs your own Google / Apple developer accounts)
 
 The website can show "Continue with Google" and "Continue with Apple" on the sign-in screen. They need accounts only you can make, so

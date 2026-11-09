@@ -17,12 +17,13 @@ import { publishedChapters } from '../../lib/chapterPublishing';
 import { useDomReadAloud } from '../Speech/useDomReadAloud';
 import { ReadAloudBar } from '../Speech/ReadAloudBar';
 import { tp, useT } from '../../i18n';
+import { languageLabel } from '../../lib/novelLanguage';
 
 export const LibraryReaderView: React.FC = () => {
   const t = useT();
   // The title and the text of every chapter, in order
-  const ra = useDomReadAloud('.reader-text .reader-chapter > h2, .reader-text .reader-chapter .prose p, .reader-text .reader-chapter .prose h1, .reader-text .reader-chapter .prose h2, .reader-text .reader-chapter .prose h3, .reader-text .reader-chapter .prose li');
   const { user, activePublicProject, setActivePublicProject, publicProjects, loadPublicProjects, trackProjectView, recentlyRead, setRecentlyRead } = useApp();
+  const ra = useDomReadAloud('.reader-text .reader-chapter > h2, .reader-text .reader-chapter .prose p, .reader-text .reader-chapter .prose h1, .reader-text .reader-chapter .prose h2, .reader-text .reader-chapter .prose h3, .reader-text .reader-chapter .prose li', activePublicProject?.language || undefined);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -210,13 +211,14 @@ export const LibraryReaderView: React.FC = () => {
               </button>
 
               <div className="reader-title">
-                <h1>{activePublicProject.title}</h1>
+                <h1 lang={activePublicProject.language || undefined}>{activePublicProject.title}</h1>
                 <p>
                   {t('by')}{' '}
                   <Link className="link-accent" to={`/library/author/${activePublicProject.user_id}`}>
                     {activePublicProject.author_name || t('Anonymous')}
                   </Link>
-                  {activePublicProject.genre ? ` · ${activePublicProject.genre}` : ''} · {tp(chapters.length, '{n} chapter', '{n} chapters')}
+                  {activePublicProject.genre ? ` · ${activePublicProject.genre}` : ''}
+                  {activePublicProject.language ? ` · ${languageLabel(activePublicProject.language)}` : ''} · {tp(chapters.length, '{n} chapter', '{n} chapters')}
                   {sample ? (
                     ` · ${t('Sample novel')}`
                   ) : (
@@ -246,8 +248,8 @@ export const LibraryReaderView: React.FC = () => {
                 <>
                   {safeChapters.map((chapter) => (
                     <article key={chapter.id} id={`reader-ch-${chapter.id}`} className="reader-chapter">
-                      <h2>{chapter.title}</h2>
-                      <div className="prose" dangerouslySetInnerHTML={{ __html: chapter.html }} />
+                      <h2 lang={activePublicProject.language || undefined}>{chapter.title}</h2>
+                      <div className="prose" lang={activePublicProject.language || undefined} dangerouslySetInnerHTML={{ __html: chapter.html }} />
                       <ReaderComments projectId={activePublicProject.id} chapterId={chapter.id} />
                     </article>
                   ))}
