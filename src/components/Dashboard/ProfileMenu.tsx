@@ -6,8 +6,15 @@ import { useT } from '../../i18n';
 import { startTour } from '../../lib/tour';
 
 const SUPPORT_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/issues';
-const WINDOWS_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0/Novelist.Workspace.Setup.0.0.0.exe';
-const ANDROID_URL = 'https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/v1.0.0-android/app-debug.apk';
+// "Get the Windows app" and "Get the Android app" download these two files from one GitHub release. They are not found by themselves: change
+// the three values below with every release (README, "Desktop app and updates"), and publish that release, with both files attached,
+// before the website that points at it goes live. The installed desktop app updates itself from the latest release and does not use these.
+const RELEASE_TAG = 'v0.1.0';
+const WINDOWS_FILE = 'Novelist-Workspace-Setup-0.1.0.exe';
+const ANDROID_FILE = 'Novelist-Workspace-1.1.0.apk';
+const RELEASE_URL = `https://github.com/Aruhaaa/Novel-Worskspace-WebApp/releases/download/${RELEASE_TAG}`;
+const WINDOWS_URL = `${RELEASE_URL}/${WINDOWS_FILE}`;
+const ANDROID_URL = `${RELEASE_URL}/${ANDROID_FILE}`;
 
 type MenuView = 'profile' | 'preferences' | 'tracker' | 'messages' | 'notifications' | 'admin';
 

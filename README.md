@@ -56,6 +56,11 @@ To publish a release:
 2. Make a GitHub personal access token that can write to this repository's releases, and set it as `GH_TOKEN` in your terminal.
 3. Run `npm run electron:publish`. It builds the website and the installer and uploads them, with the `latest.yml` file the updater reads, to a **draft**
    release. Publish the draft on GitHub.
+4. Attach the phone app's APK to the same release, renamed to match `ANDROID_FILE` (for example `Novelist-Workspace-1.1.0.apk`; the built file is
+   `mobile/build/app/outputs/flutter-apk/app-release.apk`). GitHub names the installer `Novelist-Workspace-Setup-<version>.exe`.
+5. Change `RELEASE_TAG`, `WINDOWS_FILE` and `ANDROID_FILE` at the top of `src/components/Dashboard/ProfileMenu.tsx` to the new release. They are what
+   **Get the Windows app** and **Get the Android app** in the profile menu download, and they do not follow new releases by themselves. Publish the release
+   first and deploy the website after, or the menu links lead to "not found" until the release exists.
 
 Not tested: downloading and installing a real release, which needs one to exist. The logic around it is (`npm run test:unit`), and so is the real desktop
 app starting and handing its window the update bridge (`e2e/desktop.spec.ts`). The Windows installer is not code-signed, so Windows may warn the first time
