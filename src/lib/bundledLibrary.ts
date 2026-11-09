@@ -224,6 +224,8 @@ const toProject = (e: BundledEntry): Project => ({
   is_published: true,
   author_name: e.author,
   genre: e.genre,
+  // Every sample novel is in English
+  language: 'en',
   cover_url: coverFor(e),
   likes: people(LIKES_PREFIX, e.id),
   views: people(VIEWS_PREFIX, e.id),

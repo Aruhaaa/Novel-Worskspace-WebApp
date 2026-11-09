@@ -514,6 +514,23 @@ class SupabaseBackend implements Backend {
     await _c.from('chapters').delete().eq('id', id);
   });
 
+  @override
+  Future<Chapter> setChapterPublished(String id, bool published) =>
+      _run(() async {
+        return Chapter.fromJson(
+          await _c
+              .from('chapters')
+              .update({
+                'published_at': published
+                    ? DateTime.now().toUtc().toIso8601String()
+                    : null,
+              })
+              .eq('id', id)
+              .select()
+              .single(),
+        );
+      });
+
   // A copy of a deleted chapter is kept in the cloud when the deleted_chapters table exists (see supabase/migrations),
   // otherwise on this phone.
   bool _binMissing = false;

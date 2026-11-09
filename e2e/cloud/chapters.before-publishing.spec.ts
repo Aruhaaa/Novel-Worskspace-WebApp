@@ -20,6 +20,8 @@ test.describe('before the chapter publishing setup has been run', () => {
     await expect(benPage.locator('.tile-pub')).toHaveCount(0);
     await benPage.goto('/#/write');
     await benPage.getByRole('button', { name: 'Publish', exact: true }).click();
+    // The novel has no language yet, so it is asked which one first (English is already chosen)
+    await benPage.locator('dialog[open]').getByRole('button', { name: 'Publish', exact: true }).click();
     await expect(benPage.getByText('is now in the Public Library')).toBeVisible();
     expect((await sql<{ is_published: boolean }>(testInfo, 'select is_published from public.projects where id = $1', [project.id]))[0].is_published).toBe(true);
 

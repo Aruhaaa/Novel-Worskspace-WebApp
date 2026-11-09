@@ -3,7 +3,7 @@
 A Flutter app (Android, iOS) for the Novelist Workspace web app. It has two spaces in one app, **Read** and **Write**, plus **Me**. Which one opens first is the person's own choice, asked once at sign-up. Nothing is hidden from anyone.
 
 - **Read**: browse the public library, search and filter by genre, save novels, like them, and pick up where you left off. The reader has size, typeface and theme settings. Guests can read without an account.
-- **Write**: projects, chapters (drag to reorder, delete with Undo and a Recently deleted list), a rich text editor, a notebook for characters, places and ideas, a daily word goal with a 14-day chart, and publish or unpublish.
+- **Write**: projects, chapters (drag to reorder, delete with Undo and a Recently deleted list), a rich text editor, a notebook for characters, places and ideas, a daily word goal with a 14-day chart, publish or unpublish the whole book, and publish or take down one chapter at a time once the chapter publishing script has been run.
 - **Reading links**: open a writer's private link, read the manuscript and leave comments. No account is needed.
 - **Me**: profile, daily goal, where the app opens (kept on the account, so it follows you to another phone or the website), the six web themes, reading and writing typeface and size, change password, blocked writers, sign-out and delete account.
 - **Safety**: "Forgot password?" on sign-in, **Report this novel** and **Block this writer** from a novel's page, and **Delete my account** in Me. Blocked writers' novels are hidden. These need `supabase/setup_scripts/20261008_account_safety.sql` run in the cloud project; see `supabase/README.md`.

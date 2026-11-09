@@ -14,6 +14,7 @@ import { GuestGateModal } from '../Auth/GuestGateModal';
 import { Dialog } from '../ui/Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { PageHead } from '../ui/PageHead';
+import { LanguageTag } from '../ui/LanguageSelect';
 import { fmtDate, tp, useT } from '../../i18n';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
@@ -133,6 +134,7 @@ export const HomeView: React.FC = () => {
                       <span className={`badge${project.is_published ? ' is-accent' : ''}`}>
                         <span className="small-dot" /> {project.is_published ? t('Published') : t('Draft')}
                       </span>{' '}
+                      <LanguageTag code={project.language} />{' '}
                       {isSampleProject(project.id) && <span className="badge">{t('Sample')}</span>}{' '}
                       &nbsp; {t('Updated {date}', { date: fmtDate(project.updated_at) })}
                     </p>

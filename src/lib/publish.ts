@@ -2,15 +2,23 @@ import { useApp } from '../context/AppContext';
 import { useToast } from '../components/ui/toastContext';
 import type { Project } from '../services/types';
 import { t, tp } from '../i18n';
+import { askLanguage } from './languagePrompt';
+import { supportsLanguage } from './novelLanguage';
 
 /** Publish or unpublish a project under the author's display name. */
 export const usePublishProject = () => {
-  const { user, profile, publishProject } = useApp();
+  const { user, profile, publishProject, updateProjectSettings } = useApp();
   const { toast } = useToast();
   return async (project: Project) => {
     if (!user) return;
     const authorName = profile?.display_name || (user.email ? user.email.split('@')[0] : 'Anonymous');
     const publishing = !project.is_published;
+    // A novel goes to readers under a language, so one that has none is asked first (and not published if the question is dismissed)
+    if (publishing && !project.language && supportsLanguage(project)) {
+      const code = await askLanguage(project);
+      if (!code) return;
+      await updateProjectSettings(project.id, { language: code });
+    }
     await publishProject(project.id, publishing, authorName);
     toast({
       message: publishing ? t('“{title}” is now in the Public Library.', { title: project.title }) : t('“{title}” is no longer public.', { title: project.title }),

@@ -16,12 +16,16 @@ import { ShareProjectDialog } from '../Collab/ShareProjectDialog';
 import { removeMember, type SharedProject } from '../../lib/collab';
 import { ROLE_LABEL } from '../../lib/notifications';
 import { fmtDate, useT } from '../../i18n';
+import { CoverPicker } from '../ui/CoverPicker';
+import { resolveCover, type CoverChoice } from '../../lib/coverImage';
+import { defaultNovelLanguage, languageAvailable, supportsLanguage } from '../../lib/novelLanguage';
+import { LanguageSelect, LanguageTag } from '../ui/LanguageSelect';
 
 const COVER_TONES = ['', 'alt', 'alt2'];
 
 /** Every project, so the author can choose which manuscript to open. */
 export const ManuscriptsView: React.FC = () => {
-  const { projects, activeProject, setActiveProject, createProject, updateProjectSettings, isGuest, user, sharedProjects, sharedProjectIds, refreshShared } = useApp();
+  const { projects, activeProject, setActiveProject, createProject, updateProjectSettings, uploadCoverImage, discardCover, isGuest, user, sharedProjects, sharedProjectIds, refreshShared } = useApp();
   const t = useT();
   const navigate = useNavigate();
   const [sharing, setSharing] = useState<Project | null>(null);
@@ -37,14 +41,41 @@ export const ManuscriptsView: React.FC = () => {
   const [eTitle, setETitle] = useState('');
   const [eDesc, setEDesc] = useState('');
   const [eGenre, setEGenre] = useState('');
-  const [eCover, setECover] = useState('');
+  const [eLanguage, setELanguage] = useState('');
+  const [newLanguage, setNewLanguage] = useState('en');
+  const [eCover, setECover] = useState<CoverChoice>({ url: '', picture: null });
+  const [saving, setSaving] = useState(false);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [saveProblem, setSaveProblem] = useState('');
 
   const openSettings = (project: Project) => {
     setEditing(project);
     setETitle(project.title || '');
     setEDesc(project.description || '');
     setEGenre(project.genre || '');
-    setECover(project.cover_url || '');
+    setELanguage(project.language || '');
+    setECover({ url: project.cover_url || '', picture: null });
+    setSaving(false);
+    setCoverBusy(false);
+    setSaveProblem('');
+  };
+
+  const saveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    setSaving(true);
+    setSaveProblem('');
+    // The picture goes up first; if that fails, the form stays open with everything the person typed
+    const cover = await resolveCover(eCover, uploadCoverImage);
+    if (cover.error) {
+      setSaveProblem(cover.error);
+      setSaving(false);
+      return;
+    }
+    await updateProjectSettings(editing.id, { title: eTitle, description: eDesc, genre: eGenre, cover_url: cover.url, ...(supportsLanguage(editing) ? { language: eLanguage || null } : {}) });
+    if (cover.url !== (editing.cover_url || '')) void discardCover(editing.cover_url, editing.id);
+    setSaving(false);
+    setEditing(null);
   };
 
   const open = (project: Project) => {
@@ -62,7 +93,12 @@ export const ManuscriptsView: React.FC = () => {
     }
   };
 
-  const startNew = () => (isGuest ? setShowGate(true) : setShowNew(true));
+  const askLanguageOnNew = languageAvailable(projects);
+  const startNew = () => {
+    if (isGuest) return setShowGate(true);
+    setNewLanguage(defaultNovelLanguage());
+    setShowNew(true);
+  };
   const startImport = () => (isGuest ? setShowGate(true) : setShowImport(true));
 
   return (
@@ -113,6 +149,7 @@ export const ManuscriptsView: React.FC = () => {
                   <span className={`badge${project.is_published ? ' is-accent' : ''}`}>
                     <span className="small-dot" /> {project.is_published ? t('Published') : t('Draft')}
                   </span>
+                  <span style={{ marginLeft: 8 }}><LanguageTag code={project.language} /></span>
                   {isSampleProject(project.id) && <span className="badge" style={{ marginLeft: 8 }}>{t('Sample')}</span>}
                   {sharedProjectIds.includes(project.id) && <span className="badge" style={{ marginLeft: 8 }}>{t('Shared')}</span>}
                   {activeProject?.id === project.id && (
@@ -185,7 +222,7 @@ export const ManuscriptsView: React.FC = () => {
           onSubmit={async (e) => {
             e.preventDefault();
             if (!title.trim()) return;
-            await createProject(title, desc);
+            await createProject(title, desc, askLanguageOnNew ? newLanguage || null : null);
             setTitle('');
             setDesc('');
             setShowNew(false);
@@ -197,6 +234,13 @@ export const ManuscriptsView: React.FC = () => {
           <input id="ms-np-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Whispers of the Starward')} required autoFocus />
           <label htmlFor="ms-np-desc">{t('Description')}</label>
           <input id="ms-np-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('A short summary of the theme, setting or plot')} />
+          {askLanguageOnNew && (
+            <>
+              <label htmlFor="ms-np-lang">{t('Language of this novel')}</label>
+              <LanguageSelect id="ms-np-lang" value={newLanguage} onChange={setNewLanguage} style={{ marginTop: 8 }} />
+              <p>{t('The same story in two languages? Make a separate novel for each version and publish them one by one.')}</p>
+            </>
+          )}
           <div className="dialog-actions">
             <button type="button" className="button button-outline button-small" onClick={() => setShowNew(false)}>{t('Cancel')}</button>
             <button className="button button-primary button-small">{t('Create project')}</button>
@@ -205,14 +249,7 @@ export const ManuscriptsView: React.FC = () => {
       </Dialog>
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} labelledBy="ps-h">
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!editing) return;
-            await updateProjectSettings(editing.id, { title: eTitle, description: eDesc, genre: eGenre, cover_url: eCover });
-            setEditing(null);
-          }}
-        >
+        <form onSubmit={saveSettings}>
           <p className="eyebrow">{t('PROJECT DETAILS')}</p>
           <h2 id="ps-h">{editing?.title}</h2>
           <label htmlFor="ps-title">{t('Novel title')}</label>
@@ -226,11 +263,21 @@ export const ManuscriptsView: React.FC = () => {
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
-          <label htmlFor="ps-cover">{t('Cover image URL')}</label>
-          <input id="ps-cover" type="url" value={eCover} onChange={(e) => setECover(e.target.value)} placeholder={t('https://…')} />
+          <label htmlFor="ps-lang">{t('Language of this novel')}</label>
+          {supportsLanguage(editing) ? (
+            <>
+              <LanguageSelect id="ps-lang" allowUnset value={eLanguage} onChange={setELanguage} style={{ marginTop: 8 }} />
+              <p>{t('The same story in two languages? Make a separate novel for each version and publish them one by one.')}</p>
+            </>
+          ) : (
+            <p id="ps-lang">{t('Choosing a language is not switched on for this site yet.')}</p>
+          )}
+          <span className="dialog-label" id="ps-cover-label">{t('Cover picture')}</span>
+          <CoverPicker labelId="ps-cover-label" value={eCover} onChange={setECover} onBusy={setCoverBusy} disabled={saving} />
+          {saveProblem && <p className="cover-picker-problem" role="alert">{saveProblem}</p>}
           <div className="dialog-actions">
             <button type="button" className="button button-outline button-small" onClick={() => setEditing(null)}>{t('Cancel')}</button>
-            <button className="button button-primary button-small">{t('Save changes')}</button>
+            <button className="button button-primary button-small" disabled={saving || coverBusy}>{saving ? t('Saving…') : t('Save changes')}</button>
           </div>
         </form>
       </Dialog>

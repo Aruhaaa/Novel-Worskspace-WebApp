@@ -19,6 +19,7 @@ import { getLastChapter, getLastProject, setLastChapter, setLastProject, forgetP
 import { createSampleProject as buildSampleProject, forgetSample } from '../lib/sample';
 import { loadMode, saveMode, spaceOfView, openingSpace, type UseMode, type Space } from '../lib/mode';
 import { can, listSharedProjects, sharedProjectIds, type Role, type SharedProject } from '../lib/collab';
+import { describeCoverError } from '../lib/coverImage';
 
 interface AppContextType {
   user: User | null;
@@ -82,12 +83,16 @@ interface AppContextType {
   loadProjects: (userId: string) => Promise<void>;
   loadPublicProjects: () => Promise<void>;
   loadProjectData: (projectId: string) => Promise<void>;
-  createProject: (title: string, description: string) => Promise<void>;
-  createExternalProject: (title: string, authorName: string, description: string, genre: string, coverUrl: string) => Promise<{error: string | null}>;
+  createProject: (title: string, description: string, language?: string | null) => Promise<void>;
+  createExternalProject: (title: string, authorName: string, description: string, genre: string, coverUrl: string, language?: string | null) => Promise<{error: string | null}>;
   publishProject: (projectId: string, isPublished: boolean, authorName: string) => Promise<void>;
   /** Publish or unpublish chapters of the open project, one at a time or several (owner only). */
   publishChapters: (chapterIds: string[], published: boolean) => Promise<{ error: string | null }>;
-  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => Promise<void>;
+  updateProjectSettings: (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name' | 'language'>>) => Promise<void>;
+  /** Keep a cover picture (already shrunk) and give back the address to save in `cover_url`, or a sentence about what went wrong. */
+  uploadCoverImage: (picture: Blob) => Promise<{ url: string | null; error: string | null }>;
+  /** Delete a replaced cover file, unless another of this person's novels still shows it. Never fails. */
+  discardCover: (url: string | undefined, exceptProjectId?: string) => Promise<void>;
   toggleLikeProject: (projectId: string) => Promise<void>;
   trackProjectView: (projectId: string) => Promise<void>;
   updateProfile: (fields: Partial<UserProfile>) => Promise<{error: string | null}>;
@@ -596,10 +601,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveChapter(null);
   };
 
-  const createProject = async (title: string, description: string) => {
+  const createProject = async (title: string, description: string, language?: string | null) => {
     if (!user) return;
     try {
-      const newProj = await databaseService.createProject(user.id, title, description);
+      const newProj = await databaseService.createProject(user.id, title, description, language);
       setProjects(prev => [newProj, ...prev]);
       setActiveProjectState(newProj);
     } catch (err) {
@@ -607,10 +612,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const createExternalProject = async (title: string, authorName: string, description: string, genre: string, coverUrl: string) => {
+  const createExternalProject = async (title: string, authorName: string, description: string, genre: string, coverUrl: string, language?: string | null) => {
     if (!user) return { error: 'Not authenticated' };
     try {
-      const newProj = await databaseService.createExternalProject(user.id, title, authorName, description, genre, coverUrl);
+      const newProj = await databaseService.createExternalProject(user.id, title, authorName, description, genre, coverUrl, language);
       setProjects(prev => [newProj, ...prev]);
       setActiveProjectState(newProj);
       await loadPublicProjects();
@@ -664,7 +669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name'>>) => {
+  const updateProjectSettings = async (projectId: string, fields: Partial<Pick<Project, 'title' | 'description' | 'cover_url' | 'genre' | 'author_name' | 'language'>>) => {
     if (activeProject?.id === projectId && !can.manage(projectRole)) return;
     try {
       const updated = await databaseService.updateProjectSettings(projectId, fields);
@@ -676,6 +681,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       console.error('Error updating project settings:', err);
     }
+  };
+
+  const uploadCoverImage = async (picture: Blob) => {
+    if (!user) return { url: null, error: 'Not authenticated' };
+    try {
+      return { url: await databaseService.uploadCover(user.id, picture), error: null };
+    } catch (err) {
+      console.error('Error uploading cover:', err);
+      return { url: null, error: describeCoverError(err) };
+    }
+  };
+
+  const discardCover = async (url: string | undefined, exceptProjectId?: string) => {
+    if (!url || projects.some(p => p.id !== exceptProjectId && p.cover_url === url)) return;
+    await databaseService.removeCover(url);
   };
 
   const toggleLikeProject = async (projectId: string) => {
@@ -1160,6 +1180,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         publishProject,
         publishChapters,
         updateProjectSettings,
+        uploadCoverImage,
+        discardCover,
         toggleLikeProject,
         trackProjectView,
         updateProfile,

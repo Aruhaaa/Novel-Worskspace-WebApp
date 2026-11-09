@@ -8,8 +8,8 @@ import { APP_PORT, APP_BARE_PORT, APP_PRE_PORT, LITE_PORT, LITE_BARE_PORT, LITE_
 //
 //   npm run test:e2e:cloud
 //
-// "cloud" has the newest setup script applied. "cloud-before-setup" has none of the newer ones, and "cloud-before-publishing" has all but
-// the chapter publishing one, to see that the app copes until each is run.
+// "cloud" has the newest setup script applied. "cloud-before-setup" has none of the newer ones (not even the cover pictures or novel language ones), and
+// "cloud-before-publishing" has all but the chapter publishing one, to see that the app copes until each is run.
 const channel = process.env.PW_CHANNEL === 'bundled' ? undefined : (process.env.PW_CHANNEL ?? 'msedge');
 
 const standIn = (port: number, extra = '') => ({
@@ -45,7 +45,7 @@ export default defineConfig({
   ],
   webServer: [
     standIn(LITE_PORT),
-    standIn(LITE_BARE_PORT, '--no-next-features'),
+    standIn(LITE_BARE_PORT, '--no-next-features --no-cover-uploads --no-novel-language'),
     standIn(LITE_PRE_PORT, '--no-chapter-publishing'),
     app(APP_PORT, LITE_PORT),
     app(APP_BARE_PORT, LITE_BARE_PORT),

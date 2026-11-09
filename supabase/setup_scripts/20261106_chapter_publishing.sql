@@ -242,6 +242,13 @@ revoke all on table public.projects from anon, authenticated;
 grant select on table public.projects to anon, authenticated;
 grant insert on table public.projects to authenticated;
 grant update (title, description, is_published, author_name, cover_url, genre, updated_at) on table public.projects to authenticated;
+-- A column a later setup script adds for people to change (the novel language one) keeps its permission when this script is run again
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'projects' and column_name = 'language') then
+    grant update (language) on table public.projects to authenticated;
+  end if;
+end $$;
 grant delete on table public.projects to authenticated;
 
 revoke all on table public.chapters from anon, authenticated;
